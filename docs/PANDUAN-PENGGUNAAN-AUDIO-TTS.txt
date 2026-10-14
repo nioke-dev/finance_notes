@@ -1,0 +1,98 @@
+# PANDUAN LENGKAP PENGGUNAAN APLIKASI KEUANGAN PRIBADI & SHOPEEFOOD DRIVER
+
+Halo! Dokumen ini disusun khusus agar nyaman dibaca dan sangat jelas saat didengarkan menggunakan aplikasi Text-to-Speech (TTS). Semua penjelasan menggunakan bahasa yang sederhana, praktis, dan tanpa istilah keuangan yang membingungkan.
+
+---
+
+## BAB 1: KONSEP DASAR APLIKASI
+Aplikasi ini dibuat untuk menyelesaikan satu masalah besar yang dialami driver ojek online: Uang narik di kantong sering kali campur aduk dengan uang dapur, uang makan, dan uang bensin. Akibatnya, saat malam hari tiba, kita sering bingung: "Uang hasil kerja hari ini ke mana ya? Kok saldo di dompet sisa sedikit?"
+
+Untuk itu, aplikasi ini membagi dunia keuangan Anda menjadi dua kamar yang terpisah:
+Kamar pertama adalah Operasional Driver ShopeeFood saat Anda sedang aktif narik di jalan.
+Kamar kedua adalah Keuangan Pribadi dan Kebutuhan Sehari-hari saat Anda di luar pekerjaan driver.
+
+---
+
+## BAB 2: PENJELASAN DOMPET DAN REKENING ANDA
+Di dalam aplikasi ini, Anda memiliki beberapa dompet dan rekening aktif:
+
+1. Dompet Tunai atau Cash on Hand.
+Ini adalah uang lembaran fisik yang ada di saku atau dompet Anda. Fungsinya untuk menerima uang pembayaran tunai pesanan COD, memberikan uang kembalian ke customer, serta membayar bensin atau parkir secara tunai.
+
+2. Saldo ShopeePay Driver.
+Ini adalah dompet digital di aplikasi ShopeeFood Anda. Ongkos kirim non-tunai, insentif harian, dan bonus level akan masuk ke sini.
+
+3. Rekening Bank, misalnya BCA, Mandiri, atau DANA.
+Ini adalah rekening simpanan pribadi Anda untuk tabungan atau kebutuhan rumah tangga.
+
+4. Catatan Utang dan Cicilan.
+Tempat mencatat pinjaman ke teman atau cicilan Shopee PayLater agar Anda ingat kapan harus membayar dan uang kas Anda tidak kaget.
+
+---
+
+## BAB 3: INISIALISASI SALDO AWAL (HANYA SEKALI SEUMUR HIDUP)
+Banyak orang salah paham dengan saldo awal. Saldo awal bukanlah uang yang kita dapatkan setiap hari. Saldo awal adalah berapa uang yang memang sudah ada di kantong atau rekening Anda pada hari pertama Anda mulai memakai aplikasi ini.
+
+Oleh karena itu, di aplikasi ini saldo awal dikunci permanen:
+1. Klik tombol hijau berlabel Kunci Saldo Awal Akun Baru di bawah tabel daftar akun.
+2. Masukkan nominal uang yang ada saat ini, misalnya di rekening BCA ada lima ratus ribu rupiah, dan di ShopeePay ada lima puluh ribu rupiah.
+3. Setelah disimpan, status akun akan berubah menjadi Terkunci atau Locked. Ini menjamin catatan keuangan Anda di hari-hari berikutnya tidak akan pernah melenceng atau berantakan.
+
+Jika suatu saat Anda salah ketik angka nol, gunakan tombol Koreksi Audit Saldo. Di tombol ini, Anda wajib mengetik alasan koreksinya agar catatan riwayat tetap jujur dan rapi.
+
+---
+
+## BAB 4: ALUR HARIAN KETIKA SEDANG ON-BID ATAU NARIK SHOPEEFOOD
+Saat Anda keluar rumah untuk mencari orderan, buka Tab Mode On-Bid Driver. Berikut urutan aktivitasnya:
+
+Langkah Pertama: Buka Shift Pagi.
+Sebelum menyalakan aplikasi driver, klik tombol Buka Shift. Masukkan uang modal kembalian yang Anda bawa di kantong, misalnya seratus ribu rupiah pecahan dua ribuan dan lima ribuan. Langkah ini memastikan sistem tahu berapa uang modal awal Anda sebelum dapat orderan pertama.
+
+Langkah Kedua: Mencatat Pesanan COD.
+Saat Anda mengantar makanan dengan pembayaran tunai di tempat atau COD, klik tombol Pesanan COD.
+Masukkan total tagihan makanan dari resto, misalnya empat puluh lima ribu rupiah.
+Lalu masukkan uang yang diserahkan pelanggan, misalnya pelanggan memberikan uang lima puluh ribu rupiah dan berkata: Kembaliannya ambil saja, Mas.
+Sistem secara cerdas akan langsung memecah uang tersebut: empat puluh lima ribu dicatat sebagai penerimaan order, dan lima ribu rupiah sisanya otomatis dicatat sebagai Tip Bersih Anda.
+
+Langkah Ketiga: Membeli Bensin Motor.
+Bensin adalah biaya operasional motor. Klik tombol Beli Bensin, pilih beli di SPBU resmi atau Warung Madura, lalu masukkan nominalnya, misalnya dua puluh lima ribu rupiah. Sistem otomatis menghitung berapa liter bensin yang masuk ke tangki motor Anda.
+
+Langkah Keempat: Membayar Parkir Restoran.
+Klik tombol Parkir Motor. Masukkan nama resto yang Anda kunjungi. Jika restoran tersebut menggratiskan parkir khusus untuk driver ShopeeFood, Anda cukup mencentang kotak Gratis atau Ditanggung Restoran. Uang di kantong Anda tidak akan berkurang sepeser pun, tetapi riwayat kunjungan ke resto tersebut tetap tersimpan rapi.
+
+---
+
+## BAB 5: MENCATAT KEBUTUHAN SEHARI-HARI DI LUAR NARIK
+Ingat prinsip penting ini: Makan siang, beli kopi, beli rokok, sarapan pagi jam tujuh, beli pulsa, atau jajan cilok sepuluh ribu rupiah BUKANLAH pengeluaran driver. Itu adalah Pengeluaran Kebutuhan Sehari-hari.
+
+Untuk mencatatnya, buka Tab Kebutuhan Sehari-hari:
+1. Klik tombol Catat Pengeluaran Pribadi.
+2. Ketik keterangannya, misalnya: Sarapan soto ayam dan es teh.
+3. Pilih dibayar pakai apa, apakah uang tunai dari dompet atau transfer dari rekening BCA.
+4. Masukkan nominalnya, misalnya lima belas ribu rupiah.
+
+Jika Anda mendapatkan pemasukan di luar narik ojol, misalnya Anda mendapat kiriman uang dari keluarga, atau hasil menjual barang bekas, Anda cukup mengklik tombol Catat Pemasukan Lainnya di tab kebutuhan sehari-hari. Uang ini akan masuk sebagai pemasukan pribadi dan tidak akan dicampuradukkan dengan omzet ojek online Anda.
+
+---
+
+## BAB 6: EVALUASI KINERJA HARIAN (KOTAK PERFORMA DRIVER)
+Di bagian atas dashboard, terdapat Kotak Performa Driver ShopeeFood yang sangat detail. Kotak ini memperlihatkan:
+1. Total Pesanan COD dan uang tagihan yang terkumpul.
+2. Total Tip Bersih yang diberikan oleh pelanggan.
+3. Total Pengeluaran Bensin Motor hari itu.
+4. Total Biaya Parkir Mandiri serta berapa kali Anda mendapatkan parkir gratis dari restoran.
+5. Profit Bersih Narik atau keuntungan murni yang Anda bawa pulang, yaitu total pendapatan dikurangi bensin dan parkir.
+
+Anda juga bisa memilih tanggal di kalender atas untuk melihat performa kemarin, dua hari lalu, atau minggu lalu.
+
+---
+
+## BAB 7: CLOSING KAS FISIK DI MALAM HARI
+Setelah Anda selesai narik dan sampai di rumah, klik tombol kuning berlabel Closing Kas Shift Ini.
+Anda akan masuk ke halaman hitung uang fisik:
+1. Keluarkan semua uang dari saku dan dompet Anda.
+2. Masukkan jumlah lembaran uang yang ada. Berapa lembar uang seratus ribuan, lima puluh ribuan, sepuluh ribuan, hingga kepingan uang logam.
+3. Sistem akan menjumlahkan total fisik uang Anda dan membandingkannya dengan pembukuan transaksi hari ini.
+4. Jika selisihnya nol rupiah, artinya uang fisik dan catatan buku seimbang sempurna. Tombol hijau Finalkan Hari Kerja Ini akan menyala, dan Anda bisa menguncinya dengan tenang.
+
+Selamat mencoba! Aplikasi ini akan menjadi asisten finansial setia yang menjaga setiap rupiah hasil keringat Anda tetap aman dan terdata rapi.
