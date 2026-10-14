@@ -60,12 +60,8 @@ class AppUpdateController extends Controller
             ]);
         }
 
-        return response()->json([
-            'status' => 'error',
-            'message' => 'File APK belum diunggah ke server rilis.',
-            'latest_version_name' => self::LATEST_VERSION_NAME,
-            'build_instruction' => 'Build APK lokal via `flutter build apk --release` dan letakkan di storage/app/public/releases/driver-finance-latest.apk',
-        ], 404);
+        // Fallback langsung ke GitHub Release binary APK
+        return redirect()->away('https://github.com/nioke-dev/finance_notes/releases/download/v1.1.0-release/driver-finance-latest.apk');
     }
 
     /**

@@ -39,14 +39,11 @@ class AppUpdateTest extends TestCase
         ]);
     }
 
-    public function test_download_apk_endpoint_returns_404_instruction_when_file_not_present(): void
+    public function test_download_apk_endpoint_redirects_to_github_release_when_file_not_present(): void
     {
         $response = $this->get('/download/driver-finance-latest.apk');
 
-        $response->assertStatus(404);
-        $response->assertJson([
-            'status' => 'error',
-            'latest_version_name' => AppUpdateController::LATEST_VERSION_NAME,
-        ]);
+        $response->assertStatus(302);
+        $response->assertRedirect('https://github.com/nioke-dev/finance_notes/releases/download/v1.1.0-release/driver-finance-latest.apk');
     }
 }
