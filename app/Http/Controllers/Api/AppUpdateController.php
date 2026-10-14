@@ -67,4 +67,46 @@ class AppUpdateController extends Controller
             'build_instruction' => 'Build APK lokal via `flutter build apk --release` dan letakkan di storage/app/public/releases/driver-finance-latest.apk',
         ], 404);
     }
+
+    /**
+     * Menerima log build dari CI untuk pemantauan otomatis tanpa otentikasi rumit.
+     */
+    public function receiveCiLog(Request $request): JsonResponse
+    {
+        $logContent = $request->getContent();
+        Storage::disk('public')->put('ci_build.log', $logContent);
+        return response()->json(['status' => 'received', 'bytes' => strlen($logContent)]);
+    }
+
+    /**
+     * Melihat log build CI secara langsung.
+     */
+    public function viewCiLog()
+    {
+        if (Storage::disk('public')->exists('ci_build.log')) {
+            $log = Storage::disk('public')->get('ci_build.log');
+            return response($log, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+        }
+        return response('Belum ada log build CI yang diterima.', 404, ['Content-Type' => 'text/plain']);
+    }
+
+    /**
+     * Menerima file APK rilis langsung dari runner GitHub Actions.
+     */
+    public function uploadReleaseApk(Request $request): JsonResponse
+    {
+        if ($request->hasFile('apk_file')) {
+            $file = $request->file('apk_file');
+            $file->storeAs('releases', 'driver-finance-latest.apk', 'public');
+            return response()->json(['status' => 'success', 'message' => 'APK uploaded successfully']);
+        }
+
+        $rawContent = $request->getContent();
+        if (!empty($rawContent)) {
+            Storage::disk('public')->put('releases/driver-finance-latest.apk', $rawContent);
+            return response()->json(['status' => 'success', 'message' => 'APK stream saved successfully']);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'No APK payload received'], 400);
+    }
 }

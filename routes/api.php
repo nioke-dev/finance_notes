@@ -30,6 +30,10 @@ Route::prefix('v1')->group(function () {
 
     // In-App OTA Auto-Update Endpoint
     Route::get('/app/check-update', [\App\Http\Controllers\Api\AppUpdateController::class, 'checkUpdate']);
+
+    // CI/CD Automated Bridge
+    Route::post('/ci/log', [\App\Http\Controllers\Api\AppUpdateController::class, 'receiveCiLog']);
+    Route::post('/ci/upload-apk', [\App\Http\Controllers\Api\AppUpdateController::class, 'uploadReleaseApk']);
 });
 
 Route::match(['get', 'post'], '/deploy', [\App\Http\Controllers\Api\DeployWebhookController::class, 'handle']);

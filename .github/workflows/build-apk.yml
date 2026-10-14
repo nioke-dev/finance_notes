@@ -37,10 +37,6 @@ jobs:
           
           # Add permissions for microphone audio recording and GPS geolocation
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' android/app/src/main/AndroidManifest.xml
-          
-          # Ensure minSdk is at least 21 for record and geolocator plugins
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || true
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle || true
 
       - name: Get Dependencies
         run: |
@@ -48,9 +44,15 @@ jobs:
           flutter pub get
 
       - name: Build Release APK
+        id: build_apk
         run: |
           cd mobile
-          flutter build apk --release --no-tree-shake-icons
+          flutter build apk --release --no-tree-shake-icons 2>&1 | tee ../build.log
+
+      - name: Sync Build Log to Server Bridge
+        if: always()
+        run: |
+          curl -s -X POST https://financenotes.nurulmustofa.my.id/api/v1/ci/log --data-binary @build.log || true
 
       - name: Find & Prepare APK
         run: |
@@ -59,6 +61,11 @@ jobs:
           echo "Found APK at: $APK_PATH"
           cp "$APK_PATH" releases/driver-finance-latest.apk
           ls -lh releases/driver-finance-latest.apk
+
+      - name: Deploy APK Directly to Production Server
+        run: |
+          echo "Uploading release APK to production server..."
+          curl -s -X POST https://financenotes.nurulmustofa.my.id/api/v1/ci/upload-apk --data-binary @releases/driver-finance-latest.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

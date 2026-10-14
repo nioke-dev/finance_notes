@@ -81,4 +81,5 @@ Route::middleware('auth')->group(function () {
 
 // Download Langsung APK Rilis Android
 Route::get('/download/driver-finance-latest.apk', [\App\Http\Controllers\Api\AppUpdateController::class, 'downloadApk'])->name('app.download');
+Route::get('/ci/log', [\App\Http\Controllers\Api\AppUpdateController::class, 'viewCiLog'])->name('ci.log');
 
