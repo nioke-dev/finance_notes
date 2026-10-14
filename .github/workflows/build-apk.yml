@@ -44,6 +44,13 @@ jobs:
           sed -i 's/minSdk = .*/minSdk = 23/g' android/app/build.gradle || true
           grep -i "minSdk" android/app/build.gradle || true
 
+          # Set Kotlin version to 1.9.24 to match compiled library dependencies
+          sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "1.9.24"/g' android/settings.gradle || true
+          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.24'/g" android/build.gradle || true
+          sed -i "s/kotlin_version = .*/kotlin_version = '1.9.24'/g" android/build.gradle || true
+          grep -i "kotlin" android/settings.gradle || true
+          grep -i "kotlin" android/build.gradle || true
+
       - name: Get Dependencies
         run: |
           cd mobile
