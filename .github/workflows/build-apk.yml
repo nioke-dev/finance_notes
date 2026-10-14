@@ -51,6 +51,22 @@ jobs:
           grep -i "kotlin" android/settings.gradle || true
           grep -i "kotlin" android/build.gradle || true
 
+          # Disable R8 full mode & minification
+          echo "android.enableR8.fullMode=false" >> android/gradle.properties
+          sed -i 's/signingConfig/minifyEnabled false\n            shrinkResources false\n            signingConfig/g' android/app/build.gradle || true
+          grep -i "minify" android/app/build.gradle || true
+
+          # Upgrade R8 compiler in settings.gradle to 8.3.37
+          sed -i '/pluginManagement {/a \    buildscript {\n        repositories {\n            mavenCentral()\n            maven { url = uri("https://storage.googleapis.com/r8-releases/raw") }\n        }\n        dependencies {\n            classpath("com.android.tools:r8:8.3.37")\n        }\n    }' android/settings.gradle || true
+
+          # Add Proguard compatibility rules
+          cat << 'EOF' > android/app/proguard-rules.pro
+          -dontwarn **
+          -keepattributes *Annotation*
+          -keepattributes InnerClasses, EnclosingMethod
+          -keep class com.llfbandit.record.** { *; }
+          EOF
+
       - name: Get Dependencies
         run: |
           cd mobile
