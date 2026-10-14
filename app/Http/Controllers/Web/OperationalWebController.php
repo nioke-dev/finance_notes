@@ -35,6 +35,7 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'work_date' => 'required|date',
+            'day_type' => 'nullable|in:on_bid,day_off',
             'cash_initial_balance' => 'nullable|integer|min:0',
             'bill_100000' => 'nullable|integer|min:0',
             'bill_50000' => 'nullable|integer|min:0',
@@ -50,13 +51,27 @@ class OperationalWebController extends Controller
         ]);
 
         $workDate = Carbon::parse($validated['work_date']);
-        $workDay = $openWorkDayService->openWorkDay($workDate);
+        $dayType = $validated['day_type'] ?? WorkDay::TYPE_ON_BID;
+
+        // Validasi Audit Integritas: Hari sebelumnya wajib sudah diinput hitungan fisik kasnya (walau selisih boleh pending)
+        $previousDay = WorkDay::where('work_date', '<', $workDate->toDateString())
+            ->orderBy('work_date', 'desc')
+            ->first();
+
+        if ($previousDay && !$previousDay->isFinal()) {
+            $prevDenom = \App\Models\CashDenomination::where('work_day_id', $previousDay->id)->first();
+            if (!$prevDenom && !$request->has('force_open')) {
+                return redirect()->back()->with('error', "Hari sebelumnya ({$previousDay->work_date->translatedFormat('d M Y')}) belum pernah diinput hitungan fisik kasnya. Harap selesaikan hitungan kas fisik hari kemarin terlebih dahulu di menu Closing.");
+            }
+        }
+
+        $workDay = $openWorkDayService->openWorkDay($workDate, $dayType);
 
         // Hitung total dari lembaran & koin
         $calculatedDenom = \App\Models\CashDenomination::calculateSum($validated);
         $totalCashInitial = $calculatedDenom > 0 ? $calculatedDenom : (int) ($validated['cash_initial_balance'] ?? 0);
 
-        // Simpan pecahan ke tabel CashDenomination untuk shift ini
+        // Simpan pecahan ke tabel CashDenomination untuk shift ini jika ada input
         if ($calculatedDenom > 0) {
             $denomRecord = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
             $denomRecord->fill($validated);
@@ -77,9 +92,12 @@ class OperationalWebController extends Controller
                     );
                 }
             }
+        }
+
+        $dayLabel = $dayType === WorkDay::TYPE_DAY_OFF ? 'Hari Libur' : 'Hari Kerja / Narik';
         $successMsg = $totalCashInitial > 0
-            ? "Hari kerja {$workDate->toDateString()} berhasil dibuka dengan modal kas fisik Rp" . number_format($totalCashInitial, 0, ',', '.')
-            : "Hari kerja {$workDate->toDateString()} berhasil dibuka. Saldo kas otomatis melanjutkan saldo berjalan sebelumnya.";
+            ? "{$dayLabel} ({$workDate->toDateString()}) berhasil dibuka dengan modal kas fisik Rp" . number_format($totalCashInitial, 0, ',', '.')
+            : "{$dayLabel} ({$workDate->toDateString()}) berhasil dibuka. Saldo kas otomatis melanjutkan saldo berjalan sebelumnya.";
 
         return redirect()->back()->with('success', $successMsg);
     }

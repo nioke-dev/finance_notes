@@ -124,6 +124,9 @@ class DashboardController extends Controller
             $cashRecommendations = $cashDenomination->getRecommendations();
         }
 
+        $isLateNightHours = (now()->hour >= 0 && now()->hour < 5);
+        $yesterdayUnfinalized = $unfinalizedDays->first();
+
         return view('dashboard.index', compact(
             'accounts',
             'totalDigital',
@@ -148,7 +151,9 @@ class DashboardController extends Controller
             'activeInstallments',
             'recentTransactions',
             'cashDenomination',
-            'cashRecommendations'
+            'cashRecommendations',
+            'isLateNightHours',
+            'yesterdayUnfinalized'
         ));
     }
 }

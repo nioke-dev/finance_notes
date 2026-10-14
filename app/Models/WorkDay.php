@@ -13,9 +13,13 @@ class WorkDay extends Model
     public const STATUS_NEEDS_RECONCILIATION = 'needs_reconciliation';
     public const STATUS_FINAL = 'final';
 
+    public const TYPE_ON_BID = 'on_bid';
+    public const TYPE_DAY_OFF = 'day_off';
+
     protected $fillable = [
         'work_date',
         'status',
+        'day_type',
         'opened_at',
         'closed_at',
         'total_orders',
@@ -23,6 +27,16 @@ class WorkDay extends Model
         'is_performance_eligible',
         'closing_notes',
     ];
+
+    public function isOnBid(): bool
+    {
+        return ($this->day_type ?? self::TYPE_ON_BID) === self::TYPE_ON_BID;
+    }
+
+    public function isDayOff(): bool
+    {
+        return $this->day_type === self::TYPE_DAY_OFF;
+    }
 
     protected $casts = [
         'work_date' => 'date:Y-m-d',

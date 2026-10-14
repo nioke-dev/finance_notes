@@ -7,7 +7,7 @@ use Illuminate\Support\Carbon;
 
 class OpenWorkDayService
 {
-    public function openWorkDay(?Carbon $workDate = null): WorkDay
+    public function openWorkDay(?Carbon $workDate = null, string $dayType = WorkDay::TYPE_ON_BID): WorkDay
     {
         $date = ($workDate ?? now())->toDateString();
 
@@ -19,6 +19,7 @@ class OpenWorkDayService
         return WorkDay::create([
             'work_date' => $date,
             'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+            'day_type' => $dayType,
             'opened_at' => now(),
             'closed_at' => null,
             'total_orders' => 0,

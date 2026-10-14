@@ -20,8 +20,38 @@
             </div>
         @endif
 
-        {{-- Banner Pengingat Hari Gantung --}}
-        @if($unfinalizedDays->isNotEmpty())
+        {{-- Banner Cerdas Operasional Dini Hari (00.00 - 05.00 WIB) --}}
+        @if($isLateNightHours && $yesterdayUnfinalized)
+            <div class="bg-indigo-950/60 border border-indigo-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg backdrop-blur">
+                <div class="flex items-center space-x-3">
+                    <span class="text-indigo-400 text-2xl">🌙</span>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h4 class="text-sm font-bold text-indigo-100">
+                                Jam Operasional Dini Hari ({{ now()->format('H:i') }} WIB)
+                            </h4>
+                            <span class="px-2 py-0.5 text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30">Mode Istirahat & Input</span>
+                        </div>
+                        <p class="text-xs text-indigo-200/80 mt-1">
+                            Baru bangun atau istirahat? Anda bisa menginput closingan & rincian uang lembaran kemarin ({{ $yesterdayUnfinalized->work_date->translatedFormat('d M Y') }}), atau langsung buka pencatatan untuk hari ini.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 w-full sm:w-auto shrink-0">
+                    <a href="/closing/{{ $yesterdayUnfinalized->id }}" class="flex-1 sm:flex-initial text-center px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow">
+                        🔒 Investigasi Sekarang (Closing Kemarin)
+                    </a>
+                    @if(!$currentWorkDay || $currentWorkDay->is_finalized)
+                        <button type="button" onclick="openModal('modal-open-day')" class="flex-1 sm:flex-initial text-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
+                            🌅 Buka Hari Ini
+                        </button>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        {{-- Banner Pengingat Hari Gantung / Belum Finalisasi --}}
+        @if($unfinalizedDays->isNotEmpty() && !($isLateNightHours && $yesterdayUnfinalized))
             <div class="space-y-3">
                 @foreach($unfinalizedDays as $unfinalized)
                     <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -32,7 +62,7 @@
                                     Hari Kerja Belum Difinalisasi: {{ $unfinalized->work_date->translatedFormat('d M Y') }}
                                 </h4>
                                 <p class="text-xs text-amber-300/80 mt-0.5">
-                                    Ada shift narik lampau yang belum closing atau masih ada selisih audit kas.
+                                    Ada shift lampau yang belum closing atau masih ada selisih audit. Anda tetap bisa buka hari baru jika opname fisik kas sudah disimpan.
                                 </p>
                             </div>
                         </div>
