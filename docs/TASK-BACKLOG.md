@@ -138,3 +138,13 @@
 - [x] `TASK-072`: Layar On-Beat Progress Snapshot & Dialog Evaluasi Jam 20.00 Flutter `[DONE]`
 - [x] `TASK-073`: Layar Closing Mobile: Input Denominasi Fisik & Validasi Selisih Rp0 `[DONE]`
 - [x] `TASK-097`: Integration Test End-to-End On-Beat Flow Mobile Flutter `[DONE]`
+
+---
+
+## Modul 8: Penyempurnaan Web Desktop (Desktop-First Core Architecture)
+- [x] `TASK-104`: Multi-COD Asynchronous Tracking (Kode 3-Digit Resto, Calculator Kembalian Cepat, Auto-Rounding & Cancel/Reversal) `[DONE]`
+- [x] `TASK-105`: Target Belanja Survival & Wishlist Prioritas 5-Level (Needs vs Wants, Progress Bar, Quick Sisihkan 10k/20k, & Realisasi Belanja) `[DONE]`
+- [x] `TASK-106`: Safe-to-Spend Metric Card (Total Likuid - Survival Reserved Level 1-3 - Wants Reserved Level 4-5) `[DONE]`
+- [x] `TASK-107`: Snapshot 4 Saldo Digital Malam Hari & Deteksi Surplus QRIS Otomatis (GoPay Merchant, GoPay, Dompet ShopeeFood Driver, ShopeePay) `[DONE]`
+- [x] `TASK-108`: Automated Feature & Web Tests Suite (280 Tests Passed 100%) & Live Webhook Deployment `[DONE]`
+
