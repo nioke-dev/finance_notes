@@ -38,6 +38,12 @@ jobs:
           # Add permissions for microphone audio recording and GPS geolocation
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' android/app/src/main/AndroidManifest.xml
 
+          # Set minSdkVersion to 23 required by record_android
+          sed -i 's/minSdkVersion .*/minSdkVersion 23/g' android/app/build.gradle || true
+          sed -i 's/minSdkVersion = .*/minSdkVersion = 23/g' android/app/build.gradle || true
+          sed -i 's/minSdk = .*/minSdk = 23/g' android/app/build.gradle || true
+          grep -i "minSdk" android/app/build.gradle || true
+
       - name: Get Dependencies
         run: |
           cd mobile
