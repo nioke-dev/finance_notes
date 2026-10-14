@@ -13,6 +13,8 @@ class BonusEvaluationModel {
     this.reason,
   });
 
+  String get message => reason ?? (isEligible ? 'Target bonus tercapai' : 'Target bonus belum tercapai');
+
   factory BonusEvaluationModel.fromJson(Map<String, dynamic> json) {
     final data = json['data'] is Map<String, dynamic> ? json['data'] : json;
 

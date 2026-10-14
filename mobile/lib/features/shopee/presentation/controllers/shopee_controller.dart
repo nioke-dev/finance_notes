@@ -82,7 +82,7 @@ class ShopeeController extends StateNotifier<ShopeeState> {
     return state.evaluation;
   }
 
-  Future<bool> recordTripSnapshot({required int trips, required int income}) async {
+  Future<bool> recordTripSnapshot({required int trips, double? onlineHours, int income = 0}) async {
     return updateSnapshot(
       completedOrders: trips,
       hubIncome: income,
