@@ -38,20 +38,6 @@ jobs:
           # Add permissions for microphone audio recording and GPS geolocation
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' android/app/src/main/AndroidManifest.xml
 
-          # Ensure compileSdkVersion 34 for subproject plugins like geolocator
-          cat << 'EOF' >> android/build.gradle
-          subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty("android")) {
-                      project.android {
-                          compileSdkVersion 34
-                          buildToolsVersion "34.0.0"
-                      }
-                  }
-              }
-          }
-          EOF
-
       - name: Get Dependencies
         run: |
           cd mobile
