@@ -28,3 +28,5 @@ Route::prefix('v1')->group(function () {
     Route::post('/reconciliation/finalize-day', [\App\Http\Controllers\Api\ReconciliationController::class, 'finalizeDay']);
     Route::get('/reconciliation/unfinalized-dates', [\App\Http\Controllers\Api\UnfinalizedDatesBannerController::class, 'index']);
 });
+
+Route::match(['get', 'post'], '/deploy', [\App\Http\Controllers\Api\DeployWebhookController::class, 'handle']);
