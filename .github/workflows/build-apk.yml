@@ -38,6 +38,29 @@ jobs:
           # Add permissions for microphone audio recording and GPS geolocation
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' android/app/src/main/AndroidManifest.xml
 
+          # Configure flutter SDK versions in local.properties for plugin compatibility
+          echo "flutter.compileSdkVersion=34" >> android/local.properties
+          echo "flutter.minSdkVersion=21" >> android/local.properties
+          echo "flutter.targetSdkVersion=34" >> android/local.properties
+
+          # Safely inject compileSdkVersion 34 before subprojects evaluation
+          cat << 'EOF' >> android/build.gradle
+          subprojects {
+              project.plugins.whenPluginAdded { plugin ->
+                  if ("com.android.build.gradle.LibraryPlugin".equals(plugin.class.name)) {
+                      project.android {
+                          compileSdkVersion 34
+                          buildToolsVersion "34.0.0"
+                          defaultConfig {
+                              minSdkVersion 21
+                              targetSdkVersion 34
+                          }
+                      }
+                  }
+              }
+          }
+          EOF
+
       - name: Get Dependencies
         run: |
           cd mobile
