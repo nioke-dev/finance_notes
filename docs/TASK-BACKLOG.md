@@ -146,5 +146,7 @@
 - [x] `TASK-105`: Target Belanja Survival & Wishlist Prioritas 5-Level (Needs vs Wants, Progress Bar, Quick Sisihkan 10k/20k, & Realisasi Belanja) `[DONE]`
 - [x] `TASK-106`: Safe-to-Spend Metric Card (Total Likuid - Survival Reserved Level 1-3 - Wants Reserved Level 4-5) `[DONE]`
 - [x] `TASK-107`: Snapshot 4 Saldo Digital Malam Hari & Deteksi Surplus QRIS Otomatis (GoPay Merchant, GoPay, Dompet ShopeeFood Driver, ShopeePay) `[DONE]`
-- [x] `TASK-108`: Automated Feature & Web Tests Suite (280 Tests Passed 100%) & Live Webhook Deployment `[DONE]`
+- [x] `TASK-108`: Automated Feature & Web Tests Suite (288 Tests Passed 100%) & Live Webhook Deployment `[DONE]`
+- [x] `TASK-109`: CI/CD GitHub Actions APK Build & Packaging (Flutter 3.22, AGP, R8 Optimization & GitHub Release Binary v1.1.0) `[DONE]`
+- [x] `TASK-110`: Direct APK Release Distribution Endpoint (`/download/driver-finance-latest.apk`) & PWA Standalone Support `[DONE]`
 
