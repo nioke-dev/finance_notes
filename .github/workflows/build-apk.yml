@@ -34,6 +34,9 @@ jobs:
         run: |
           cd mobile
           flutter create . --org com.driverfinance.malang --platforms=android
+          sed -i 's/gradle-.*-all.zip/gradle-8.3-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
 
       - name: Get Dependencies
         run: |
