@@ -247,7 +247,7 @@
                     </div>
                 </div>
 
-                {{-- WIDGET KHUSUS: DOMPET OPERASIONAL DRIVER (4+1 ELEMEN NARIK) --}}
+                {{-- WIDGET 1: 4 ELEMEN SALDO UANG NARIK DRIVER (LIKUID RIIL) --}}
                 <div id="tour-driver-wallet" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-amber-500/40 rounded-2xl p-6 shadow-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
                         <div class="flex items-center space-x-3">
@@ -256,13 +256,13 @@
                             </div>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Dompet Operasional Driver ShopeeFood</h3>
+                                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">4 Elemen Saldo Uang Narik Driver</h3>
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                        4+1 Elemen Narik
+                                        Saldo Likuid Riil
                                     </span>
                                 </div>
                                 <p class="text-xs text-slate-300 mt-0.5">
-                                    Saldo terintegrasi untuk modal bensin, COD, kembalian tunai, dan penerima tip QRIS.
+                                    Total uang riil siap pakai yang tersebar di dompet saku & e-wallet narik Anda.
                                 </p>
                             </div>
                         </div>
@@ -279,34 +279,88 @@
                         </div>
                     </div>
 
-                    {{-- Grid 5 Elemen Saldo Narik Driver --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {{-- Grid 4 Elemen Saldo Riil Driver --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         @foreach($driverWalletElements as $key => $elem)
-                            <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-600 rounded-xl p-3.5 flex flex-col justify-between space-y-2">
+                            <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 rounded-xl p-4 flex flex-col justify-between space-y-2.5">
                                 <div>
-                                    <div class="flex justify-between items-start mb-1">
-                                        <span class="text-xl">{{ $elem['icon'] }}</span>
+                                    <div class="flex justify-between items-start mb-1.5">
+                                        <span class="text-2xl">{{ $elem['icon'] }}</span>
                                         <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase border {{ $elem['badge_color'] }}">
                                             {{ $elem['badge'] }}
                                         </span>
                                     </div>
                                     <span class="text-xs font-bold text-white block">{{ $elem['name'] }}</span>
-                                    <span class="text-[10px] text-slate-300 leading-tight block mt-0.5">{{ $elem['desc'] }}</span>
+                                    <span class="text-[11px] text-slate-300 leading-tight block mt-0.5">{{ $elem['desc'] }}</span>
                                 </div>
-                                <div class="pt-2 border-t border-slate-800">
-                                    <span class="text-[10px] text-slate-300 block">Saldo Terkini:</span>
-                                    <span class="text-base font-black {{ $elem['balance'] < 10000 ? 'text-amber-400' : 'text-slate-100' }}">
+                                <div class="pt-2.5 border-t border-slate-800">
+                                    <span class="text-[10px] text-slate-300 block font-semibold">Saldo Terkini:</span>
+                                    <span class="text-lg font-black {{ $elem['balance'] < 10000 ? 'text-amber-400' : 'text-slate-100' }}">
                                         Rp {{ number_format($elem['balance'], 0, ',', '.') }}
                                     </span>
                                 </div>
                             </div>
                         @endforeach
                     </div>
+                </div>
 
-                    <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 flex items-start space-x-2.5">
-                        <span class="text-base text-amber-400 mt-0.5">ℹ️</span>
+                {{-- WIDGET 2: REKAPITULASI RIWAYAT SHOPEEFOOD DRIVER HARI INI (BUKAN DOMPET UANG) --}}
+                <div class="bg-gradient-to-br from-slate-900 via-orange-950/20 to-slate-900 border border-orange-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-xl">
+                                🛵
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat ShopeeFood Driver Hari Ini</h3>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                                        Data Riwayat Performa (Bukan Dompet)
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-300 mt-0.5">
+                                    Rekapitulasi data trip & pendapatan dari layar aplikasi driver (uangnya otomatis langsung masuk ke ShopeePay).
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="text-left sm:text-right">
+                            <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Pendapatan Narik</span>
+                            <span class="text-2xl font-black text-emerald-400">Rp {{ number_format($shopeeReportData['total_income'], 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Grid 4 Metrik Riwayat Driver --}}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
+                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3 space-y-0.5">
+                            <span class="text-slate-300 text-[10px] uppercase font-bold block">Pesanan Selesai</span>
+                            <span class="text-base font-black text-white block">{{ $shopeeReportData['total_orders'] }} trip</span>
+                            <span class="text-[10px] text-slate-300 block">Hari ini</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3 space-y-0.5">
+                            <span class="text-slate-300 text-[10px] uppercase font-bold block">Ongkir / Tagihan COD</span>
+                            <span class="text-base font-black text-white block">Rp {{ number_format($shopeeReportData['regular_income'], 0, ',', '.') }}</span>
+                            <span class="text-[10px] text-slate-300 block">Tarif trip pesanan</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 space-y-0.5">
+                            <span class="text-emerald-300 text-[10px] uppercase font-bold block">Tip Pelanggan (Shopee)</span>
+                            <span class="text-base font-black text-emerald-400 block">+Rp {{ number_format($shopeeReportData['tip_income'], 0, ',', '.') }}</span>
+                            <span class="text-[10px] text-slate-300 block">Ikhlas dari customer</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3 space-y-0.5">
+                            <span class="text-amber-300 text-[10px] uppercase font-bold block">Bonus / Insentif Hub</span>
+                            <span class="text-base font-black text-amber-400 block">+Rp {{ number_format($shopeeReportData['bonus_income'], 0, ',', '.') }}</span>
+                            <span class="text-[10px] text-slate-300 block">Performa harian</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 flex items-start space-x-2.5">
+                        <span class="text-base text-amber-400 mt-0.5">💡</span>
                         <div class="leading-relaxed">
-                            <strong class="text-slate-100">Alur Perputaran Uang Narik:</strong> Saat Anda mengambil order COD di resto, saldo <strong class="text-orange-400">ShopeePay</strong> dipotong sistem. Setelah diantar, pelanggan menyerahkan uang tunai yang masuk ke <strong class="text-amber-400">Cash Dompet</strong>. Jika pelanggan bayar tip lewat QRIS, dana masuk ke <strong class="text-cyan-400">GoPay Merchant / GoPay</strong>. Gunakan tombol <strong class="text-purple-300">Update di Jalan</strong> saat nunggu resto untuk mencocokkan saldo tanpa menutup shift.
+                            <strong class="text-white">Alur Saldo Real-Time:</strong> Seluruh gaji, ongkir, dan tip dari rekap ShopeeFood Driver di atas <strong>otomatis langsung masuk detik itu juga ke saldo ShopeePay Anda</strong> (tidak ada uang yang tertahan di aplikasi driver). Panel ini hadir khusus untuk mempermudah tracking pendapatan bersih hari ini tanpa harus pusing membedah riwayat mutasi campur aduk di aplikasi ShopeePay.
                         </div>
                     </div>
                 </div>

@@ -152,18 +152,16 @@ class DashboardController extends Controller
 
         // Akun digital wallet utama untuk sinkronisasi saldo malam hari
         $digitalReconAccounts = Account::whereIn('name', [
-            'GoPay Merchant',
-            'GoPay',
-            'Dompet Driver ShopeeFood',
             'ShopeePay',
+            'GoPay',
+            'GoPay Merchant',
             'BCA',
             'SeaBank',
         ])->get();
 
-        // 4+1 Elemen Dompet Operasional Driver ShopeeFood
+        // 4 Elemen Saldo Likuid Uang Riil Driver
         $driverCashAcc = $accounts->firstWhere('name', 'Cash') ?? $accounts->where('type', AccountType::CASH)->first();
         $driverShopeePayAcc = $accounts->firstWhere('name', 'ShopeePay');
-        $driverShopeeFoodAcc = $accounts->firstWhere('name', 'Dompet Driver ShopeeFood');
         $driverGoPayAcc = $accounts->firstWhere('name', 'GoPay');
         $driverGoPayMerchantAcc = $accounts->firstWhere('name', 'GoPay Merchant');
 
@@ -173,27 +171,18 @@ class DashboardController extends Controller
                 'account' => $driverCashAcc,
                 'balance' => $driverCashAcc?->current_balance ?? 0,
                 'icon' => '💵',
-                'badge' => 'Uang Fisik Saku',
+                'badge' => 'Fisik Saku',
                 'badge_color' => 'bg-amber-500/20 text-amber-300 border-amber-500/40',
                 'desc' => 'Uang tunai kembalian COD & beli bensin cash',
             ],
             'shopeepay' => [
-                'name' => 'ShopeePay',
+                'name' => 'ShopeePay Driver',
                 'account' => $driverShopeePayAcc,
                 'balance' => $driverShopeePayAcc?->current_balance ?? 0,
                 'icon' => '🟠',
-                'badge' => 'E-Wallet Shopee',
+                'badge' => 'E-Wallet Utama',
                 'badge_color' => 'bg-orange-500/20 text-orange-300 border-orange-500/40',
-                'desc' => 'Dipotong otomatis sistem saat ambil order COD di resto',
-            ],
-            'driver_wallet' => [
-                'name' => 'Dompet ShopeeFood',
-                'account' => $driverShopeeFoodAcc,
-                'balance' => $driverShopeeFoodAcc?->current_balance ?? 0,
-                'icon' => '🛵',
-                'badge' => 'Saldo App Driver',
-                'badge_color' => 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                'desc' => 'Ongkir narik & bonus yang terkumpul hari ini',
+                'desc' => 'Tempat masuknya seluruh gaji trip narik & pemotong talangan COD',
             ],
             'gopay' => [
                 'name' => 'GoPay Driver',
@@ -202,7 +191,7 @@ class DashboardController extends Controller
                 'icon' => '🟢',
                 'badge' => 'E-Wallet GoPay',
                 'badge_color' => 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                'desc' => 'Penampung cadangan dana & pembayaran darurat',
+                'desc' => 'Saldo cadangan transaksi & operasional darurat di jalan',
             ],
             'gopay_merchant' => [
                 'name' => 'GoPay Merchant',
@@ -211,11 +200,20 @@ class DashboardController extends Controller
                 'icon' => '🏪',
                 'badge' => 'QRIS Pelanggan',
                 'badge_color' => 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-                'desc' => 'Penerima tip QRIS yang dibayar pelanggan di jalan',
+                'desc' => 'Penampung tip QRIS non-tunai yang dibayar pelanggan di jalan',
             ],
         ];
 
         $driverTotalBalance = collect($driverWalletElements)->sum('balance');
+
+        // Rekapitulasi Riwayat Performa Narik ShopeeFood Hari Ini (Data Read-Only dari App Driver)
+        $shopeeReportData = [
+            'total_orders' => $dayOrdersCount,
+            'regular_income' => $dayRegularIncome,
+            'bonus_income' => $dayBonusIncome,
+            'tip_income' => $dayTipIncome,
+            'total_income' => $dayTotalIncome,
+        ];
 
         return view('dashboard.index', compact(
             'accounts',
@@ -250,7 +248,8 @@ class DashboardController extends Controller
             'safeToSpendData',
             'digitalReconAccounts',
             'driverWalletElements',
-            'driverTotalBalance'
+            'driverTotalBalance',
+            'shopeeReportData'
         ));
     }
 }

@@ -49,7 +49,7 @@ class DigitalReconciliationService
                     // Surplus terdeteksi (Tip QRIS nyusul di GoPay/Merchant atau penambahan saldo ShopeeFood Driver)
                     $totalSurplus += $diff;
 
-                    $surplusAccount = in_array($account->name, ['GoPay', 'GoPay Merchant', 'Dompet Driver ShopeeFood'])
+                    $surplusAccount = in_array($account->name, ['GoPay', 'GoPay Merchant', 'ShopeePay'])
                         ? Account::firstOrCreate(
                             ['name' => 'Pendapatan QRIS / Tip Non-Tunai'],
                             ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]

@@ -52,8 +52,8 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
         $response->assertSee('Safe-to-Spend (Uang Aman Jajan)');
         $response->assertSee('Ganti Oli Mesin Honda');
         $response->assertSee('Level 3: Nyawa Narik');
-        $response->assertSee('Update Snapshot Saldo');
-        $response->assertSee('Dompet Operasional Driver ShopeeFood');
+        $response->assertSee('4 Elemen Saldo Uang Narik Driver');
+        $response->assertSee('ShopeeFood Driver Hari Ini');
     }
 
     public function test_can_create_new_financial_goal(): void
@@ -140,14 +140,14 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
     public function test_can_reconcile_digital_balances_and_detect_qris_surplus(): void
     {
         $gopayMerchant = Account::where('name', 'GoPay Merchant')->firstOrFail();
-        $shopeeFoodDriver = Account::where('name', 'Dompet Driver ShopeeFood')->firstOrFail();
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
 
         $gopayMerchant->update(['current_balance' => 10000]);
-        $shopeeFoodDriver->update(['current_balance' => 25000]);
+        $shopeePay->update(['current_balance' => 25000]);
 
         // Snapshot malam hari:
         // Di layar HP GoPay Merchant ada Rp15.000 (ada surplus tip QRIS +5.000 yang masuk belakangan)
-        // Di layar HP ShopeeFood Driver ada Rp25.000 (cocok)
+        // Di layar HP ShopeePay ada Rp25.000 (cocok)
         $payload = [
             'work_day_id' => $this->workDay->id,
             'balances' => [
@@ -156,7 +156,7 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
                     'actual_balance' => 15000,
                 ],
                 [
-                    'account_id' => $shopeeFoodDriver->id,
+                    'account_id' => $shopeePay->id,
                     'actual_balance' => 25000,
                 ],
             ],
