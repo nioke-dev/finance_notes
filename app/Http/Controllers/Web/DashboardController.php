@@ -160,6 +160,63 @@ class DashboardController extends Controller
             'SeaBank',
         ])->get();
 
+        // 4+1 Elemen Dompet Operasional Driver ShopeeFood
+        $driverCashAcc = $accounts->firstWhere('name', 'Cash') ?? $accounts->where('type', AccountType::CASH)->first();
+        $driverShopeePayAcc = $accounts->firstWhere('name', 'ShopeePay');
+        $driverShopeeFoodAcc = $accounts->firstWhere('name', 'Dompet Driver ShopeeFood');
+        $driverGoPayAcc = $accounts->firstWhere('name', 'GoPay');
+        $driverGoPayMerchantAcc = $accounts->firstWhere('name', 'GoPay Merchant');
+
+        $driverWalletElements = [
+            'cash' => [
+                'name' => 'Cash Dompet',
+                'account' => $driverCashAcc,
+                'balance' => $driverCashAcc?->current_balance ?? 0,
+                'icon' => '💵',
+                'badge' => 'Uang Fisik Saku',
+                'badge_color' => 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                'desc' => 'Uang tunai kembalian COD & beli bensin cash',
+            ],
+            'shopeepay' => [
+                'name' => 'ShopeePay',
+                'account' => $driverShopeePayAcc,
+                'balance' => $driverShopeePayAcc?->current_balance ?? 0,
+                'icon' => '🟠',
+                'badge' => 'E-Wallet Shopee',
+                'badge_color' => 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+                'desc' => 'Dipotong otomatis sistem saat ambil order COD di resto',
+            ],
+            'driver_wallet' => [
+                'name' => 'Dompet ShopeeFood',
+                'account' => $driverShopeeFoodAcc,
+                'balance' => $driverShopeeFoodAcc?->current_balance ?? 0,
+                'icon' => '🛵',
+                'badge' => 'Saldo App Driver',
+                'badge_color' => 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                'desc' => 'Ongkir narik & bonus yang terkumpul hari ini',
+            ],
+            'gopay' => [
+                'name' => 'GoPay Driver',
+                'account' => $driverGoPayAcc,
+                'balance' => $driverGoPayAcc?->current_balance ?? 0,
+                'icon' => '🟢',
+                'badge' => 'E-Wallet GoPay',
+                'badge_color' => 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                'desc' => 'Penampung cadangan dana & pembayaran darurat',
+            ],
+            'gopay_merchant' => [
+                'name' => 'GoPay Merchant',
+                'account' => $driverGoPayMerchantAcc,
+                'balance' => $driverGoPayMerchantAcc?->current_balance ?? 0,
+                'icon' => '🏪',
+                'badge' => 'QRIS Pelanggan',
+                'badge_color' => 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+                'desc' => 'Penerima tip QRIS yang dibayar pelanggan di jalan',
+            ],
+        ];
+
+        $driverTotalBalance = collect($driverWalletElements)->sum('balance');
+
         return view('dashboard.index', compact(
             'accounts',
             'totalDigital',
@@ -191,7 +248,9 @@ class DashboardController extends Controller
             'financialGoals',
             'achievedGoals',
             'safeToSpendData',
-            'digitalReconAccounts'
+            'digitalReconAccounts',
+            'driverWalletElements',
+            'driverTotalBalance'
         ));
     }
 }

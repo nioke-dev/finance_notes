@@ -52,7 +52,8 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
         $response->assertSee('Safe-to-Spend (Uang Aman Jajan)');
         $response->assertSee('Ganti Oli Mesin Honda');
         $response->assertSee('Level 3: Nyawa Narik');
-        $response->assertSee('Sinkron Saldo Digital Malam');
+        $response->assertSee('Update Snapshot Saldo');
+        $response->assertSee('Dompet Operasional Driver ShopeeFood');
     }
 
     public function test_can_create_new_financial_goal(): void
