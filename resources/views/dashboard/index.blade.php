@@ -2228,7 +2228,7 @@
             </div>
 
             <div class="bg-purple-950/50 border border-purple-500/40 rounded-xl p-3.5 text-xs text-purple-200 leading-relaxed">
-                💡 <strong>Bisa Anda lakukan kapan saja di jalan raya atau sambil nunggu resto!</strong> Cukup intip saldo aktual di layar HP (GoPay Merchant, GoPay, Dompet ShopeeFood, ShopeePay). Sistem otomatis mendeteksi tip QRIS nyusul atau potongan admin tanpa perlu menutup hari.
+                💡 <strong>Bisa Anda lakukan kapan saja di jalan raya atau sambil nunggu resto!</strong> Cukup intip saldo aktual di layar HP (ShopeePay, GoPay, GoPay Merchant perantara QRIS). Sistem otomatis mendeteksi tip QRIS nyusul, bayar hutang titipan, atau potongan admin tanpa perlu menutup hari.
             </div>
 
             <form method="POST" action="/operational/digital-reconciliation" class="space-y-4">
