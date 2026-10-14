@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/closing/presentation/closing_screen.dart';
-import 'package:mobile/features/closing/presentation/widgets/denomination_input_tile.dart';
+import 'package:driver_finance_mobile/features/closing/presentation/closing_screen.dart';
+import 'package:driver_finance_mobile/features/closing/presentation/widgets/denomination_input_tile.dart';
 
 void main() {
   group('ClosingScreen Widget Tests', () {

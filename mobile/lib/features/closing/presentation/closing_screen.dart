@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/features/closing/presentation/widgets/denomination_input_tile.dart';
+import 'package:driver_finance_mobile/features/closing/presentation/widgets/denomination_input_tile.dart';
 
 class ClosingScreen extends StatefulWidget {
   final int bookBalance;

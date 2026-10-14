@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/home/presentation/home_screen.dart';
-import 'package:mobile/features/quick_actions/presentation/widgets/quick_parking_button.dart';
-import 'package:mobile/features/quick_actions/presentation/widgets/quick_fuel_bottom_sheet.dart';
-import 'package:mobile/features/closing/presentation/closing_screen.dart';
+import 'package:driver_finance_mobile/features/home/presentation/home_screen.dart';
+import 'package:driver_finance_mobile/features/quick_actions/presentation/widgets/quick_parking_button.dart';
+import 'package:driver_finance_mobile/features/quick_actions/presentation/widgets/quick_fuel_bottom_sheet.dart';
+import 'package:driver_finance_mobile/features/closing/presentation/closing_screen.dart';
 
 void main() {
   group('E2E On-Beat Field Flow Integration Test', () {

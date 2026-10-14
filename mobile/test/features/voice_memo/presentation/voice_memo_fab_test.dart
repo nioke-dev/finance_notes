@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/voice_memo/presentation/widgets/voice_memo_fab.dart';
+import 'package:driver_finance_mobile/features/voice_memo/presentation/widgets/voice_memo_fab.dart';
 
 void main() {
   group('VoiceMemoFab Widget Tests', () {

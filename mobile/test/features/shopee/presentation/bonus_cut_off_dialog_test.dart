@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/shopee/presentation/widgets/bonus_cut_off_dialog.dart';
+import 'package:driver_finance_mobile/features/shopee/presentation/widgets/bonus_cut_off_dialog.dart';
 
 void main() {
   group('BonusCutOffDialog Widget Tests', () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/quick_actions/presentation/widgets/quick_fuel_bottom_sheet.dart';
+import 'package:driver_finance_mobile/features/quick_actions/presentation/widgets/quick_fuel_bottom_sheet.dart';
 
 void main() {
   group('QuickFuelBottomSheet Widget Tests', () {

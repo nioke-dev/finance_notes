@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile/features/shopee/presentation/controllers/shopee_controller.dart';
-import 'package:mobile/features/shopee/presentation/widgets/bonus_cut_off_dialog.dart';
+import 'package:driver_finance_mobile/features/shopee/presentation/controllers/shopee_controller.dart';
+import 'package:driver_finance_mobile/features/shopee/presentation/widgets/bonus_cut_off_dialog.dart';
 
 class OnBeatScreen extends ConsumerStatefulWidget {
   const OnBeatScreen({super.key});
