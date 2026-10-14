@@ -485,14 +485,14 @@
 
     {{-- ================= MODALS SECTION ================= --}}
 
-    {{-- 1. Modal Buka Shift Narik & Hitung Pecahan Kas --}}
-    <div id="modal-open-day" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
-        <div class="bg-slate-800 border border-slate-700 max-w-xl w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+    {{-- 1. Modal Buka Shift Narik (1 Klik Cepat) --}}
+    <div id="modal-open-day" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <div class="flex items-center space-x-2.5 mb-1">
                 <span class="text-2xl">🌅</span>
                 <div>
-                    <h3 class="text-base font-bold text-white">Buka Shift & Hitung Kas Dompet</h3>
-                    <p class="text-xs text-slate-400">Hitung uang kas kembalian per lembar & per koin agar cepat dan terpantau akurat.</p>
+                    <h3 class="text-base font-bold text-white">Buka Hari Kerja (Shift Baru)</h3>
+                    <p class="text-xs text-slate-400">Buka wadah transaksi narik hari ini dengan cepat.</p>
                 </div>
             </div>
 
@@ -500,76 +500,35 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Tanggal Shift</label>
-                    <input type="date" name="work_date" value="{{ now()->toDateString() }}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <input type="date" name="work_date" value="{{ now()->toDateString() }}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-semibold">
                 </div>
 
-                {{-- Pecahan Uang Kertas --}}
-                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-2">
-                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">💵 Uang Kertas (Lembar)</span>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        @foreach([100000, 50000, 20000, 10000, 5000, 2000, 1000] as $nom)
-                            <div class="bg-slate-800 border border-slate-700 rounded-lg p-2">
-                                <label for="openday_bill_{{ $nom }}" class="text-[10px] font-bold text-slate-300 block mb-1">
-                                    Rp {{ number_format($nom, 0, ',', '.') }}
-                                </label>
-                                <input 
-                                    type="number" 
-                                    min="0" 
-                                    name="bill_{{ $nom }}" 
-                                    id="openday_bill_{{ $nom }}" 
-                                    value="{{ old('bill_' . $nom, $cashDenomination?->{'bill_' . $nom} ?? 0) }}"
-                                    class="openday-denom-input w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-bold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                                >
-                            </div>
-                        @endforeach
+                {{-- Status Kas Otomatis Melanjutkan --}}
+                <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3.5 space-y-1">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400 font-medium">Saldo Kas Berjalan:</span>
+                        <span class="font-extrabold text-emerald-400">Rp {{ number_format($totalCash, 0, ',', '.') }}</span>
                     </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed pt-1.5 border-t border-slate-800">
+                        ✓ Saldo kas otomatis melanjutkan sisa uang dari hari sebelumnya. Anda <strong>tidak perlu menghitung lembaran uang di pagi hari</strong>. Perhitungan fisik per lembar & per koin dilakukan nanti saat <strong>Closing Kas Malam Hari</strong>.
+                    </p>
                 </div>
 
-                {{-- Pecahan Koin --}}
-                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-2">
-                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">🪙 Uang Logam (Koin)</span>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        @foreach([1000, 500, 200, 100] as $nom)
-                            <div class="bg-slate-800 border border-slate-700 rounded-lg p-2">
-                                <label for="openday_coin_{{ $nom }}" class="text-[10px] font-bold text-slate-300 block mb-1">
-                                    Rp {{ number_format($nom, 0, ',', '.') }}
-                                </label>
-                                <input 
-                                    type="number" 
-                                    min="0" 
-                                    name="coin_{{ $nom }}" 
-                                    id="openday_coin_{{ $nom }}" 
-                                    value="{{ old('coin_' . $nom, $cashDenomination?->{'coin_' . $nom} ?? 0) }}"
-                                    class="openday-denom-input w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-bold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                                >
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Live Counter Box --}}
-                <div class="bg-slate-900 border border-emerald-500/40 rounded-xl p-3 flex justify-between items-center shadow-inner">
-                    <div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Kas Fisik Dihitung:</span>
-                        <span id="openday-total-pieces" class="text-xs text-slate-300">0 lembar & koin</span>
-                    </div>
-                    <span id="openday-total-amount" class="text-lg font-extrabold text-emerald-400">
-                        Rp 0
-                    </span>
-                </div>
-
-                {{-- Opsi Input Cepat / Manual Cadangan --}}
+                {{-- Opsi Bawa Modal Kas Baru dari Luar (Opsional) --}}
                 <details class="bg-slate-900/40 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-400">
-                    <summary class="cursor-pointer font-semibold text-slate-300 hover:text-white">Atau input total nominal langsung tanpa lembaran</summary>
-                    <div class="mt-2.5">
-                        <label class="block text-[11px] font-bold text-slate-400 mb-1">Nominal Total Kas Fisik (Rp)</label>
-                        <input type="number" id="openday_manual_cash" name="cash_initial_balance" min="0" placeholder="Biarkan kosong jika sudah mengisi pecahan di atas" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs">
+                    <summary class="cursor-pointer font-semibold text-slate-300 hover:text-white">Bawa uang kas baru / modal tambahan pagi ini? (Opsional)</summary>
+                    <div class="mt-2.5 space-y-1.5">
+                        <label class="block text-[11px] font-bold text-slate-400">Nominal Modal Tambahan (Rp)</label>
+                        <input type="number" name="cash_initial_balance" min="0" placeholder="Kosongkan jika hanya pakai saldo kemarin" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs">
                     </div>
                 </details>
 
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-open-day')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Buka Shift Sekarang</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
+                        <span>🌅</span>
+                        <span>Buka Shift Sekarang</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -1177,42 +1136,6 @@
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
         }
-
-        const opendayDenoms = {
-            'openday_bill_100000': 100000,
-            'openday_bill_50000': 50000,
-            'openday_bill_20000': 20000,
-            'openday_bill_10000': 10000,
-            'openday_bill_5000': 5000,
-            'openday_bill_2000': 2000,
-            'openday_bill_1000': 1000,
-            'openday_coin_1000': 1000,
-            'openday_coin_500': 500,
-            'openday_coin_200': 200,
-            'openday_coin_100': 100
-        };
-
-        function calculateOpenDayTotal() {
-            let total = 0;
-            let pieces = 0;
-            for (const [id, value] of Object.entries(opendayDenoms)) {
-                const el = document.getElementById(id);
-                if (el) {
-                    const count = parseInt(el.value) || 0;
-                    total += count * value;
-                    pieces += count;
-                }
-            }
-            const totalEl = document.getElementById('openday-total-amount');
-            const piecesEl = document.getElementById('openday-total-pieces');
-            if (totalEl) totalEl.innerText = 'Rp ' + total.toLocaleString('id-ID');
-            if (piecesEl) piecesEl.innerText = pieces + ' lembar & koin';
-        }
-
-        document.querySelectorAll('.openday-denom-input').forEach(input => {
-            input.addEventListener('input', calculateOpenDayTotal);
-        });
-        calculateOpenDayTotal();
 
         // Kalkulator Denominasi Modal Awal Akun
         const initDenoms = {

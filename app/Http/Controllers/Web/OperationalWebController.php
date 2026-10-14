@@ -77,9 +77,11 @@ class OperationalWebController extends Controller
                     );
                 }
             }
-        }
+        $successMsg = $totalCashInitial > 0
+            ? "Hari kerja {$workDate->toDateString()} berhasil dibuka dengan modal kas fisik Rp" . number_format($totalCashInitial, 0, ',', '.')
+            : "Hari kerja {$workDate->toDateString()} berhasil dibuka. Saldo kas otomatis melanjutkan saldo berjalan sebelumnya.";
 
-        return redirect()->back()->with('success', "Hari kerja {$workDate->toDateString()} berhasil dibuka dengan modal kas fisik Rp" . number_format($totalCashInitial, 0, ',', '.'));
+        return redirect()->back()->with('success', $successMsg);
     }
 
     /**
