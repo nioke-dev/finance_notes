@@ -44,6 +44,9 @@ class ShopeeState {
       errorMessage: errorMessage,
     );
   }
+
+  int get totalTrips => completedOrders;
+  int get onlineHours => 8;
 }
 
 final shopeeControllerProvider =
@@ -72,6 +75,23 @@ class ShopeeController extends StateNotifier<ShopeeState> {
         errorMessage: e.toString(),
       );
     }
+  }
+
+  Future<BonusEvaluationModel?> evaluateBonusCutOff({int? workDayId}) async {
+    await checkBonusCutOff(workDayId: workDayId);
+    return state.evaluation;
+  }
+
+  Future<bool> recordTripSnapshot({required int trips, required int income}) async {
+    return updateSnapshot(
+      completedOrders: trips,
+      hubIncome: income,
+      hubBonus: 0,
+      customerTip: 0,
+      shopeepayBalance: 0,
+      gopayBalance: 0,
+      gopayMerchantBalance: 0,
+    );
   }
 
   Future<bool> updateSnapshot({

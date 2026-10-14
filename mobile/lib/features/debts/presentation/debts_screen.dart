@@ -70,7 +70,7 @@ class DebtsScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${_formatCurrency(85000)} / hari',
-                  style: const TextStyle(color: Color(0xFFFACC15), fontSize: 24, fontWeight: FontWeight.black),
+                  style: const TextStyle(color: Color(0xFFFACC15), fontSize: 24, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 8),
                 const Text(

@@ -75,7 +75,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           await voiceMemoNotifier.startRecording();
         },
         onStopRecord: () async {
-          await voiceMemoNotifier.stopRecordingAndUpload(workDayId: 1);
+          await voiceMemoNotifier.stopAndUpload();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
