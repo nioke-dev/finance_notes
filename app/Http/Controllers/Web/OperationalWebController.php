@@ -36,27 +36,50 @@ class OperationalWebController extends Controller
         $validated = $request->validate([
             'work_date' => 'required|date',
             'cash_initial_balance' => 'nullable|integer|min:0',
+            'bill_100000' => 'nullable|integer|min:0',
+            'bill_50000' => 'nullable|integer|min:0',
+            'bill_20000' => 'nullable|integer|min:0',
+            'bill_10000' => 'nullable|integer|min:0',
+            'bill_5000' => 'nullable|integer|min:0',
+            'bill_2000' => 'nullable|integer|min:0',
+            'bill_1000' => 'nullable|integer|min:0',
+            'coin_1000' => 'nullable|integer|min:0',
+            'coin_500' => 'nullable|integer|min:0',
+            'coin_200' => 'nullable|integer|min:0',
+            'coin_100' => 'nullable|integer|min:0',
         ]);
 
         $workDate = Carbon::parse($validated['work_date']);
         $workDay = $openWorkDayService->openWorkDay($workDate);
 
-        if (isset($validated['cash_initial_balance'])) {
+        // Hitung total dari lembaran & koin
+        $calculatedDenom = \App\Models\CashDenomination::calculateSum($validated);
+        $totalCashInitial = $calculatedDenom > 0 ? $calculatedDenom : (int) ($validated['cash_initial_balance'] ?? 0);
+
+        // Simpan pecahan ke tabel CashDenomination untuk shift ini
+        if ($calculatedDenom > 0) {
+            $denomRecord = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+            $denomRecord->fill($validated);
+            $denomRecord->total_physical_amount = $calculatedDenom;
+            $denomRecord->save();
+        }
+
+        if ($totalCashInitial > 0) {
             $cashAccount = Account::where('name', 'Cash')->first();
             if ($cashAccount) {
                 if ($cashAccount->initial_balance == 0) {
-                    $initialBalanceService->setInitialBalance($cashAccount, (int) $validated['cash_initial_balance']);
+                    $initialBalanceService->setInitialBalance($cashAccount, $totalCashInitial);
                 } else {
                     $initialBalanceService->correctInitialBalance(
                         $cashAccount,
-                        (int) $validated['cash_initial_balance'],
-                        "Set modal awal fisik shift tanggal {$workDate->toDateString()}"
+                        $totalCashInitial,
+                        "Set modal awal kas fisik shift tanggal {$workDate->toDateString()} via hitungan lembar/koin"
                     );
                 }
             }
         }
 
-        return redirect()->back()->with('success', "Hari kerja {$workDate->toDateString()} berhasil dibuka!");
+        return redirect()->back()->with('success', "Hari kerja {$workDate->toDateString()} berhasil dibuka dengan modal kas fisik Rp" . number_format($totalCashInitial, 0, ',', '.'));
     }
 
     /**

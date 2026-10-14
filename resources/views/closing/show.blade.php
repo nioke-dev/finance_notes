@@ -24,7 +24,7 @@
             <div class="flex items-center space-x-3">
                 <x-status-badge :status="$workDay->status" />
                 <a href="/dashboard" class="px-3.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition">
-                    &larr; Kembali ke Dashboard
+                    &larr; Simpan Draft / Tutup Nanti
                 </a>
             </div>
         </div>
@@ -91,11 +91,31 @@
 
                 {{-- Total Fisik Terhitung --}}
                 <div class="bg-slate-900/80 border border-slate-700 rounded-xl p-4 flex justify-between items-center">
-                    <span class="text-xs font-bold uppercase text-slate-400">Total Akumulasi Fisik Dompet</span>
-                    <span class="text-xl font-extrabold text-emerald-400">
+                    <div>
+                        <span class="text-xs font-bold uppercase text-slate-400 block">Total Akumulasi Fisik Dompet</span>
+                        <span id="closing-total-pieces" class="text-[11px] text-slate-400 block">{{ $denominations->total_pieces ?? 0 }} lembar & koin</span>
+                    </div>
+                    <span id="closing-total-amount" class="text-xl font-extrabold text-emerald-400">
                         Rp {{ number_format($denominations->total_physical_amount ?? 0, 0, ',', '.') }}
                     </span>
                 </div>
+
+                {{-- Smart Denomination Analysis / Recommendations --}}
+                @php $closingRecs = $denominations->getRecommendations(); @endphp
+                @if(count($closingRecs) > 0)
+                    <div class="space-y-2 pt-2 border-t border-slate-700/60">
+                        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block">⚡ Analisis Beban Kas & Kembalian:</span>
+                        @foreach($closingRecs as $rec)
+                            <div class="p-3 rounded-xl border text-xs flex items-start space-x-2 {{ $rec['type'] === 'excess' ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300' }}">
+                                <span class="text-base">{{ $rec['type'] === 'excess' ? '⚠️' : '💡' }}</span>
+                                <div>
+                                    <span class="font-bold block">{{ $rec['type'] === 'excess' ? 'Beban Lembaran Berlebih' : 'Pecahan Kembalian COD Menipis' }}</span>
+                                    <span>{{ $rec['message'] }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </form>
 
             {{-- Sisi Kanan: Audit Rekonsiliasi & Finalisasi --}}
@@ -156,4 +176,41 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const denomValues = {
+            'bill_100000': 100000,
+            'bill_50000': 50000,
+            'bill_20000': 20000,
+            'bill_10000': 10000,
+            'bill_5000': 5000,
+            'bill_2000': 2000,
+            'bill_1000': 1000,
+            'coin_1000': 1000,
+            'coin_500': 500,
+            'coin_200': 200,
+            'coin_100': 100
+        };
+
+        function calculateClosingTotal() {
+            let total = 0;
+            let pieces = 0;
+            for (const [id, value] of Object.entries(denomValues)) {
+                const el = document.getElementById(id);
+                if (el) {
+                    const count = parseInt(el.value) || 0;
+                    total += count * value;
+                    pieces += count;
+                }
+            }
+            const totalEl = document.getElementById('closing-total-amount');
+            const piecesEl = document.getElementById('closing-total-pieces');
+            if (totalEl) totalEl.innerText = 'Rp ' + total.toLocaleString('id-ID');
+            if (piecesEl) piecesEl.innerText = pieces + ' lembar & koin';
+        }
+
+        document.querySelectorAll('input[name^="bill_"], input[name^="coin_"]').forEach(input => {
+            input.addEventListener('input', calculateClosingTotal);
+        });
+    </script>
 </x-layouts.app>

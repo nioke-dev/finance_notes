@@ -19,6 +19,7 @@
             </div>
             <div class="hidden md:flex items-center space-x-5 text-sm font-medium text-slate-300">
                 <a href="/dashboard" class="hover:text-emerald-400 transition">Dashboard</a>
+                <a href="/dashboard#tab-onbeat" class="hover:text-emerald-400 transition">Closing & Rekonsiliasi</a>
                 <a href="/debts" class="hover:text-emerald-400 transition">Utang & PayLater</a>
                 <a href="/analytics/driver" class="hover:text-emerald-400 transition">Analitik Driver</a>
                 <a href="/analytics/fuel" class="hover:text-emerald-400 transition">Konsumsi BBM</a>

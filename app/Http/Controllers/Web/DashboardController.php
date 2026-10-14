@@ -107,6 +107,17 @@ class DashboardController extends Controller
             ->take(20)
             ->get();
 
+        // Denominasi Kas Fisik & Rekomendasi Beban Dompet
+        $cashDenomination = null;
+        $cashRecommendations = [];
+        if ($currentWorkDay) {
+            $currentWorkDay->load('cashDenomination');
+            $cashDenomination = $currentWorkDay->cashDenomination;
+            if ($cashDenomination) {
+                $cashRecommendations = $cashDenomination->getRecommendations();
+            }
+        }
+
         return view('dashboard.index', compact(
             'accounts',
             'totalDigital',
@@ -129,7 +140,9 @@ class DashboardController extends Controller
             'dayPersonalIncome',
             'dayDebtRepayment',
             'activeInstallments',
-            'recentTransactions'
+            'recentTransactions',
+            'cashDenomination',
+            'cashRecommendations'
         ));
     }
 }
