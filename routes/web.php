@@ -59,6 +59,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/pay-installment', [\App\Http\Controllers\Web\OperationalWebController::class, 'payInstallment'])->name('operational.pay-installment');
     Route::post('/operational/settle-friend-debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'settleFriendDebt'])->name('operational.settle-friend-debt');
     Route::post('/operational/lend-friend-cash', [\App\Http\Controllers\Web\OperationalWebController::class, 'lendFriendCash'])->name('operational.lend-friend-cash');
+    Route::post('/operational/digital-reconciliation', [\App\Http\Controllers\Web\OperationalWebController::class, 'reconcileDigital'])->name('operational.digital-reconciliation');
+    Route::post('/operational/goals', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeGoal'])->name('operational.goals');
+    Route::post('/operational/goals/{id}/allocate', [\App\Http\Controllers\Web\OperationalWebController::class, 'allocateGoalFunds'])->name('operational.goals.allocate');
+    Route::post('/operational/goals/{id}/achieve', [\App\Http\Controllers\Web\OperationalWebController::class, 'achieveGoal'])->name('operational.goals.achieve');
 
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');
     Route::get('/analytics/fuel', [FuelAnalyticsController::class, 'index'])->name('analytics.fuel');

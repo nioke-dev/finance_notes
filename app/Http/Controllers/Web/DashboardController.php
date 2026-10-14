@@ -9,6 +9,8 @@ use App\Models\Debt;
 use App\Models\DebtInstallment;
 use App\Models\Transaction;
 use App\Models\WorkDay;
+use App\Models\FinancialGoal;
+use App\Services\FinancialGoalService;
 use App\Services\ReconciliationEngineService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -16,7 +18,11 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, ReconciliationEngineService $reconciliationService): View
+    public function index(
+        Request $request,
+        ReconciliationEngineService $reconciliationService,
+        FinancialGoalService $goalService
+    ): View
     {
         $accounts = Account::active()->get();
 
@@ -131,6 +137,29 @@ class DashboardController extends Controller
             ? $currentWorkDay->activeCodOrders()->onDelivery()->orderBy('accepted_at', 'asc')->get() 
             : collect();
 
+        // 3. Target Belanja Survival & Wishlist Prioritas (Needs vs Wants)
+        $financialGoals = FinancialGoal::active()
+            ->orderBy('priority_level', 'asc')
+            ->orderBy('target_date', 'asc')
+            ->get();
+
+        $achievedGoals = FinancialGoal::where('status', 'achieved')
+            ->latest('achieved_at')
+            ->take(5)
+            ->get();
+
+        $safeToSpendData = $goalService->calculateSafeToSpend((int) ($totalDigital + $totalCash));
+
+        // Akun digital wallet utama untuk sinkronisasi saldo malam hari
+        $digitalReconAccounts = Account::whereIn('name', [
+            'GoPay Merchant',
+            'GoPay',
+            'Dompet Driver ShopeeFood',
+            'ShopeePay',
+            'BCA',
+            'SeaBank',
+        ])->get();
+
         return view('dashboard.index', compact(
             'accounts',
             'totalDigital',
@@ -158,7 +187,11 @@ class DashboardController extends Controller
             'cashRecommendations',
             'isLateNightHours',
             'yesterdayUnfinalized',
-            'activeCodOrders'
+            'activeCodOrders',
+            'financialGoals',
+            'achievedGoals',
+            'safeToSpendData',
+            'digitalReconAccounts'
         ));
     }
 }

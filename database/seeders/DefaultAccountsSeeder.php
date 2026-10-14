@@ -20,6 +20,7 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'ShopeePay', 'type' => AccountType::EWALLET],
             ['name' => 'GoPay', 'type' => AccountType::EWALLET],
             ['name' => 'GoPay Merchant', 'type' => AccountType::EWALLET],
+            ['name' => 'Dompet Driver ShopeeFood', 'type' => AccountType::EWALLET],
             ['name' => 'Cash', 'type' => AccountType::CASH],
             ['name' => 'Flazz / e-money', 'type' => AccountType::EWALLET],
             ['name' => 'Talangan Pesanan COD', 'type' => AccountType::RECEIVABLE],

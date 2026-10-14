@@ -9,9 +9,12 @@ use App\Models\Account;
 use App\Models\ActiveCodOrder;
 use App\Models\Debt;
 use App\Models\DebtInstallment;
+use App\Models\FinancialGoal;
 use App\Models\WorkDay;
 use App\Services\ActiveCodOrderService;
 use App\Services\CodOrderService;
+use App\Services\DigitalReconciliationService;
+use App\Services\FinancialGoalService;
 use App\Services\FriendDebtSettlementService;
 use App\Services\InitialBalanceService;
 use App\Services\LedgerService;
@@ -874,5 +877,98 @@ class OperationalWebController extends Controller
         ]);
 
         return redirect()->back()->with('success', "Kas Rp " . number_format($amount, 0, ',', '.') . " berhasil dipinjamkan ke {$borrowerName} & otomatis tercatat sebagai Piutang Teman.");
+    }
+
+    /**
+     * Rekonsiliasi Saldo Digital Malam Hari (Snapshot 4 Saldo Digital & Deteksi QRIS Nyusul)
+     */
+    public function reconcileDigital(Request $request, DigitalReconciliationService $service): RedirectResponse
+    {
+        $validated = $request->validate([
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'balances' => 'required|array',
+            'balances.*.account_id' => 'required|exists:accounts,id',
+            'balances.*.actual_balance' => 'required|integer|min:0',
+        ]);
+
+        $workDay = !empty($validated['work_day_id'])
+            ? WorkDay::findOrFail($validated['work_day_id'])
+            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
+
+        if (!$workDay) {
+            return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan. Silakan buka hari kerja terlebih dahulu.');
+        }
+
+        $result = $service->reconcileDigitalAccounts($workDay, $validated['balances']);
+
+        $message = "Rekonsiliasi saldo digital selesai. ";
+        if ($result['adjusted_count'] > 0) {
+            $parts = [];
+            if ($result['total_surplus'] > 0) {
+                $parts[] = "Surplus QRIS/Digital +Rp " . number_format($result['total_surplus'], 0, ',', '.');
+            }
+            if ($result['total_shortage'] > 0) {
+                $parts[] = "Penyesuaian Biaya Admin/Kurang -Rp " . number_format($result['total_shortage'], 0, ',', '.');
+            }
+            $message .= implode(', ', $parts) . " berhasil dicatat ke pembukuan.";
+        } else {
+            $message .= "Semua saldo digital sudah sinkron dan cocok 100%.";
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * Tambah Target Belanja Survival / Wishlist Baru
+     */
+    public function storeGoal(Request $request, FinancialGoalService $service): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category' => 'required|in:pangan,hygiene,work_essential,maintenance,wants',
+            'priority_level' => 'required|integer|between:1,5',
+            'target_amount' => 'required|integer|min:1',
+            'target_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $goal = $service->createGoal($validated);
+
+        return redirect()->back()->with('success', "Target belanja '{$goal->name}' (Rp " . number_format($goal->target_amount, 0, ',', '.') . ") berhasil disimpan ke daftar prioritas.");
+    }
+
+    /**
+     * Alokasi Dana Bertahap ke Target Belanja
+     */
+    public function allocateGoalFunds(Request $request, int $id, FinancialGoalService $service): RedirectResponse
+    {
+        $validated = $request->validate([
+            'amount' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $goal = FinancialGoal::findOrFail($id);
+        $service->allocateFunds($goal, (int) $validated['amount'], $validated['notes'] ?? null);
+
+        return redirect()->back()->with('success', "Dana Rp " . number_format($validated['amount'], 0, ',', '.') . " berhasil disisihkan ke target '{$goal->name}'. (Terkumpul: Rp " . number_format($goal->fresh()->allocated_amount, 0, ',', '.') . " / Rp " . number_format($goal->target_amount, 0, ',', '.') . ")");
+    }
+
+    /**
+     * Realisasikan Belanja Target (Toko / Bengkel)
+     */
+    public function achieveGoal(Request $request, int $id, FinancialGoalService $service): RedirectResponse
+    {
+        $validated = $request->validate([
+            'account_id' => 'required|exists:accounts,id',
+            'actual_spent' => 'nullable|integer|min:1',
+        ]);
+
+        $goal = FinancialGoal::findOrFail($id);
+        $account = Account::findOrFail($validated['account_id']);
+        $spent = $validated['actual_spent'] ? (int) $validated['actual_spent'] : $goal->target_amount;
+
+        $service->achieveGoal($goal, $account, $spent);
+
+        return redirect()->back()->with('success', "Selamat! Target belanja '{$goal->name}' berhasil dibeli seharga Rp " . number_format($spent, 0, ',', '.') . " menggunakan {$account->name}.");
     }
 }

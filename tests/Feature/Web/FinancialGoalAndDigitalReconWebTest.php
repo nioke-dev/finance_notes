@@ -1,0 +1,186 @@
+<?php
+
+namespace Tests\Feature\Web;
+
+use App\Enums\AccountType;
+use App\Models\Account;
+use App\Models\FinancialGoal;
+use App\Models\User;
+use App\Models\WorkDay;
+use Database\Seeders\DefaultAccountsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class FinancialGoalAndDigitalReconWebTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $user;
+    protected WorkDay $workDay;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(DefaultAccountsSeeder::class);
+
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+
+        $this->workDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+            'day_type' => WorkDay::TYPE_ON_BID,
+            'opened_at' => now(),
+        ]);
+    }
+
+    public function test_dashboard_renders_safe_to_spend_and_goals(): void
+    {
+        FinancialGoal::create([
+            'name' => 'Ganti Oli Mesin Honda',
+            'category' => 'work_essential',
+            'priority_level' => 3,
+            'target_amount' => 55000,
+            'allocated_amount' => 20000,
+            'status' => 'active',
+        ]);
+
+        $response = $this->get('/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Safe-to-Spend (Uang Aman Jajan)');
+        $response->assertSee('Ganti Oli Mesin Honda');
+        $response->assertSee('Level 3: Nyawa Narik');
+        $response->assertSee('Sinkron Saldo Digital Malam');
+    }
+
+    public function test_can_create_new_financial_goal(): void
+    {
+        $payload = [
+            'name' => 'Beras 5kg & Telur 1kg',
+            'category' => 'pangan',
+            'priority_level' => 1,
+            'target_amount' => 110000,
+            'target_date' => now()->addDays(5)->toDateString(),
+            'notes' => 'Kebutuhan pokok makan di kos',
+        ];
+
+        $response = $this->post('/operational/goals', $payload);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('financial_goals', [
+            'name' => 'Beras 5kg & Telur 1kg',
+            'category' => 'pangan',
+            'priority_level' => 1,
+            'target_amount' => 110000,
+            'allocated_amount' => 0,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_can_allocate_funds_to_goal_step_by_step(): void
+    {
+        $goal = FinancialGoal::create([
+            'name' => 'Phone Holder Motor Robot',
+            'category' => 'work_essential',
+            'priority_level' => 3,
+            'target_amount' => 75000,
+            'allocated_amount' => 10000,
+            'status' => 'active',
+        ]);
+
+        // Alokasi cepat +20k
+        $response = $this->post("/operational/goals/{$goal->id}/allocate", [
+            'amount' => 20000,
+            'notes' => 'Dari tip sore orderan martabak',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(30000, $goal->fresh()->allocated_amount);
+    }
+
+    public function test_can_achieve_goal_and_record_real_expense(): void
+    {
+        $cashAcc = Account::where('name', 'Cash')->firstOrFail();
+        $cashAcc->update(['current_balance' => 150000]);
+
+        $goal = FinancialGoal::create([
+            'name' => 'Ganti Oli Mesin Honda MPX2',
+            'category' => 'work_essential',
+            'priority_level' => 3,
+            'target_amount' => 55000,
+            'allocated_amount' => 55000,
+            'status' => 'active',
+        ]);
+
+        // Realisasikan belanja di bengkel seharga Rp53.000 riil di nota
+        $response = $this->post("/operational/goals/{$goal->id}/achieve", [
+            'account_id' => $cashAcc->id,
+            'actual_spent' => 53000,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Target status berubah jadi achieved
+        $freshGoal = $goal->fresh();
+        $this->assertEquals('achieved', $freshGoal->status);
+        $this->assertEquals(53000, $freshGoal->allocated_amount);
+
+        // Saldo kas dompet berkurang sebesar 53.000 (150.000 - 53.000 = 97.000)
+        $this->assertEquals(97000, $cashAcc->fresh()->current_balance);
+    }
+
+    public function test_can_reconcile_digital_balances_and_detect_qris_surplus(): void
+    {
+        $gopayMerchant = Account::where('name', 'GoPay Merchant')->firstOrFail();
+        $shopeeFoodDriver = Account::where('name', 'Dompet Driver ShopeeFood')->firstOrFail();
+
+        $gopayMerchant->update(['current_balance' => 10000]);
+        $shopeeFoodDriver->update(['current_balance' => 25000]);
+
+        // Snapshot malam hari:
+        // Di layar HP GoPay Merchant ada Rp15.000 (ada surplus tip QRIS +5.000 yang masuk belakangan)
+        // Di layar HP ShopeeFood Driver ada Rp25.000 (cocok)
+        $payload = [
+            'work_day_id' => $this->workDay->id,
+            'balances' => [
+                [
+                    'account_id' => $gopayMerchant->id,
+                    'actual_balance' => 15000,
+                ],
+                [
+                    'account_id' => $shopeeFoodDriver->id,
+                    'actual_balance' => 25000,
+                ],
+            ],
+        ];
+
+        $response = $this->post('/operational/digital-reconciliation', $payload);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Saldo GoPay Merchant otomatis naik menjadi 15.000
+        $this->assertEquals(15000, $gopayMerchant->fresh()->current_balance);
+
+        // Tercatat transaksi pendapatan surplus QRIS digital
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'type' => 'income',
+        ]);
+
+        $this->assertDatabaseHas('ledger_entries', [
+            'amount' => 5000,
+            'entry_type' => 'credit',
+        ]);
+
+        $qrisIncome = Account::where('name', 'Pendapatan QRIS / Tip Non-Tunai')->firstOrFail();
+        $this->assertEquals(5000, $qrisIncome->current_balance);
+    }
+}

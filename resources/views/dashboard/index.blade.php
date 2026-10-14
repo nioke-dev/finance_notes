@@ -531,26 +531,215 @@
             </div>
         </div>
 
-        {{-- Ringkasan Total Kekayaan (Net Worth Card) --}}
-        <div id="tour-net-worth" class="bg-gradient-to-br from-slate-800 to-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Kekayaan Bersih (Net Worth)</span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-1">
-                        Rp {{ number_format($netWorth, 0, ',', '.') }}
-                    </h2>
-                </div>
-                <div class="flex gap-4 text-xs font-semibold">
-                    <div class="bg-slate-900/60 border border-slate-700/50 px-3.5 py-2 rounded-xl">
-                        <span class="text-slate-400 block text-[10px] uppercase">Aset Liquid (Kas + Bank)</span>
-                        <span class="text-emerald-400 font-bold text-sm">Rp {{ number_format($totalDigital + $totalCash, 0, ',', '.') }}</span>
+        {{-- Ringkasan Total Kekayaan & Safe-to-Spend (Uang Aman Jajan) --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {{-- Kartu Net Worth --}}
+            <div id="tour-net-worth" class="bg-gradient-to-br from-slate-800 to-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Kekayaan Bersih (Net Worth)</span>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-1">
+                            Rp {{ number_format($netWorth, 0, ',', '.') }}
+                        </h2>
                     </div>
-                    <div class="bg-slate-900/60 border border-slate-700/50 px-3.5 py-2 rounded-xl">
-                        <span class="text-slate-400 block text-[10px] uppercase">Total Utang Aktif</span>
-                        <span class="text-rose-400 font-bold text-sm">Rp {{ number_format($totalDebt, 0, ',', '.') }}</span>
+                    <div class="flex gap-4 text-xs font-semibold">
+                        <div class="bg-slate-900/60 border border-slate-700/50 px-3.5 py-2 rounded-xl">
+                            <span class="text-slate-400 block text-[10px] uppercase">Aset Liquid (Kas + Bank)</span>
+                            <span class="text-emerald-400 font-bold text-sm">Rp {{ number_format($totalDigital + $totalCash, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="bg-slate-900/60 border border-slate-700/50 px-3.5 py-2 rounded-xl">
+                            <span class="text-slate-400 block text-[10px] uppercase">Total Utang Aktif</span>
+                            <span class="text-rose-400 font-bold text-sm">Rp {{ number_format($totalDebt, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+                    <span>Semua kas dompet + seluruh rekening bank & e-wallet</span>
+                    <span class="text-slate-500 text-[11px]">&bull; Diaudit per transaksi</span>
+                </div>
+            </div>
+
+            {{-- Kartu Safe-to-Spend (Uang Aman Jajan Driver) --}}
+            <div id="tour-safe-to-spend" class="bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-950/40 border border-cyan-500/40 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center space-x-1.5">
+                            <span>🛡️</span>
+                            <span>Safe-to-Spend (Uang Aman Jajan)</span>
+                        </span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                            Anti Defisit Survival
+                        </span>
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-1">
+                        Rp {{ number_format($safeToSpendData['safe_to_spend'], 0, ',', '.') }}
+                    </h2>
+                    <p class="text-xs text-slate-300 mt-1">
+                        Uang yang bebas Anda belanjakan untuk jajan es krim, cilok, atau nongkrong <strong class="text-cyan-300">tanpa mengorbankan beras, sewa tempat tinggal, atau ganti oli motor</strong>.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-700/60 text-[11px]">
+                    <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-2.5">
+                        <span class="text-slate-400 block text-[9px] uppercase font-bold">Uang Likuid Kas+Bank</span>
+                        <span class="text-slate-200 font-bold block mt-0.5">Rp {{ number_format($safeToSpendData['total_liquid'], 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/80 border border-rose-500/30 rounded-xl p-2.5">
+                        <span class="text-rose-400 block text-[9px] uppercase font-bold">Terkunci Survival (L1-3)</span>
+                        <span class="text-rose-300 font-bold block mt-0.5">-Rp {{ number_format($safeToSpendData['total_survival_reserved'], 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/80 border border-amber-500/30 rounded-xl p-2.5">
+                        <span class="text-amber-400 block text-[9px] uppercase font-bold">Terkunci Wishlist (L4-5)</span>
+                        <span class="text-amber-300 font-bold block mt-0.5">-Rp {{ number_format($safeToSpendData['total_wants_reserved'], 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
+        </div>
+
+        {{-- TARGET BELANJA SURVIVAL & WISHLIST PRIORITAS (NEEDS VS WANTS) --}}
+        <div id="tour-financial-goals" class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/60 pb-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-xl">
+                        🎯
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-white">Target Belanja Survival & Wishlist Prioritas</h3>
+                            <span class="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full">5 Level Skala Prioritas</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Pisahkan kebutuhan primer (Pangan, Mandi, Ganti Oli, Holder HP) dari keinginan jajan biasa.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="openModal('modal-add-goal')" class="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0">
+                    <span>➕</span>
+                    <span>Tambah Target Belanja</span>
+                </button>
+            </div>
+
+            @if($financialGoals->isEmpty())
+                <div class="py-8 text-center bg-slate-900/50 border border-slate-800 rounded-xl">
+                    <span class="text-3xl block mb-2">🛒</span>
+                    <h4 class="text-sm font-bold text-white">Belum Ada Target Belanja / Wishlist Aktif</h4>
+                    <p class="text-xs text-slate-400 max-w-md mx-auto mt-1">
+                        Buat target belanja seperti <strong>Ganti Oli Mesin Honda</strong>, <strong>Holder HP</strong>, atau <strong>Beras & Telur</strong> agar uang jajan Anda terkendali dengan aman.
+                    </p>
+                    <button type="button" onclick="openModal('modal-add-goal')" class="mt-3 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow transition">
+                        + Buat Target Pertama Sekarang
+                    </button>
+                </div>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    @foreach($financialGoals as $goal)
+                        @php
+                            $progress = $goal->target_amount > 0 ? min(100, round(($goal->allocated_amount / $goal->target_amount) * 100)) : 0;
+                            $priorityBadgeClass = match($goal->priority_level) {
+                                1 => 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+                                2 => 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+                                3 => 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                                4 => 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+                                default => 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+                            };
+                            $isFunded = $goal->allocated_amount >= $goal->target_amount;
+                        @endphp
+                        <div class="bg-slate-900/80 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-4 flex flex-col justify-between shadow transition">
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase border {{ $priorityBadgeClass }}">
+                                        {{ $goal->getPriorityLabel() }}
+                                    </span>
+                                    @if($goal->target_date)
+                                        <span class="text-[10px] text-slate-400 font-medium">
+                                            📅 Batas: {{ $goal->target_date->format('d M Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <h4 class="text-sm font-bold text-white mb-1">{{ $goal->name }}</h4>
+                                @if($goal->notes)
+                                    <p class="text-[11px] text-slate-400 mb-3">{{ $goal->notes }}</p>
+                                @endif
+
+                                {{-- Progress Nominal & Bar --}}
+                                <div class="space-y-1.5 my-3">
+                                    <div class="flex justify-between items-baseline text-xs">
+                                        <span class="text-slate-400 text-[11px]">Terkumpul: <strong class="text-emerald-400 font-bold">Rp {{ number_format($goal->allocated_amount, 0, ',', '.') }}</strong></span>
+                                        <span class="text-slate-300 font-bold">Rp {{ number_format($goal->target_amount, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+                                        <div class="h-2.5 rounded-full transition-all duration-500 {{ $isFunded ? 'bg-emerald-500' : 'bg-amber-500' }}" style="width: {{ $progress }}%"></div>
+                                    </div>
+                                    <div class="flex justify-between items-center text-[10px] text-slate-400">
+                                        <span>{{ $progress }}% tercapai</span>
+                                        @if($isFunded)
+                                            <span class="text-emerald-400 font-bold">✓ Dana Cukup untuk Dibeli!</span>
+                                        @else
+                                            <span>Kurang: Rp {{ number_format(max(0, $goal->target_amount - $goal->allocated_amount), 0, ',', '.') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Action Buttons: Quick Allocate 10k/20k & Realisasi Belanja --}}
+                            <div class="pt-3 border-t border-slate-800/80 space-y-2">
+                                <div class="flex items-center space-x-1.5">
+                                    {{-- Tombol Cepat Sisihkan 10k --}}
+                                    <form method="POST" action="/operational/goals/{{ $goal->id }}/allocate" class="flex-1">
+                                        @csrf
+                                        <input type="hidden" name="amount" value="10000">
+                                        <button type="submit" class="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold transition text-center" title="Sisihkan Rp10.000 ke target ini">
+                                            +10k
+                                        </button>
+                                    </form>
+
+                                    {{-- Tombol Cepat Sisihkan 20k --}}
+                                    <form method="POST" action="/operational/goals/{{ $goal->id }}/allocate" class="flex-1">
+                                        @csrf
+                                        <input type="hidden" name="amount" value="20000">
+                                        <button type="submit" class="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold transition text-center" title="Sisihkan Rp20.000 ke target ini">
+                                            +20k
+                                        </button>
+                                    </form>
+
+                                    {{-- Tombol Sisihkan Custom --}}
+                                    <button type="button" onclick="openAllocateGoalModal({{ $goal->id }}, '{{ addslashes($goal->name) }}', {{ $goal->target_amount - $goal->allocated_amount }})" class="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold transition text-center">
+                                        +Custom
+                                    </button>
+                                </div>
+
+                                {{-- Tombol Realisasikan Belanja di Toko/Bengkel --}}
+                                <button type="button" onclick="openAchieveGoalModal({{ $goal->id }}, '{{ addslashes($goal->name) }}', {{ $goal->target_amount }})" class="w-full py-2 px-3 {{ $isFunded ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700' }} rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1 shadow">
+                                    <span>🛒</span>
+                                    <span>Sudah Dibeli / Realisasikan</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Target yang telah selesai / terbeli --}}
+            @if($achievedGoals->isNotEmpty())
+                <div class="pt-2">
+                    <details class="group">
+                        <summary class="cursor-pointer text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center space-x-2 select-none">
+                            <span class="group-open:rotate-90 transition transform">▶</span>
+                            <span>Riwayat Target yang Sudah Terbeli ({{ $achievedGoals->count() }})</span>
+                        </summary>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                            @foreach($achievedGoals as $achieved)
+                                <div class="bg-slate-900/60 border border-emerald-500/30 rounded-xl p-3 flex justify-between items-center text-xs">
+                                    <div>
+                                        <span class="text-white font-bold block">{{ $achieved->name }}</span>
+                                        <span class="text-[10px] text-slate-400">Selesai: {{ $achieved->achieved_at ? $achieved->achieved_at->format('d M Y') : '-' }}</span>
+                                    </div>
+                                    <span class="text-emerald-400 font-bold text-xs">Rp {{ number_format($achieved->allocated_amount, 0, ',', '.') }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                </div>
+            @endif
         </div>
 
         {{-- Grid Kartu Akun Driver & Tambah Rekening / Dompet Baru --}}
@@ -561,6 +750,10 @@
                     <p class="text-xs text-slate-500">Kelola dompet fisik, rekening bank baru (BCA, Mandiri, BRI), atau e-wallet (GoPay, DANA, OVO).</p>
                 </div>
                 <div class="flex items-center space-x-2">
+                    <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 text-xs font-bold transition flex items-center space-x-1 shadow">
+                        <span>📲</span>
+                        <span>Sinkron Saldo Digital Malam</span>
+                    </button>
                     <button type="button" onclick="openModal('modal-add-account')" class="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-bold transition flex items-center space-x-1">
                         <span>➕</span>
                         <span>Tambah Rekening Baru</span>
@@ -1899,6 +2092,234 @@
         </div>
     </div>
 
+    {{-- ================= MODAL SINKRONISASI SALDO DIGITAL MALAM HARI ================= --}}
+    <div id="modal-reconcile-digital" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-purple-500/40 max-w-lg w-full rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center space-x-2.5 mb-2">
+                <span class="text-2xl">📲</span>
+                <div>
+                    <h3 class="text-base font-bold text-white">Sinkron Saldo Digital Malam Hari</h3>
+                    <p class="text-xs text-slate-400">Snapshot 4 Saldo Digital & Deteksi Surplus QRIS Otomatis</p>
+                </div>
+            </div>
+
+            <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-3 text-xs text-purple-200 mb-4 leading-relaxed">
+                💡 <strong>Tidak perlu lacak pelanggan satu per satu!</strong> Cukup intip saldo aktual di layar HP (GoPay Merchant, GoPay, Dompet Driver ShopeeFood, ShopeePay). Sistem akan langsung menghitung selisih dan mencatat penerimaan tip QRIS nyusul.
+            </div>
+
+            <form method="POST" action="/operational/digital-reconciliation" class="space-y-4">
+                @csrf
+                @if($currentWorkDay)
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                @endif
+
+                <div class="space-y-3">
+                    @foreach($digitalReconAccounts as $idx => $dAcc)
+                        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-3">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-bold text-white flex items-center space-x-1.5">
+                                    <span>
+                                        @if(str_contains(strtolower($dAcc->name), 'merchant')) 🏪
+                                        @elseif(str_contains(strtolower($dAcc->name), 'gopay')) 🟢
+                                        @elseif(str_contains(strtolower($dAcc->name), 'shopeefood')) 🛵
+                                        @elseif(str_contains(strtolower($dAcc->name), 'shopeepay')) 🟠
+                                        @else 🏦
+                                        @endif
+                                    </span>
+                                    <span>{{ $dAcc->name }}</span>
+                                </span>
+                                <span class="text-[11px] text-slate-400">
+                                    Di Sistem: <strong class="text-slate-200 font-bold">Rp {{ number_format($dAcc->current_balance, 0, ',', '.') }}</strong>
+                                </span>
+                            </div>
+
+                            <input type="hidden" name="balances[{{ $idx }}][account_id]" value="{{ $dAcc->id }}">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-slate-500 font-bold">Rp</span>
+                                <input 
+                                    type="number" 
+                                    inputmode="numeric" 
+                                    pattern="[0-9]*" 
+                                    name="balances[{{ $idx }}][actual_balance]" 
+                                    id="recon-input-{{ $dAcc->id }}"
+                                    value="{{ $dAcc->current_balance }}"
+                                    data-recorded="{{ $dAcc->current_balance }}"
+                                    data-account-name="{{ $dAcc->name }}"
+                                    oninput="calculateDigitalReconDiff()"
+                                    class="recon-digital-input w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                                >
+                            </div>
+                            <div id="recon-diff-msg-{{ $dAcc->id }}" class="text-[11px] font-semibold mt-1 text-slate-400">
+                                Status: Cocok (Rp 0)
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Live Summary Penyelarasan --}}
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-1.5 text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="text-emerald-400 font-semibold">🎉 Terdeteksi Surplus QRIS Nyusul:</span>
+                        <strong id="live-recon-surplus" class="text-emerald-400 font-bold">+Rp 0</strong>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-rose-400 font-semibold">⚠️ Selisih Kurang (Biaya Admin):</span>
+                        <strong id="live-recon-shortage" class="text-rose-400 font-bold">-Rp 0</strong>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-reconcile-digital')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow">✓ Sinkronkan Saldo & Terima Surplus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ================= MODAL TAMBAH TARGET BELANJA / WISHLIST ================= --}}
+    <div id="modal-add-goal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-amber-500/40 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <span class="text-2xl">🎯</span>
+                <div>
+                    <h3 class="text-base font-bold text-white">Tambah Target Belanja & Wishlist</h3>
+                    <p class="text-xs text-slate-400">Tentukan target kebutuhan dan skala prioritasnya.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="/operational/goals" class="space-y-3.5 mt-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Target Belanja <span class="text-rose-400">*</span></label>
+                    <input type="text" name="name" required placeholder="Contoh: Ganti Oli Mesin Honda MPX2" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Skala Prioritas (Needs vs Wants) <span class="text-rose-400">*</span></label>
+                    <select name="priority_level" id="goal-priority-select" onchange="syncGoalCategory(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="1">Level 1 - 🍚 Pangan Pokok (Beras, Telur, Tempe, Ayam)</option>
+                        <option value="2">Level 2 - 🧼 Kebersihan & Mandi (Sabun, Sampo, Cuci Piring)</option>
+                        <option value="3" selected>Level 3 - 🛵 Nyawa Narik (Ganti Oli Mesin, Phone Holder, Kuota)</option>
+                        <option value="4">Level 4 - 🔧 Servis Berkala Motor (CVT, Kampas Rem, Ban)</option>
+                        <option value="5">Level 5 - 🍦 Keinginan Santai / Jajan (Es Krim, Cilok, Nongkrong)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Kategori Belanja <span class="text-rose-400">*</span></label>
+                    <select name="category" id="goal-category-select" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="work_essential" selected>🛵 Perlengkapan Kerja Narik (Oli / Holder / Kuota)</option>
+                        <option value="pangan">🍚 Pangan Pokok & Makanan Mentah</option>
+                        <option value="hygiene">🧼 Kebersihan & Perawatan Tubuh</option>
+                        <option value="maintenance">🔧 Servis Motor Berkala</option>
+                        <option value="wants">🍦 Keinginan / Jajan Bebas</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Target Nominal (Rp) <span class="text-rose-400">*</span></label>
+                        <input type="number" inputmode="numeric" name="target_amount" required min="1000" step="1000" placeholder="55000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Target Tanggal</label>
+                        <input type="date" name="target_date" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Catatan Tambahan</label>
+                    <input type="text" name="notes" placeholder="Contoh: MPX2 0.8L untuk Vario / Beat" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-add-goal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow">Simpan Target</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ================= MODAL ALOKASI DANA CUSTOM KE TARGET ================= --}}
+    <div id="modal-allocate-goal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-amber-500/40 max-w-sm w-full rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <span class="text-2xl">💰</span>
+                <div>
+                    <h3 class="text-base font-bold text-white">Sisihkan Dana ke Target</h3>
+                    <p id="allocate-goal-title" class="text-xs text-amber-300 font-semibold">-</p>
+                </div>
+            </div>
+
+            <form id="form-allocate-goal" method="POST" action="" class="space-y-4 mt-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal yang Disisihkan (Rp) <span class="text-rose-400">*</span></label>
+                    <input type="number" inputmode="numeric" name="amount" id="allocate-goal-amount" required min="1000" step="1000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    
+                    <div class="flex space-x-1.5 mt-2">
+                        <button type="button" onclick="document.getElementById('allocate-goal-amount').value = 5000" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">5k</button>
+                        <button type="button" onclick="document.getElementById('allocate-goal-amount').value = 10000" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">10k</button>
+                        <button type="button" onclick="document.getElementById('allocate-goal-amount').value = 20000" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">20k</button>
+                        <button type="button" onclick="document.getElementById('allocate-goal-amount').value = 50000" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">50k</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Catatan (Opsional)</label>
+                    <input type="text" name="notes" placeholder="Contoh: Dari tip orderan siang" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-allocate-goal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow">Sisihkan Sekarang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ================= MODAL REALISASI BELANJA TARGET (DI TOKO / BENGKEL) ================= --}}
+    <div id="modal-achieve-goal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-emerald-500/40 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <span class="text-2xl">🛒</span>
+                <div>
+                    <h3 class="text-base font-bold text-white">Realisasikan Belanja Target</h3>
+                    <p id="achieve-goal-title" class="text-xs text-emerald-300 font-semibold">-</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-400 mt-2">
+                Tandai target ini sebagai selesai dibeli. Sistem akan otomatis memotong saldo rekening pembayar dan mencatat beban pengeluaran riil di pembukuan.
+            </p>
+
+            <form id="form-achieve-goal" method="POST" action="" class="space-y-4 mt-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Sumber Dana (Bayar Pakai Apa?) <span class="text-rose-400">*</span></label>
+                    <select name="account_id" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        @foreach($accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])) as $acc)
+                            <option value="{{ $acc->id }}">
+                                {{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Riil yang Dibayar di Kasir / Nota (Rp) <span class="text-rose-400">*</span></label>
+                    <input type="number" inputmode="numeric" name="actual_spent" id="achieve-actual-spent" required min="500" step="500" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <span class="text-[10px] text-slate-400 block mt-1">Bisa disesuaikan dengan harga riil di struk/nota toko.</span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-achieve-goal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">✓ Selesai & Catat Pengeluaran</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Script Modal Handling, Tabs, & Interactive Tour --}}
     <script>
         function openModal(id) {
@@ -2209,6 +2630,89 @@
             openModal('modal-cancel-cod');
         }
 
+        // ================= JAVASCRIPT LOGIKA DIGITAL REKONSILIASI & SURVIVAL GOALS =================
+        function calculateDigitalReconDiff() {
+            let totalSurplus = 0;
+            let totalShortage = 0;
+
+            document.querySelectorAll('.recon-digital-input').forEach(input => {
+                const recorded = parseInt(input.getAttribute('data-recorded')) || 0;
+                const actual = parseInt(input.value) || 0;
+                const diff = actual - recorded;
+                const accId = input.id.replace('recon-input-', '');
+                const msgEl = document.getElementById('recon-diff-msg-' + accId);
+
+                if (msgEl) {
+                    if (diff > 0) {
+                        msgEl.innerText = '🎉 Surplus QRIS / Inflow: +Rp ' + diff.toLocaleString('id-ID');
+                        msgEl.className = 'text-[11px] font-bold mt-1 text-emerald-400';
+                        totalSurplus += diff;
+                    } else if (diff < 0) {
+                        msgEl.innerText = '⚠️ Selisih Kurang / Biaya: -Rp ' + Math.abs(diff).toLocaleString('id-ID');
+                        msgEl.className = 'text-[11px] font-bold mt-1 text-rose-400';
+                        totalShortage += Math.abs(diff);
+                    } else {
+                        msgEl.innerText = '✓ Status: Saldo Cocok Sempurna (Rp 0)';
+                        msgEl.className = 'text-[11px] font-semibold mt-1 text-slate-400';
+                    }
+                }
+            });
+
+            const surplusEl = document.getElementById('live-recon-surplus');
+            if (surplusEl) surplusEl.innerText = '+Rp ' + totalSurplus.toLocaleString('id-ID');
+
+            const shortageEl = document.getElementById('live-recon-shortage');
+            if (shortageEl) shortageEl.innerText = '-Rp ' + totalShortage.toLocaleString('id-ID');
+        }
+
+        function syncGoalCategory(priorityLevel) {
+            const catSelect = document.getElementById('goal-category-select');
+            if (!catSelect) return;
+            switch(parseInt(priorityLevel)) {
+                case 1:
+                    catSelect.value = 'pangan';
+                    break;
+                case 2:
+                    catSelect.value = 'hygiene';
+                    break;
+                case 3:
+                    catSelect.value = 'work_essential';
+                    break;
+                case 4:
+                    catSelect.value = 'maintenance';
+                    break;
+                case 5:
+                    catSelect.value = 'wants';
+                    break;
+            }
+        }
+
+        function openAllocateGoalModal(id, name, remaining) {
+            const form = document.getElementById('form-allocate-goal');
+            if (form) form.action = '/operational/goals/' + id + '/allocate';
+
+            const titleEl = document.getElementById('allocate-goal-title');
+            if (titleEl) titleEl.innerText = name + (remaining > 0 ? ' (Kekurangan: Rp ' + remaining.toLocaleString('id-ID') + ')' : '');
+
+            const inputAmount = document.getElementById('allocate-goal-amount');
+            if (inputAmount) inputAmount.value = remaining > 0 ? Math.min(20000, remaining) : 10000;
+
+            openModal('modal-allocate-goal');
+        }
+
+        function openAchieveGoalModal(id, name, targetAmount) {
+            const form = document.getElementById('form-achieve-goal');
+            if (form) form.action = '/operational/goals/' + id + '/achieve';
+
+            const titleEl = document.getElementById('achieve-goal-title');
+            if (titleEl) titleEl.innerText = name + ' (Target: Rp ' + targetAmount.toLocaleString('id-ID') + ')';
+
+            const inputSpent = document.getElementById('achieve-actual-spent');
+            if (inputSpent) inputSpent.value = targetAmount;
+
+            openModal('modal-achieve-goal');
+        }
+
         // Interactive Tour menggunakan Driver.js
         function startDriverTour() {
             const driverObj = window.driver.js.driver({
@@ -2234,6 +2738,24 @@
                             description: 'Memperlihatkan uang masuk dan keluar di luar pekerjaan driver: Sarapan pagi jam 7, belanja pribadi, pemasukan freelance/jual barang, dan bayar cicilan.',
                             side: "bottom", 
                             align: 'start' 
+                        } 
+                    },
+                    { 
+                        element: '#tour-safe-to-spend', 
+                        popover: { 
+                            title: '🛡️ Safe-to-Spend (Uang Aman Jajan)', 
+                            description: 'Pilar psikologi finansial: Uang yang 100% aman Anda belanjakan tanpa merusak atau mengorbankan dana beras pokok, sabun, dan ganti oli motor.',
+                            side: "bottom", 
+                            align: 'start' 
+                        } 
+                    },
+                    { 
+                        element: '#tour-financial-goals', 
+                        popover: { 
+                            title: '🎯 Target Belanja Survival (Needs vs Wants)', 
+                            description: 'Sisihkan bertahap uang receh narik (+10k / +20k) untuk beli oli MPX2, holder HP, atau beras. Saat dibeli, klik tombol Realisasikan untuk catat ke pembukuan.',
+                            side: "top", 
+                            align: 'center' 
                         } 
                     },
                     { 
@@ -2266,8 +2788,8 @@
                     { 
                         element: '#tour-accounts-grid', 
                         popover: { 
-                            title: '🏦 Tambah Rekening & Kunci Saldo', 
-                            description: 'Di sini Anda bisa bebas menambah rekening bank baru (Mandiri, BRI, SeaBank, DANA) dan mengunci saldo modal awal secara permanen.',
+                            title: '🏦 Tambah Rekening & Sinkron Saldo Malam', 
+                            description: 'Sinkronkan saldo digital (GoPay, ShopeeFood, BCA) dalam sekali snapshot dan terima otomatis tip QRIS yang masuk belakangan.',
                             side: "top", 
                             align: 'center' 
                         } 
