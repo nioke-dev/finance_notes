@@ -51,13 +51,8 @@ jobs:
           grep -i "kotlin" android/settings.gradle || true
           grep -i "kotlin" android/build.gradle || true
 
-          # Generate Release Keystore
+          # Generate Official Release Keystore
           keytool -genkey -v -keystore android/app/release.keystore -alias driverfinance -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=DriverFinance, OU=App, O=FinanceNotes, L=Malang, ST=JawaTimur, C=ID"
-
-          # Configure release signing config in build.gradle
-          sed -i '/buildTypes {/i \    signingConfigs {\n        release {\n            storeFile file("release.keystore")\n            storePassword "password123"\n            keyAlias "driverfinance"\n            keyPassword "password123"\n        }\n    }' android/app/build.gradle
-          sed -i 's/signingConfigs\.debug/signingConfigs.release/g' android/app/build.gradle || true
-          sed -i 's/signingConfig/minifyEnabled false\n            shrinkResources false\n            signingConfig/g' android/app/build.gradle || true
 
           # Upgrade R8 compiler in settings.gradle to 8.3.37
           sed -i '/pluginManagement {/a \    buildscript {\n        repositories {\n            mavenCentral()\n            maven { url = uri("https://storage.googleapis.com/r8-releases/raw") }\n        }\n        dependencies {\n            classpath("com.android.tools:r8:8.3.37")\n        }\n    }' android/settings.gradle || true
@@ -82,12 +77,7 @@ jobs:
           set -o pipefail
           flutter build apk --release --no-tree-shake-icons 2>&1 | tee ../build.log
 
-      - name: Sync Build Log to Server Bridge
-        if: always()
-        run: |
-          curl -s -X POST https://financenotes.nurulmustofa.my.id/api/v1/ci/log --data-binary @build.log || true
-
-      - name: Find & Prepare APK
+      - name: Find, Sign & Prepare APK
         run: |
           mkdir -p releases
           APK_PATH=$(find mobile/build -name "*.apk" | head -n 1)
@@ -97,11 +87,16 @@ jobs:
           # Explicitly sign with apksigner to ensure v1, v2, and v3 signature schemes
           APKSIGNER=$(find /usr/local/lib/android/sdk/build-tools -name apksigner | sort -V | tail -n 1)
           echo "Using apksigner at: $APKSIGNER"
-          $APKSIGNER sign --ks mobile/android/app/release.keystore --ks-pass pass:password123 --ks-key-alias driverfinance --key-pass pass:password123 releases/driver-finance-latest.apk
+          $APKSIGNER sign --ks mobile/android/app/release.keystore --ks-pass pass:password123 --ks-key-alias driverfinance --key-pass pass:password123 releases/driver-finance-latest.apk 2>&1 | tee -a build.log
           
           # Verify signatures
-          $APKSIGNER verify --verbose releases/driver-finance-latest.apk
+          $APKSIGNER verify --verbose releases/driver-finance-latest.apk 2>&1 | tee -a build.log
           ls -lh releases/driver-finance-latest.apk
+
+      - name: Sync Build Log to Server Bridge
+        if: always()
+        run: |
+          curl -s -X POST https://financenotes.nurulmustofa.my.id/api/v1/ci/log --data-binary @build.log || true
 
       - name: Deploy APK Directly to Production Server
         run: |
