@@ -34,6 +34,7 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'Beban Bensin Kendaraan', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Parkir', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Makanan & Minuman Driver', 'type' => AccountType::EXPENSE],
+            ['name' => 'Beban Serba-serbi & Insidental Lapangan', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Biaya Admin Transfer', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Sedekah & Bantuan Pribadi', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Selisih Kas (Hilang/Kurang)', 'type' => AccountType::EXPENSE],

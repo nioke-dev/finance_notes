@@ -31,6 +31,7 @@ class DefaultAccountsSeederTest extends TestCase
             'Bonus Hub ShopeeFood' => AccountType::INCOME,
             'Beban Bensin Kendaraan' => AccountType::EXPENSE,
             'Beban Parkir' => AccountType::EXPENSE,
+            'Beban Serba-serbi & Insidental Lapangan' => AccountType::EXPENSE,
         ];
 
         foreach ($essentialAccounts as $name => $expectedType) {
@@ -41,7 +42,7 @@ class DefaultAccountsSeederTest extends TestCase
             $this->assertTrue($account->is_active);
         }
 
-        $this->assertEquals(19, Account::count());
+        $this->assertEquals(20, Account::count());
     }
 
     /**
@@ -50,10 +51,10 @@ class DefaultAccountsSeederTest extends TestCase
     public function test_seeder_can_run_multiple_times_without_duplicate_errors(): void
     {
         $this->seed(DefaultAccountsSeeder::class);
-        $this->assertEquals(19, Account::count());
+        $this->assertEquals(20, Account::count());
 
         // Jalankan kedua kali
         $this->seed(DefaultAccountsSeeder::class);
-        $this->assertEquals(19, Account::count());
+        $this->assertEquals(20, Account::count());
     }
 }

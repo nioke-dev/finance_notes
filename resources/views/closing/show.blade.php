@@ -55,6 +55,8 @@
                                 </label>
                                 <input 
                                     type="number" 
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
                                     min="0"
                                     name="{{ $field }}" 
                                     id="{{ $field }}" 
@@ -78,6 +80,8 @@
                                 </label>
                                 <input 
                                     type="number" 
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
                                     min="0"
                                     name="{{ $field }}" 
                                     id="{{ $field }}" 
@@ -114,6 +118,8 @@
                             <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nominal Uang Rusak (Rp)</label>
                             <input 
                                 type="number" 
+                                inputmode="numeric"
+                                pattern="[0-9]*"
                                 name="damaged_notes_amount" 
                                 min="0" 
                                 step="1000"
@@ -251,6 +257,110 @@
                         </button>
                     </form>
                 </div>
+
+                {{-- Kotak Hitam: Voice Memos Helm Hari Ini --}}
+                <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🎙️</span>
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-white">Kotak Hitam Helm (Voice Memos)</h3>
+                                <span class="text-[10px] text-slate-400">Dengar rekaman suara Anda di jalan sebelum menyesuaikan selisih</span>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">
+                            {{ $workDay->voiceMemos->count() }} rekaman
+                        </span>
+                    </div>
+
+                    @if($workDay->voiceMemos->isEmpty())
+                        <div class="py-4 text-center text-slate-500 text-xs">
+                            Belum ada rekaman suara helm yang diunggah untuk shift ini.
+                        </div>
+                    @else
+                        <div class="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                            @foreach($workDay->voiceMemos as $memo)
+                                <div class="p-3 bg-slate-900/70 border border-slate-700/50 rounded-xl space-y-2">
+                                    <div class="flex justify-between items-center text-[11px]">
+                                        <span class="font-bold text-white flex items-center space-x-1.5">
+                                            <span>⏰</span>
+                                            <span>{{ $memo->recorded_at ? $memo->recorded_at->format('H:i:s') : $memo->created_at->format('H:i:s') }}</span>
+                                        </span>
+                                        @if($memo->latitude && $memo->longitude)
+                                            <a href="https://www.google.com/maps?q={{ $memo->latitude }},{{ $memo->longitude }}" target="_blank" class="text-blue-400 hover:text-blue-300 hover:underline flex items-center space-x-1 font-semibold">
+                                                <span>📍</span>
+                                                <span>Lihat di Maps</span>
+                                            </a>
+                                        @endif
+                                    </div>
+                                    <audio controls class="w-full h-8 rounded">
+                                        <source src="{{ asset('storage/' . $memo->file_path) }}" type="audio/mpeg">
+                                        Browser Anda tidak mendukung pemutar audio.
+                                    </audio>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Mutasi Kas Shift Ini & Koreksi Cepat di Tempat (In-Place Edit) --}}
+                <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">📋</span>
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-white">Mutasi Kas Shift Ini</h3>
+                                <span class="text-[10px] text-slate-400">Ada salah ketik tadi siang? Koreksi langsung di sini</span>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">
+                            {{ count($cashTransactions) }} mutasi
+                        </span>
+                    </div>
+
+                    @if(count($cashTransactions) === 0)
+                        <div class="py-4 text-center text-slate-500 text-xs">
+                            Belum ada mutasi kas fisik yang tercatat untuk shift ini.
+                        </div>
+                    @else
+                        <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                            @foreach($cashTransactions as $tx)
+                                @php
+                                    $isReversed = \App\Models\Transaction::where('metadata->reversed_transaction_id', $tx->id)->exists();
+                                    $isReversal = $tx->type === 'reversal';
+                                @endphp
+                                <div class="p-3 bg-slate-900/70 border border-slate-700/50 rounded-xl flex items-center justify-between text-xs {{ $isReversed ? 'opacity-40' : '' }}">
+                                    <div class="flex-1 pr-2">
+                                        <span class="font-bold text-white block">{{ $tx->description }}</span>
+                                        <span class="text-[10px] text-slate-400">
+                                            {{ $tx->transaction_time ? $tx->transaction_time->format('H:i') : '' }} &bull; 
+                                            <span class="uppercase font-semibold text-slate-300">{{ $tx->type }}</span>
+                                            @if($isReversed)
+                                                &bull; <span class="text-rose-400 font-semibold">(Telah Dikoreksi)</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="text-right flex items-center space-x-2">
+                                        <span class="font-bold text-white block">
+                                            Rp {{ number_format($tx->amount, 0, ',', '.') }}
+                                        </span>
+                                        @if(!$isReversed && !$isReversal)
+                                            <button 
+                                                type="button" 
+                                                onclick="openCorrectModal('{{ $tx->id }}', '{{ addslashes($tx->description) }}', '{{ $tx->amount }}')"
+                                                class="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg text-[10px] font-bold transition flex items-center space-x-1"
+                                                title="Koreksi Nominal"
+                                            >
+                                                <span>✏️</span>
+                                                <span>Koreksi</span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -297,6 +407,20 @@
 
         function closeModal(id) {
             document.getElementById(id)?.classList.add('hidden');
+        }
+
+        function openCorrectModal(txId, desc, currentAmount) {
+            const form = document.getElementById('form-correct-tx');
+            if (form) {
+                form.action = '/closing/{{ $workDay->id }}/transactions/' + txId + '/correct';
+            }
+            const descEl = document.getElementById('correct-tx-desc');
+            if (descEl) descEl.innerText = desc;
+            const currentEl = document.getElementById('correct-tx-current');
+            if (currentEl) currentEl.innerText = 'Rp ' + Number(currentAmount).toLocaleString('id-ID');
+            const inputEl = document.getElementById('correct-new-amount');
+            if (inputEl) inputEl.value = currentAmount;
+            openModal('modal-correct-closing-tx');
         }
     </script>
 
@@ -357,6 +481,69 @@
                     </button>
                     <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow">
                         Simpan & Seimbangkan Saldo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Koreksi Transaksi Kas di Tempat --}}
+    <div id="modal-correct-closing-tx" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">✏️</span>
+                    <h3 class="text-base font-bold text-white">Koreksi Transaksi Kas</h3>
+                </div>
+                <button type="button" onclick="closeModal('modal-correct-closing-tx')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            <form id="form-correct-tx" method="POST" action="" class="space-y-4">
+                @csrf
+                <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-xs space-y-1">
+                    <span class="text-slate-400 block">Transaksi yang dikoreksi:</span>
+                    <span id="correct-tx-desc" class="font-bold text-white block"></span>
+                    <span class="text-slate-400 block mt-1">Nominal saat ini: <span id="correct-tx-current" class="text-amber-400 font-bold"></span></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Nominal Sebenarnya (Rp) <span class="text-emerald-400">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        inputmode="numeric" 
+                        pattern="[0-9]*" 
+                        name="new_amount" 
+                        id="correct-new-amount" 
+                        min="0" 
+                        required 
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Alasan Koreksi <span class="text-rose-400">*</span>
+                    </label>
+                    <textarea 
+                        name="reason" 
+                        required 
+                        rows="2" 
+                        placeholder="Contoh: Salah ketik nominal tadi siang, struk bensin aslinya Rp40.000..." 
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    ></textarea>
+                    <span class="text-[10px] text-slate-400 block mt-1">
+                        Minimal 5 karakter. Transaksi lama akan dibalikkan dan dicatat ke audit log.
+                    </span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-correct-closing-tx')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">
+                        Simpan Koreksi
                     </button>
                 </div>
             </form>

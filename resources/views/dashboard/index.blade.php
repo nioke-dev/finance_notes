@@ -351,7 +351,7 @@
                         <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Aksi Operasional Narik</h4>
                         <span class="text-[11px] text-slate-400">Aksi cepat saat sedang di jalan</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
                         <button type="button" onclick="openModal('modal-open-day')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">🌅</span>
                             <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Buka Hari Baru</span>
@@ -376,6 +376,12 @@
                             <span class="text-[10px] text-slate-400">Mandiri / Ditanggung Resto</span>
                         </button>
 
+                        <button type="button" onclick="openModal('modal-field-incidental')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🛠️</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Biaya Serba-serbi</span>
+                            <span class="text-[10px] text-slate-400">Tambal ban, baut, dsb.</span>
+                        </button>
+
                         <button type="button" onclick="openModal('modal-lend-friend')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">🤝</span>
                             <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Kas Dipinjam Teman</span>
@@ -398,7 +404,7 @@
                         <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi Layaknya Manusia</h4>
                         <span class="text-[11px] text-slate-400">Belanja, sarapan, belanja Shopee SPayLater, pinjaman, transfer</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                         <button type="button" onclick="openModal('modal-expense')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">🍜</span>
                             <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Pengeluaran</span>
@@ -409,6 +415,12 @@
                             <span class="text-lg block mb-1">💰</span>
                             <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pemasukan Lain</span>
                             <span class="text-[10px] text-slate-400">Jual barang, project luar</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-field-incidental')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🛠️</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Biaya Serba-serbi</span>
+                            <span class="text-[10px] text-slate-400">Insidental / darurat</span>
                         </button>
 
                         <button type="button" onclick="openModal('modal-spaylater-purchase')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
@@ -1408,6 +1420,97 @@
                     <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
                         <button type="button" onclick="closeModal('modal-cash-withdraw')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Catat Tarik Tunai</button>
+                    </div>
+                </form>
+            @endif
+        </div>
+    </div>
+
+    {{-- 17. Modal Biaya Serba-serbi & Insidental Lapangan --}}
+    <div id="modal-field-incidental" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">🛠️</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Biaya Serba-serbi & Lapangan</h3>
+                        <p class="text-[11px] text-slate-400">Tambal ban, lakban packing, bohlam sen, baut lepas, dll.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-field-incidental')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            @if(!$currentWorkDay)
+                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
+                    ⚠️ Silakan buka hari terlebih dahulu sebelum mencatat pengeluaran serba-serbi.
+                </div>
+            @else
+                <form method="POST" action="{{ route('operational.field-incidental-expense') }}" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Keperluan / Keterangan Bebas <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="description" 
+                            required 
+                            placeholder="Contoh: Tambal ban belakang, Beli lakban ShopeeFood, Bohlam lampu"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <div class="flex flex-wrap gap-1.5 mt-2">
+                            <button type="button" onclick="document.querySelector('#modal-field-incidental input[name=description]').value = 'Tambal ban bocor'; document.getElementById('input-incidental-amount').value = 15000" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">🚲 Tambal Ban (15k)</button>
+                            <button type="button" onclick="document.querySelector('#modal-field-incidental input[name=description]').value = 'Beli lakban packing Shopee'; document.getElementById('input-incidental-amount').value = 10000" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">📦 Lakban (10k)</button>
+                            <button type="button" onclick="document.querySelector('#modal-field-incidental input[name=description]').value = 'Ganti bohlam lampu sen motor'; document.getElementById('input-incidental-amount').value = 12000" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">💡 Bohlam Sen (12k)</button>
+                            <button type="button" onclick="document.querySelector('#modal-field-incidental input[name=description]').value = 'Tambah angin nitrogen'; document.getElementById('input-incidental-amount').value = 5000" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">💨 Angin Ban (5k)</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Nominal Pengeluaran (Rp) <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            name="amount" 
+                            id="input-incidental-amount"
+                            required 
+                            min="500" 
+                            step="500"
+                            placeholder="15000"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <div class="flex space-x-2 mt-2">
+                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 5000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">5k</button>
+                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 10000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">10k</button>
+                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 15000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">15k</button>
+                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 20000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">20k</button>
+                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Sumber Dana (Bayar Pakai Apa?) <span class="text-rose-400">*</span>
+                        </label>
+                        <select name="source_account_id" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            @if($cashAccObj)
+                                <option value="{{ $cashAccObj->id }}" selected>💵 Kas Dompet (Fisik Cash) - Saldo: Rp {{ number_format($cashAccObj->current_balance, 0, ',', '.') }}</option>
+                            @endif
+                            @foreach($digitalAccs as $acc)
+                                <option value="{{ $acc->id }}">💳 {{ $acc->name }} (QRIS / Transfer) - Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }}</option>
+                            @endforeach
+                        </select>
+                        <span class="text-[10px] text-slate-400 block mt-1">Default memotong Kas Dompet, bisa diganti jika bayar via QRIS BCA/SeaBank.</span>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                        <button type="button" onclick="closeModal('modal-field-incidental')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Catat Biaya Lapangan</button>
                     </div>
                 </form>
             @endif

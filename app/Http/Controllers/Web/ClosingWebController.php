@@ -22,11 +22,24 @@ class ClosingWebController extends Controller
         $denominations = CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
         $reconciliationReport = $reconciliationService->reconcileWorkDay($workDay, []);
 
+        $cashAccount = Account::where('name', 'Cash')->first();
+        $cashTransactions = \App\Models\Transaction::where('work_day_id', $workDay->id)
+            ->whereHas('ledgerEntries', function ($q) use ($cashAccount) {
+                if ($cashAccount) {
+                    $q->where('account_id', $cashAccount->id);
+                }
+            })
+            ->with(['ledgerEntries.account'])
+            ->orderBy('transaction_time', 'desc')
+            ->get();
+
         return view('closing.show', compact(
             'workDay',
             'accounts',
+            'cashAccount',
             'denominations',
-            'reconciliationReport'
+            'reconciliationReport',
+            'cashTransactions'
         ));
     }
 
@@ -120,5 +133,88 @@ class ClosingWebController extends Controller
         );
 
         return redirect()->back()->with('success', 'Penyesuaian selisih kas fisik berhasil dicatat. Saldo kas kini telah seimbang dan siap difinalisasi!');
+    }
+
+    /**
+     * Koreksi Transaksi Kas Langsung di Layar Closing (In-Place Edit)
+     */
+    public function correctTransaction(
+        Request $request,
+        int $id,
+        int $transactionId,
+        \App\Services\ReversalService $reversalService,
+        \App\Services\LedgerService $ledgerService
+    ): RedirectResponse {
+        $workDay = WorkDay::findOrFail($id);
+        $originalTx = \App\Models\Transaction::with('ledgerEntries')
+            ->where('work_day_id', $workDay->id)
+            ->findOrFail($transactionId);
+
+        $validated = $request->validate([
+            'new_amount' => 'required|integer|min:0',
+            'reason' => 'required|string|min:5',
+        ]);
+
+        $newAmount = (int) $validated['new_amount'];
+        $reason = trim($validated['reason']);
+
+        if ($originalTx->type === 'reversal') {
+            return redirect()->back()->with('error', 'Transaksi pembalik (reversal) tidak dapat dikoreksi.');
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use (
+            $workDay,
+            $originalTx,
+            $newAmount,
+            $reason,
+            $reversalService,
+            $ledgerService
+        ) {
+            // 1. Batalkan (reverse) transaksi lama secara akuntansi
+            $reversalService->reverseTransaction(
+                originalTransaction: $originalTx,
+                reason: "Koreksi closing: {$reason}"
+            );
+
+            // 2. Jika nominal baru > 0, buat transaksi baru pengganti yang valid
+            if ($newAmount > 0) {
+                $newEntries = [];
+                foreach ($originalTx->ledgerEntries as $entry) {
+                    $newEntries[] = [
+                        'account_id' => $entry->account_id,
+                        'entry_type' => $entry->entry_type,
+                        'amount' => $newAmount,
+                    ];
+                }
+
+                $desc = "Koreksi #{$originalTx->id}: {$originalTx->description}";
+                $ledgerService->recordTransaction(
+                    workDay: $workDay,
+                    type: $originalTx->type,
+                    description: $desc,
+                    transactionTime: $originalTx->transaction_time,
+                    entries: $newEntries,
+                    isEstimatedTime: false,
+                    metadata: array_merge($originalTx->metadata ?? [], [
+                        'corrected_from_transaction_id' => $originalTx->id,
+                        'correction_reason' => $reason,
+                        'original_amount' => $originalTx->amount,
+                        'new_amount' => $newAmount,
+                    ])
+                );
+            }
+
+            // 3. Catat ke AuditLog
+            \App\Models\AuditLog::create([
+                'auditable_type' => \App\Models\Transaction::class,
+                'auditable_id' => $originalTx->id,
+                'action' => 'in_place_closing_correction',
+                'old_values' => ['amount' => $originalTx->amount],
+                'new_values' => ['amount' => $newAmount],
+                'reason' => $reason,
+            ]);
+        });
+
+        return redirect()->back()->with('success', "Transaksi #{$originalTx->id} berhasil dikoreksi menjadi Rp " . number_format($newAmount, 0, ',', '.') . ". Selisih kas otomatis disesuaikan!");
     }
 }

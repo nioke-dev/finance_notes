@@ -399,6 +399,58 @@ class OperationalWebController extends Controller
     }
 
     /**
+     * Catat Biaya Serba-serbi & Insidental Lapangan (Tambal ban, lakban, lampu sen, dsb)
+     */
+    public function storeFieldIncidentalExpense(
+        Request $request,
+        LedgerService $ledgerService
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'work_day_id' => 'required|exists:work_days,id',
+            'description' => 'required|string|max:255',
+            'amount' => 'required|integer|min:500',
+            'source_account_id' => 'nullable|exists:accounts,id',
+        ]);
+
+        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        
+        $sourceAccount = !empty($validated['source_account_id'])
+            ? Account::findOrFail($validated['source_account_id'])
+            : Account::where('name', 'Cash')->firstOrFail();
+
+        $expenseAccount = Account::firstOrCreate(
+            ['name' => 'Beban Serba-serbi & Insidental Lapangan'],
+            [
+                'type' => AccountType::EXPENSE,
+                'current_balance' => 0,
+                'initial_balance' => 0,
+                'is_active' => true,
+            ]
+        );
+
+        $amount = (int) $validated['amount'];
+        $desc = "Biaya Serba-serbi: " . trim($validated['description']);
+
+        $ledgerService->recordTransaction(
+            workDay: $workDay,
+            type: 'expense',
+            description: $desc,
+            transactionTime: now(),
+            entries: [
+                ['account_id' => $sourceAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $amount],
+                ['account_id' => $expenseAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $amount],
+            ],
+            isEstimatedTime: false,
+            metadata: [
+                'type' => 'field_incidental_expense',
+                'description' => $validated['description'],
+            ]
+        );
+
+        return redirect()->back()->with('success', "Biaya serba-serbi '{$validated['description']}' (Rp " . number_format($amount, 0, ',', '.') . ") berhasil dicatat memotong {$sourceAccount->name}.");
+    }
+
+    /**
      * Pemasukan Pribadi di Luar Driver (Project, Jual Barang, Hadiah)
      */
     public function storePersonalIncome(

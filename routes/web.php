@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/closing/{id}/denominations', [ClosingWebController::class, 'saveDenominations'])->name('closing.denominations');
     Route::post('/closing/{id}/finalize', [ClosingWebController::class, 'finalize'])->name('closing.finalize');
     Route::post('/closing/{id}/adjust-discrepancy', [ClosingWebController::class, 'adjustDiscrepancy'])->name('closing.adjust-discrepancy');
+    Route::post('/closing/{id}/transactions/{transactionId}/correct', [ClosingWebController::class, 'correctTransaction'])->name('closing.transactions.correct');
 
     // Operational Actions Form Submissions
     Route::post('/operational/open-day', [\App\Http\Controllers\Web\OperationalWebController::class, 'openWorkDay'])->name('operational.open-day');
@@ -49,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/transfer', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeTransfer'])->name('operational.transfer');
     Route::post('/operational/personal-expense', [\App\Http\Controllers\Web\OperationalWebController::class, 'storePersonalExpense'])->name('operational.personal-expense');
     Route::post('/operational/personal-income', [\App\Http\Controllers\Web\OperationalWebController::class, 'storePersonalIncome'])->name('operational.personal-income');
+    Route::post('/operational/field-incidental-expense', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFieldIncidentalExpense'])->name('operational.field-incidental-expense');
     Route::post('/operational/debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeDebt'])->name('operational.debt');
     Route::post('/operational/spaylater-purchase', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeSPayLaterPurchase'])->name('operational.spaylater-purchase');
     Route::post('/operational/pay-installment', [\App\Http\Controllers\Web\OperationalWebController::class, 'payInstallment'])->name('operational.pay-installment');
