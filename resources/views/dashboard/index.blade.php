@@ -922,11 +922,11 @@
     </div>
 
     {{-- 12. Modal Inisialisasi Saldo Akun PERTAMA KALI (Sekali Seumur Hidup & Terkunci) --}}
-    <div id="modal-init-account" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+    <div id="modal-init-account" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-xl w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center space-x-2 mb-1">
                 <span class="text-xl">🔒</span>
-                <h3 class="text-base font-bold text-white">Inisialisasi Saldo Awal (Modal Tetap)</h3>
+                <h3 class="text-base font-bold text-white">Inisialisasi Saldo Awal (Modal Baseline)</h3>
             </div>
             <p class="text-xs text-slate-400 mb-4">
                 Saldo awal ini menjadi titik awal (baseline) pembukuan akun Anda. Setelah dikunci, saldo ini tidak dapat diubah-ubah bebas agar laporan keuangan tetap presisi.
@@ -935,25 +935,71 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Akun yang Belum Dikunci</label>
-                    <select name="account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <select name="account_id" id="init_account_select" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                         @foreach($accounts->where('initial_balance', 0) as $acc)
-                            <option value="{{ $acc->id }}">{{ $acc->name }} (Saat ini: Rp 0)</option>
+                            <option value="{{ $acc->id }}" data-type="{{ $acc->type->value }}">{{ $acc->name }} ({{ strtoupper($acc->type->value) }} &bull; Saat ini: Rp 0)</option>
                         @endforeach
                         @if($accounts->where('initial_balance', 0)->isEmpty())
                             <option value="" disabled selected>Semua akun sudah memiliki saldo awal terkunci</option>
                         @endif
                     </select>
                 </div>
+
+                {{-- Kalkulator Denominasi Khusus Kas Tunai --}}
+                <div id="init-denom-section" class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">💵 Hitung Lembar & Koin Fisik (Kas Dompet)</span>
+                        <span class="text-[10px] text-slate-400">Otomatis hitung ke nominal</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        @foreach([100000, 50000, 20000, 10000, 5000, 2000, 1000] as $nom)
+                            <div class="bg-slate-800 border border-slate-700 rounded-lg p-2">
+                                <label class="text-[10px] font-bold text-slate-300 block mb-1">
+                                    Rp {{ number_format($nom, 0, ',', '.') }}
+                                </label>
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    name="bill_{{ $nom }}" 
+                                    id="init_bill_{{ $nom }}" 
+                                    value="0"
+                                    class="init-denom-input w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-bold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                                >
+                            </div>
+                        @endforeach
+                        @foreach([1000, 500, 200, 100] as $nom)
+                            <div class="bg-slate-800 border border-slate-700 rounded-lg p-2">
+                                <label class="text-[10px] font-bold text-slate-300 block mb-1">
+                                    🪙 Rp {{ number_format($nom, 0, ',', '.') }}
+                                </label>
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    name="coin_{{ $nom }}" 
+                                    id="init_coin_{{ $nom }}" 
+                                    value="0"
+                                    class="init-denom-input w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-bold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                                >
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-2.5 flex justify-between items-center text-xs">
+                        <span id="init-denom-pieces" class="text-slate-400">0 lembar/koin</span>
+                        <span id="init-denom-total" class="font-bold text-emerald-400">Rp 0</span>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Saldo Modal Awal (Rp)</label>
-                    <input type="number" name="amount" min="0" placeholder="Contoh: 500000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <input type="number" name="amount" id="init_account_amount" min="0" placeholder="Contoh: 500000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold">
+                    <span class="text-[10px] text-slate-400 mt-1 block">Untuk rekening Bank / E-Wallet, ketik langsung saldo riil m-banking Anda. Untuk Kas fisik, nominal di atas terisi otomatis dari hitungan pecahan.</span>
                 </div>
                 <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300">
                     ⚠️ <strong>Penting:</strong> Masukkan jumlah riil yang ada di rekening/dompet Anda saat mulai memakai aplikasi ini.
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-init-account')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Kunci Saldo Awal</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Kunci Saldo Awal</button>
                 </div>
             </form>
         </div>
@@ -1039,6 +1085,63 @@
             input.addEventListener('input', calculateOpenDayTotal);
         });
         calculateOpenDayTotal();
+
+        // Kalkulator Denominasi Modal Awal Akun
+        const initDenoms = {
+            'init_bill_100000': 100000,
+            'init_bill_50000': 50000,
+            'init_bill_20000': 20000,
+            'init_bill_10000': 10000,
+            'init_bill_5000': 5000,
+            'init_bill_2000': 2000,
+            'init_bill_1000': 1000,
+            'init_coin_1000': 1000,
+            'init_coin_500': 500,
+            'init_coin_200': 200,
+            'init_coin_100': 100
+        };
+
+        function calculateInitDenomTotal() {
+            let total = 0;
+            let pieces = 0;
+            for (const [id, value] of Object.entries(initDenoms)) {
+                const el = document.getElementById(id);
+                if (el) {
+                    const count = parseInt(el.value) || 0;
+                    total += count * value;
+                    pieces += count;
+                }
+            }
+            const totalEl = document.getElementById('init-denom-total');
+            const piecesEl = document.getElementById('init-denom-pieces');
+            const amountInput = document.getElementById('init_account_amount');
+            if (totalEl) totalEl.innerText = 'Rp ' + total.toLocaleString('id-ID');
+            if (piecesEl) piecesEl.innerText = pieces + ' lembar/koin';
+            if (total > 0 && amountInput) {
+                amountInput.value = total;
+            }
+        }
+
+        document.querySelectorAll('.init-denom-input').forEach(input => {
+            input.addEventListener('input', calculateInitDenomTotal);
+        });
+
+        const initAccSelect = document.getElementById('init_account_select');
+        const initDenomSection = document.getElementById('init-denom-section');
+        function checkInitAccountType() {
+            if (!initAccSelect || !initDenomSection) return;
+            const opt = initAccSelect.options[initAccSelect.selectedIndex];
+            const type = opt ? opt.getAttribute('data-type') : '';
+            if (type === 'cash') {
+                initDenomSection.classList.remove('hidden');
+            } else {
+                initDenomSection.classList.add('hidden');
+            }
+        }
+        if (initAccSelect) {
+            initAccSelect.addEventListener('change', checkInitAccountType);
+            checkInitAccountType();
+        }
 
         function toggleParkingAmount(chk) {
             const div = document.getElementById('div-parking-amount');

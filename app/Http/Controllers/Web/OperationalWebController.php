@@ -113,19 +113,48 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'account_id' => 'required|exists:accounts,id',
-            'amount' => 'required|integer|min:0',
+            'amount' => 'nullable|integer|min:0',
             'reason' => 'nullable|string|min:5',
+            'bill_100000' => 'nullable|integer|min:0',
+            'bill_50000' => 'nullable|integer|min:0',
+            'bill_20000' => 'nullable|integer|min:0',
+            'bill_10000' => 'nullable|integer|min:0',
+            'bill_5000' => 'nullable|integer|min:0',
+            'bill_2000' => 'nullable|integer|min:0',
+            'bill_1000' => 'nullable|integer|min:0',
+            'coin_1000' => 'nullable|integer|min:0',
+            'coin_500' => 'nullable|integer|min:0',
+            'coin_200' => 'nullable|integer|min:0',
+            'coin_100' => 'nullable|integer|min:0',
         ]);
+
+        $calculatedDenom = \App\Models\CashDenomination::calculateSum($request->all());
+        $amount = $calculatedDenom > 0 ? $calculatedDenom : (int) ($validated['amount'] ?? 0);
 
         $account = Account::findOrFail($validated['account_id']);
         if ($account->initial_balance == 0) {
-            $initialBalanceService->setInitialBalance($account, (int) $validated['amount']);
+            $initialBalanceService->setInitialBalance($account, $amount);
         } else {
             $reason = $validated['reason'] ?? "Koreksi saldo awal akun {$account->name}";
-            $initialBalanceService->correctInitialBalance($account, (int) $validated['amount'], $reason);
+            $initialBalanceService->correctInitialBalance($account, $amount, $reason);
         }
 
-        return redirect()->back()->with('success', "Saldo awal akun {$account->name} berhasil diperbarui.");
+        // Jika akun bertipe Kas dan ada rincian pecahan fisik, simpan/update ke shift aktif hari ini jika ada
+        if ($account->type === AccountType::CASH && $calculatedDenom > 0) {
+            $todayWorkDay = WorkDay::whereDate('work_date', now()->toDateString())->first();
+            if ($todayWorkDay) {
+                $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $todayWorkDay->id]);
+                $denom->fill($request->only([
+                    'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
+                    'bill_5000', 'bill_2000', 'bill_1000',
+                    'coin_1000', 'coin_500', 'coin_200', 'coin_100'
+                ]));
+                $denom->total_physical_amount = $calculatedDenom;
+                $denom->save();
+            }
+        }
+
+        return redirect()->back()->with('success', "Saldo awal akun {$account->name} berhasil diperbarui (Rp" . number_format($amount, 0, ',', '.') . ").");
     }
 
     /**
