@@ -44,77 +44,173 @@
             </div>
         @endif
 
-        {{-- ACTION HUB: Panel Tombol Aksi Operasional Utama --}}
-        <div id="tour-action-hub" class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-3 border-b border-slate-700/60">
+        {{-- FILTER TANGGAL HARIAN & HEADER AKTIVITAS --}}
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">📅</span>
                 <div>
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-white flex items-center space-x-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                        <span>Action Hub: Input Operasional Driver</span>
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">
-                        Pilih aksi untuk mencatat aktivitas keuangan secara presisi langsung dari web browser.
+                    <h3 class="text-sm font-bold text-white">Evaluasi & Filter Aktivitas Harian</h3>
+                    <p class="text-xs text-slate-400">Pilih tanggal untuk melihat breakdown pendapatan narik & pengeluaran hari tersebut.</p>
+                </div>
+            </div>
+            <form method="GET" action="/dashboard" class="flex items-center space-x-2 w-full sm:w-auto">
+                <input type="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <button type="submit" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl">Filter</button>
+            </form>
+        </div>
+
+        {{-- 1. KOTAK KINERJA HARIAN DRIVER SHOPEEFOOD (Breakdown Pendapatan Bersih vs Kotor) --}}
+        <div id="tour-driver-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-slate-700/60">
+                <div>
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold mb-2">
+                        <span>🛵</span>
+                        <span>Performa ShopeeFood Tanggal: {{ \Illuminate\Support\Carbon::parse($selectedDate)->translatedFormat('l, d F Y') }}</span>
+                    </div>
+                    <div class="flex items-baseline space-x-3">
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-white">
+                            Rp {{ number_format($dayNetProfit, 0, ',', '.') }}
+                        </h2>
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                            Profit Bersih Narik (Netto)
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">
+                        (Pendapatan Kotor: Rp {{ number_format($dayTotalIncome, 0, ',', '.') }} &bull; Pengeluaran Operasional On-Beat: Rp {{ number_format($dayFuelExpense + $dayParkingExpense, 0, ',', '.') }})
                     </p>
                 </div>
-                <div class="flex items-center space-x-2">
-                    {{-- Tombol Mulai Tour Interaktif --}}
-                    <button type="button" onclick="startDriverTour()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition flex items-center space-x-1.5 shadow">
-                        <span>✨</span>
-                        <span>Mulai Panduan Interaktif</span>
-                    </button>
 
+                <div class="flex flex-wrap gap-2.5">
                     @if($currentWorkDay)
-                        <span class="text-xs font-semibold px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Shift: {{ $currentWorkDay->work_date->format('d M Y') }}
-                        </span>
-                        <a id="tour-closing-btn" href="/closing/{{ $currentWorkDay->id }}" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition shadow">
-                            Closing Kas Shift Ini &rarr;
+                        <a id="tour-closing-btn" href="/closing/{{ $currentWorkDay->id }}" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5">
+                            <span>🔒</span>
+                            <span>Closing Kas Shift Ini &rarr;</span>
                         </a>
-                    @else
-                        <span class="text-xs font-semibold px-3 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                            Belum Ada Shift Terbuka
-                        </span>
                     @endif
+                    <button type="button" onclick="startDriverTour()" class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition flex items-center space-x-1.5 shadow">
+                        <span>✨</span>
+                        <span>Panduan Animasi</span>
+                    </button>
                 </div>
             </div>
 
-            {{-- Tombol Pemicu Modal Aksi --}}
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                <button id="tour-btn-open-day" type="button" onclick="openModal('modal-open-day')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
-                    <span class="text-lg block mb-1">🌅</span>
-                    <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Buka Shift</span>
-                    <span class="text-[10px] text-slate-400">Modal Kas Shift</span>
-                </button>
+            {{-- Breakdown Grid 4 Metrik Utama --}}
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
+                {{-- Pendapatan Reguler --}}
+                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3.5">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">1. Ongkir / Tagihan COD</span>
+                    <span class="text-lg font-bold text-white mt-1 block">
+                        Rp {{ number_format($dayRegularIncome, 0, ',', '.') }}
+                    </span>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Dari {{ $dayOrdersCount }} pesanan hari ini</span>
+                </div>
 
-                <button id="tour-btn-fuel" type="button" onclick="openModal('modal-fuel')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
-                    <span class="text-lg block mb-1">⛽</span>
-                    <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Beli Bensin</span>
-                    <span class="text-[10px] text-slate-400">SPBU / Madura</span>
-                </button>
+                {{-- Tip Pelanggan --}}
+                <div class="bg-slate-900/80 border border-emerald-500/20 rounded-xl p-3.5">
+                    <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block">2. Tip Bersih Pelanggan</span>
+                    <span class="text-lg font-bold text-emerald-400 mt-1 block">
+                        +Rp {{ number_format($dayTipIncome, 0, ',', '.') }}
+                    </span>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Surplus uang kembalian ikhlas</span>
+                </div>
 
-                <button id="tour-btn-parking" type="button" onclick="openModal('modal-parking')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
-                    <span class="text-lg block mb-1">🅿️</span>
-                    <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Motor</span>
-                    <span class="text-[10px] text-slate-400">Cepat Rp2.000 / Resto</span>
-                </button>
+                {{-- Bensin Motor --}}
+                <div class="bg-slate-900/80 border border-rose-500/20 rounded-xl p-3.5">
+                    <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider block">3. Biaya Bensin (BBM)</span>
+                    <span class="text-lg font-bold text-rose-400 mt-1 block">
+                        -Rp {{ number_format($dayFuelExpense, 0, ',', '.') }}
+                    </span>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Beban motor operasional</span>
+                </div>
 
-                <button id="tour-btn-cod" type="button" onclick="openModal('modal-cod')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
-                    <span class="text-lg block mb-1">💵</span>
-                    <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Pesanan COD</span>
-                    <span class="text-[10px] text-slate-400">Tagihan & Uang Kas</span>
-                </button>
+                {{-- Biaya Parkir & Resto Free --}}
+                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3.5">
+                    <span class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block">4. Parkir Motor Driver</span>
+                    <span class="text-lg font-bold text-amber-400 mt-1 block">
+                        -Rp {{ number_format($dayParkingExpense, 0, ',', '.') }}
+                    </span>
+                    <span class="text-[10px] text-emerald-400 font-semibold block mt-0.5">
+                        ✓ {{ $dayRestoPaidParkingCount }} resto gratis / ditanggung
+                    </span>
+                </div>
+            </div>
+        </div>
 
-                <button id="tour-btn-transfer" type="button" onclick="openModal('modal-transfer')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
-                    <span class="text-lg block mb-1">🔄</span>
-                    <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Transfer Saldo</span>
-                    <span class="text-[10px] text-slate-400">Tarik Tunai / E-Wallet</span>
+        {{-- TAB NAVIGASI: PEMISAHAN ANTARA OPERASIONAL DRIVER (ON-BID) VS KEBUTUHAN SEHARI-HARI --}}
+        <div>
+            <div class="flex border-b border-slate-700/80 space-x-2">
+                <button type="button" onclick="switchTab('tab-onbeat')" id="btn-tab-onbeat" class="tab-button px-5 py-3 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>🛵 Mode On-Bid: Operasional Narik ShopeeFood</span>
                 </button>
+                <button type="button" onclick="switchTab('tab-daily')" id="btn-tab-daily" class="tab-button px-5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
+                    <span>☕</span>
+                    <span>Kebutuhan Sehari-hari (Di Luar On-Bid)</span>
+                </button>
+            </div>
 
-                <button id="tour-btn-expense" type="button" onclick="openModal('modal-expense')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
-                    <span class="text-lg block mb-1">🍜</span>
-                    <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Beban Pribadi</span>
-                    <span class="text-[10px] text-slate-400">Makan & Jajan Driver</span>
-                </button>
+            {{-- 1. TAB KONTEN ON-BID DRIVER --}}
+            <div id="tab-onbeat" class="tab-content py-4 space-y-4">
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Aksi Operasional Narik</h4>
+                        <span class="text-[11px] text-slate-400">Aksi cepat saat sedang di jalan</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button type="button" onclick="openModal('modal-open-day')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🌅</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Buka Shift Narik</span>
+                            <span class="text-[10px] text-slate-400">Modal Kas Kembalian</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-cod')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">💵</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Pesanan COD</span>
+                            <span class="text-[10px] text-slate-400">Tagihan & Tip Customer</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-fuel')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">⛽</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Beli Bensin</span>
+                            <span class="text-[10px] text-slate-400">SPBU / Warung Madura</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-parking')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🅿️</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Motor</span>
+                            <span class="text-[10px] text-slate-400">Mandiri / Ditanggung Resto</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 2. TAB KONTEN KEBUTUHAN SEHARI-HARI --}}
+            <div id="tab-daily" class="tab-content py-4 space-y-4 hidden">
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi</h4>
+                        <span class="text-[11px] text-slate-400">Makan pagi/malam, belanja dapur, transfer tabungan</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <button type="button" onclick="openModal('modal-expense')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🍜</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Pengeluaran Pribadi</span>
+                            <span class="text-[10px] text-slate-400">Sarapan, jajan, rokok, kebutuhan rumah</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-transfer')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🔄</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pindah Uang / Tarik Tunai</span>
+                            <span class="text-[10px] text-slate-400">Transfer antar BCA, ShopeePay, DANA</span>
+                        </button>
+
+                        <a href="/debts" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group block">
+                            <span class="text-lg block mb-1">💳</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Bayar Cicilan / SPayLater</span>
+                            <span class="text-[10px] text-slate-400">Kelola tagihan & utang teman</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -194,7 +290,7 @@
         {{-- Riwayat Transaksi Terbaru --}}
         @if($recentTransactions->isNotEmpty())
             <div id="tour-recent-tx" class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow">
-                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">10 Transaksi Terakhir</h3>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">15 Transaksi Terakhir</h3>
                 <div class="divide-y divide-slate-700/50">
                     @foreach($recentTransactions as $tx)
                         <div class="py-3 flex justify-between items-center text-xs">
@@ -276,21 +372,28 @@
         </div>
     </div>
 
-    {{-- 3. Modal Parkir Motor --}}
+    {{-- 3. Modal Parkir Motor (Mendukung Parkir Mandiri vs Ditanggung Resto) --}}
     <div id="modal-parking" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
-            <h3 class="text-base font-bold text-white mb-1">🅿️ Catat Parkir Motor</h3>
-            <p class="text-xs text-slate-400 mb-4">Pengeluaran kas tunai fisik untuk parkir resto.</p>
+            <h3 class="text-base font-bold text-white mb-1">🅿️ Catat Parkir Motor Driver</h3>
+            <p class="text-xs text-slate-400 mb-4">Catat pengeluaran parkir atau resto yang menggratiskan parkir driver.</p>
             <form method="POST" action="/operational/parking" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Resto / Titik Parkir</label>
-                    <input type="text" name="restaurant_name" placeholder="Misal: Mie Gacoan Ciliwung" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Restoran / Lokasi</label>
+                    <input type="text" name="restaurant_name" placeholder="Misal: Mie Gacoan / McD / Kober" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Parkir (Rp)</label>
-                    <input type="number" name="amount" value="2000" min="500" step="500" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                <div class="p-3 bg-slate-900/80 border border-slate-700 rounded-xl">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" name="is_covered_by_resto" value="1" id="chk-covered" onchange="toggleParkingAmount(this)" class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500">
+                        <span class="text-xs font-bold text-emerald-400">Gratis / Ditanggung Restoran</span>
+                    </label>
+                    <p class="text-[10px] text-slate-400 mt-1 pl-6">Centang jika resto menyediakan parkir bebas biaya khusus driver (uang kas tidak akan dipotong).</p>
+                </div>
+                <div id="div-parking-amount">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Parkir Mandiri (Rp)</label>
+                    <input type="number" name="amount" id="input-parking-amount" value="2000" min="0" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-parking')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
@@ -371,17 +474,17 @@
         </div>
     </div>
 
-    {{-- 6. Modal Pengeluaran Pribadi --}}
+    {{-- 6. Modal Pengeluaran Pribadi Sehari-hari --}}
     <div id="modal-expense" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
-            <h3 class="text-base font-bold text-white mb-1">🍜 Pengeluaran Pribadi Driver</h3>
-            <p class="text-xs text-slate-400 mb-4">Catat makan siang, kopi, rokok, atau kebutuhan pribadi saat narik.</p>
+            <h3 class="text-base font-bold text-white mb-1">🍜 Pengeluaran Sehari-hari / Pribadi</h3>
+            <p class="text-xs text-slate-400 mb-4">Catat sarapan pagi, makan malam, kopi, belanja, atau kebutuhan rumah di luar operasional motor.</p>
             <form method="POST" action="/operational/personal-expense" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Deskripsi / Keterangan</label>
-                    <input type="text" name="description" placeholder="Makan siang nasi padang + es teh" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Pengeluaran</label>
+                    <input type="text" name="description" placeholder="Contoh: Sarapan pagi jam 7 sebelum narik" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan</label>
@@ -477,13 +580,45 @@
         </div>
     </div>
 
-    {{-- Script Modal Handling & Interactive Tour --}}
+    {{-- Script Modal Handling, Tabs, & Interactive Tour --}}
     <script>
         function openModal(id) {
             document.getElementById(id).classList.remove('hidden');
         }
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
+        }
+
+        function toggleParkingAmount(chk) {
+            const div = document.getElementById('div-parking-amount');
+            const input = document.getElementById('input-parking-amount');
+            if (chk.checked) {
+                div.classList.add('opacity-40', 'pointer-events-none');
+                input.value = 0;
+            } else {
+                div.classList.remove('opacity-40', 'pointer-events-none');
+                input.value = 2000;
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(el => {
+                el.classList.remove('border-emerald-500', 'text-emerald-400');
+                el.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+
+            if (tabId === 'tab-onbeat') {
+                const btn = document.getElementById('btn-tab-onbeat');
+                btn.classList.add('border-emerald-500', 'text-emerald-400');
+                btn.classList.remove('border-transparent', 'text-slate-400');
+            } else {
+                const btn = document.getElementById('btn-tab-daily');
+                btn.classList.add('border-indigo-500', 'text-indigo-400');
+                btn.classList.remove('border-transparent', 'text-slate-400');
+            }
         }
 
         // Interactive Tour menggunakan Driver.js
@@ -496,64 +631,46 @@
                 doneBtnText: 'Selesai & Paham',
                 steps: [
                     { 
-                        element: '#tour-action-hub', 
+                        element: '#tour-driver-summary', 
                         popover: { 
-                            title: '🚀 Action Hub (Operasional)', 
-                            description: 'Ini adalah pusat kendali input harian Anda. Seluruh aktivitas narik ShopeeFood (bensin, parkir, COD, makan) dicatat dari sini.',
+                            title: '🛵 Kinerja & Profit Bersih Harian', 
+                            description: 'Menampilkan pendapatan riil ShopeeFood harian Anda: Total Ongkir COD, Tip Bersih Customer, dikurangi Biaya Bensin & Parkir.',
                             side: "bottom", 
                             align: 'start' 
                         } 
                     },
                     { 
-                        element: '#tour-btn-open-day', 
+                        element: '#btn-tab-onbeat', 
                         popover: { 
-                            title: '🌅 1. Buka Shift Setiap Pagi', 
-                            description: 'Sebelum mulai narik orderan, klik tombol ini untuk membuka shift hari ini dan menginput uang fisik di dompet (uang pecahan untuk kembalian COD).',
+                            title: '🟢 Tab Mode On-Bid', 
+                            description: 'Gunakan tab ini khusus saat sedang aktif narik (Buka Shift Modal, Catat COD, Beli Bensin, dan Parkir Motor).',
                             side: "bottom", 
-                            align: 'center' 
+                            align: 'start' 
                         } 
                     },
                     { 
-                        element: '#tour-btn-fuel', 
+                        element: '#btn-tab-daily', 
                         popover: { 
-                            title: '⛽ 2. Catat Beli Bensin', 
-                            description: 'Saat isi bensin di SPBU atau Madura, langsung klik ini. Sistem otomatis menghitung liter bensin dan efisiensi konsumsi BBM motor Anda.',
+                            title: '☕ Tab Kebutuhan Sehari-Hari', 
+                            description: 'Pisahkan uang narik dengan kebutuhan hidup! Di sini tempat mencatat sarapan pagi jam 7, belanja pribadi, dan bayar tagihan PayLater.',
                             side: "bottom", 
-                            align: 'center' 
-                        } 
-                    },
-                    { 
-                        element: '#tour-btn-cod', 
-                        popover: { 
-                            title: '💵 3. Catat Orderan COD', 
-                            description: 'Saat dapat orderan COD dari resto ke customer, catat di sini. Jika customer kasih tip berlebih (kembalian diikhlaskan), sistem otomatis memisahkannya sebagai bonus tip Anda.',
-                            side: "bottom", 
-                            align: 'center' 
+                            align: 'start' 
                         } 
                     },
                     { 
                         element: '#tour-closing-btn', 
                         popover: { 
-                            title: '🔒 4. Closing Kas Malam Hari', 
-                            description: 'Setelah selesai narik, klik tombol ini untuk menghitung lembaran uang di dompet. Sistem akan mencocokkan uang fisik dengan catatan sampai selisihnya Rp0 (seimbang).',
+                            title: '🔒 Closing Kas Malam Hari', 
+                            description: 'Setelah selesai shift narik, klik tombol ini untuk hitung fisik kas di dompet sampai selisihnya Rp0 (seimbang sempurna).',
                             side: "bottom", 
                             align: 'end' 
-                        } 
-                    },
-                    { 
-                        element: '#tour-net-worth', 
-                        popover: { 
-                            title: '💰 Total Kekayaan Bersih (Net Worth)', 
-                            description: 'Kartu ini menghitung seluruh uang cair Anda (Kas Fisik + Rekening Bank + ShopeePay) dikurangi total utang/PayLater aktif.',
-                            side: "top", 
-                            align: 'center' 
                         } 
                     },
                     { 
                         element: '#tour-accounts-grid', 
                         popover: { 
                             title: '🏦 Daftar Akun & Kunci Saldo Awal', 
-                            description: 'Saldo awal akun di sini hanya diatur SEKALI seumur hidup saat pertama kali menggunakan aplikasi (tombol hijau Kunci Saldo). Setelah terkunci (Locked), saldo terlindungi agar pembukuan tidak berantakan.',
+                            description: 'Saldo modal awal diatur SEKALI saja saat pendaftaran akun baru agar tidak mengubah baseline keuangan.',
                             side: "top", 
                             align: 'center' 
                         } 
@@ -563,15 +680,5 @@
 
             driverObj.drive();
         }
-
-        // Jalankan tour otomatis saat pertama kali dibuka jika belum pernah melihatnya
-        window.addEventListener('DOMContentLoaded', () => {
-            if (!localStorage.getItem('driver_tour_completed')) {
-                setTimeout(() => {
-                    startDriverTour();
-                    localStorage.setItem('driver_tour_completed', 'true');
-                }, 800);
-            }
-        });
     </script>
 </x-layouts.app>

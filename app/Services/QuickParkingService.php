@@ -25,39 +25,60 @@ class QuickParkingService
         ?string $restaurantName = null,
         ?float $latitude = null,
         ?float $longitude = null,
-        ?Carbon $transactionTime = null
+        ?Carbon $transactionTime = null,
+        bool $isCoveredByResto = false
     ): Transaction {
         $cashAccount = Account::where('name', 'Cash')->firstOrFail();
         $parkingExpenseAccount = Account::where('name', 'Beban Parkir')->firstOrFail();
 
+        // Jika ditanggung resto, pengeluaran kas driver = Rp0
+        $effectiveCashDeduction = $isCoveredByResto ? 0 : $amount;
+
         $description = $restaurantName
-            ? "Parkir Motor: {$restaurantName}"
-            : "Parkir Motor Lapangan (Quick 1-Tap)";
+            ? ($isCoveredByResto ? "Parkir Motor (Gratis/Ditanggung Resto): {$restaurantName}" : "Parkir Motor: {$restaurantName}")
+            : ($isCoveredByResto ? "Parkir Motor (Gratis/Ditanggung Resto)" : "Parkir Motor Lapangan (Quick 1-Tap)");
 
         $metadata = [
             'type' => 'quick_parking',
             'restaurant_name' => $restaurantName,
             'latitude' => $latitude,
             'longitude' => $longitude,
+            'is_covered_by_resto' => $isCoveredByResto,
+            'original_fee' => $amount,
         ];
+
+        $entries = [];
+        if ($effectiveCashDeduction > 0) {
+            $entries[] = [
+                'account_id' => $cashAccount->id,
+                'entry_type' => EntryType::CREDIT,
+                'amount' => $effectiveCashDeduction,
+            ];
+            $entries[] = [
+                'account_id' => $parkingExpenseAccount->id,
+                'entry_type' => EntryType::DEBIT,
+                'amount' => $effectiveCashDeduction,
+            ];
+        } else {
+            // Entri balancing nol atau penanda catatan operasional
+            $entries[] = [
+                'account_id' => $cashAccount->id,
+                'entry_type' => EntryType::CREDIT,
+                'amount' => 0,
+            ];
+            $entries[] = [
+                'account_id' => $parkingExpenseAccount->id,
+                'entry_type' => EntryType::DEBIT,
+                'amount' => 0,
+            ];
+        }
 
         return $this->ledgerService->recordTransaction(
             workDay: $workDay,
             type: 'expense',
             description: $description,
             transactionTime: $transactionTime ?? now(),
-            entries: [
-                [
-                    'account_id' => $cashAccount->id,
-                    'entry_type' => EntryType::CREDIT,
-                    'amount' => $amount,
-                ],
-                [
-                    'account_id' => $parkingExpenseAccount->id,
-                    'entry_type' => EntryType::DEBIT,
-                    'amount' => $amount,
-                ],
-            ],
+            entries: $entries,
             isEstimatedTime: false,
             metadata: $metadata
         );

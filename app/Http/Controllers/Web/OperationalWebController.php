@@ -114,19 +114,26 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
-            'amount' => 'required|integer|min:500',
+            'amount' => 'required|integer|min:0',
             'restaurant_name' => 'nullable|string|max:255',
+            'is_covered_by_resto' => 'nullable|boolean',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $isCovered = $request->boolean('is_covered_by_resto');
 
         $parkingService->recordParking(
             workDay: $workDay,
             amount: (int) $validated['amount'],
-            restaurantName: $validated['restaurant_name'] ?? null
+            restaurantName: $validated['restaurant_name'] ?? null,
+            isCoveredByResto: $isCovered
         );
 
-        return redirect()->back()->with('success', 'Parkir berhasil dicatat.');
+        $msg = $isCovered 
+            ? 'Parkir gratis (ditanggung resto) berhasil dicatat tanpa memotong uang kas.' 
+            : 'Parkir mandiri berhasil dicatat.';
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**
