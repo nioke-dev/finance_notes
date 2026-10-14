@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
     // Operational Actions Form Submissions
     Route::post('/operational/open-day', [\App\Http\Controllers\Web\OperationalWebController::class, 'openWorkDay'])->name('operational.open-day');
     Route::post('/operational/account', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeAccount'])->name('operational.account');
+    Route::post('/operational/account/{id}/toggle-active', [\App\Http\Controllers\Web\OperationalWebController::class, 'toggleAccountActive'])->name('operational.account.toggle-active');
+    Route::delete('/operational/account/{id}', [\App\Http\Controllers\Web\OperationalWebController::class, 'destroyAccount'])->name('operational.account.destroy');
     Route::post('/operational/set-initial-balance', [\App\Http\Controllers\Web\OperationalWebController::class, 'setAccountInitialBalance'])->name('operational.set-initial-balance');
     Route::post('/operational/fuel', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFuel'])->name('operational.fuel');
     Route::post('/operational/parking', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeParking'])->name('operational.parking');

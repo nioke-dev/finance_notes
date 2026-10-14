@@ -12,40 +12,44 @@ class DebtWebController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Utang Saya (PayLater / Pinjaman Bank / Lainnya yang bukan talangan teman)
-        $myDebts = Debt::active()
-            ->where(function ($query) {
-                $query->whereIn('platform', ['spaylater', 'seabank_pinjam', 'gopay_pinjam', 'bank', 'other'])
-                    ->where(function ($sub) {
-                        $sub->whereNull('borrower_name')->orWhere('borrower_name', 'Self');
-                    });
-            })
+        // 1. Tagihan PayLater (SPayLater, TikTok PayLater, Kredivo PayLater)
+        $paylaterDebts = Debt::active()
+            ->payLater()
             ->with(['installments' => function ($q) {
                 $q->orderBy('installment_number', 'asc');
             }])
             ->orderBy('started_at', 'desc')
             ->get();
 
-        // 2. Piutang Teman (Dana yang dipinjam teman atau platform person / borrower_name terisi selain Self)
+        // 2. Pinjaman Tunai / KTA (SPinjam, SeaBank Pinjam, GoPay Pinjam, Superbank Pinjam, Kredivo Pinjam, Bank)
+        $cashLoans = Debt::active()
+            ->cashLoan()
+            ->with(['installments' => function ($q) {
+                $q->orderBy('installment_number', 'asc');
+            }])
+            ->orderBy('started_at', 'desc')
+            ->get();
+
+        // 3. Piutang Teman (Dana kas yang dipinjamkan ke teman / talangan)
         $friendDebts = Debt::active()
-            ->where(function ($query) {
-                $query->where('platform', 'person')
-                    ->orWhere(function ($sub) {
-                        $sub->whereNotNull('borrower_name')->where('borrower_name', '!=', 'Self');
-                    });
-            })
+            ->friendLoan()
             ->with(['installments' => function ($q) {
                 $q->orderBy('installment_number', 'asc');
             }])
             ->orderBy('started_at', 'desc')
             ->get();
 
-        // Jika ada debt bertipe payable / receivable eksplisit atau data uji umum
+        // Gabungan semua utang saya (untuk kompatibilitas)
+        $myDebts = $paylaterDebts->concat($cashLoans);
+
+        // Jika data uji umum belum memiliki platform spesifik
         if ($myDebts->isEmpty() && $friendDebts->isEmpty()) {
             $myDebts = Debt::active()->whereNull('borrower_name')->with('installments')->get();
             $friendDebts = Debt::active()->whereNotNull('borrower_name')->with('installments')->get();
         }
 
+        $totalPayLater = (int) $paylaterDebts->sum('remaining_amount');
+        $totalCashLoans = (int) $cashLoans->sum('remaining_amount');
         $totalPayable = (int) $myDebts->sum('remaining_amount');
         $totalReceivable = (int) $friendDebts->sum('remaining_amount');
 
@@ -57,14 +61,21 @@ class DebtWebController extends Controller
             ->get();
 
         $paymentAccounts = Account::where('is_active', true)->orderBy('name', 'asc')->get();
+        $currentWorkDay = \App\Models\WorkDay::whereDate('work_date', now()->toDateString())->first() 
+            ?? \App\Models\WorkDay::latest('work_date')->first();
 
         return view('pages.debts.index', compact(
+            'paylaterDebts',
+            'cashLoans',
             'myDebts',
             'friendDebts',
+            'totalPayLater',
+            'totalCashLoans',
             'totalPayable',
             'totalReceivable',
             'upcomingInstallments',
-            'paymentAccounts'
+            'paymentAccounts',
+            'currentWorkDay'
         ));
     }
 }

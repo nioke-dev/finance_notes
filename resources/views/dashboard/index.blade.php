@@ -520,8 +520,8 @@
                             </span>
                         </div>
 
-                        @if($acc->type === \App\Enums\AccountType::CASH)
-                            <div class="mt-3 pt-2.5 border-t border-slate-700/60 w-full">
+                        <div class="mt-3 pt-2.5 border-t border-slate-700/60 w-full flex items-center justify-between text-[11px]">
+                            @if($acc->type === \App\Enums\AccountType::CASH)
                                 <button type="button" onclick="openModal('modal-view-cash-denomination')" class="w-full py-2 px-3 bg-slate-900/90 hover:bg-slate-700 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-bold flex items-center justify-between transition group shadow">
                                     <span class="flex items-center space-x-1.5">
                                         <span>👛</span>
@@ -529,8 +529,20 @@
                                     </span>
                                     <span class="group-hover:translate-x-0.5 transition">&rarr;</span>
                                 </button>
-                            </div>
-                        @endif
+                            @else
+                                <span class="text-slate-400 font-medium">Status: <span class="text-emerald-400 font-bold">Aktif</span></span>
+                                @if($acc->current_balance == 0)
+                                    <form method="POST" action="/operational/account/{{ $acc->id }}/toggle-active" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan/menutup rekening {{ $acc->name }}?')">
+                                        @csrf
+                                        <button type="submit" class="px-2 py-1 bg-slate-700/60 hover:bg-amber-600/20 text-slate-400 hover:text-amber-400 border border-slate-600/50 rounded-lg text-[10px] font-semibold transition" title="Arsipkan / Tutup Rekening">
+                                            📦 Tutup Rekening
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="text-[10px] text-slate-500 font-medium" title="Rekening hanya bisa ditutup jika saldo Rp0">🔒 Saldo Aktif</span>
+                                @endif
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -801,14 +813,22 @@
         </div>
     </div>
 
-    {{-- 8. Modal Belanja Online Pakai SPayLater --}}
+    {{-- 8. Modal Belanja Online Pakai PayLater --}}
     <div id="modal-spaylater-purchase" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
-            <h3 class="text-base font-bold text-white mb-1">🛍️ Belanja Shopee Pakai SPayLater</h3>
-            <p class="text-xs text-slate-400 mb-4">Catat belanja barang di Shopee pakai cicilan PayLater. Tagihan otomatis terbuat ke jadwal cicilan bulanan.</p>
+            <h3 class="text-base font-bold text-white mb-1">🛍️ Belanja Online Pakai PayLater</h3>
+            <p class="text-xs text-slate-400 mb-4">Catat belanja barang bertempo/cicilan (SPayLater, TikTok PayLater, Kredivo). Tagihan otomatis terbuat ke jadwal cicilan bulanan tanpa mengurangi saldo kas/bank saat ini.</p>
             <form method="POST" action="/operational/spaylater-purchase" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform PayLater</label>
+                    <select name="platform" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold">
+                        <option value="spaylater">Shopee PayLater (SPayLater)</option>
+                        <option value="tiktok_paylater">TikTok PayLater</option>
+                        <option value="kredivo_paylater">Kredivo PayLater</option>
+                    </select>
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nama Barang / Belanjaan</label>
                     <input type="text" name="item_name" placeholder="Contoh: Jas Hujan Motor / Sepatu / Oli" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
@@ -830,7 +850,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-spaylater-purchase')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Belanja SPayLater</button>
+                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Belanja PayLater</button>
                 </div>
             </form>
         </div>
@@ -840,7 +860,7 @@
     <div id="modal-apply-loan" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <h3 class="text-base font-bold text-white mb-1">🏦 Pinjam Uang / Pinjaman Online / Bank</h3>
-            <p class="text-xs text-slate-400 mb-4">Catat penerimaan pinjaman dari SeaBank Pinjam, GoPay Pinjam, Bank, atau Teman.</p>
+            <p class="text-xs text-slate-400 mb-4">Catat penerimaan pinjaman dari SPinjam, SeaBank Pinjam, GoPay Pinjam, Superbank Pinjam, Kredivo, atau Bank.</p>
             <form method="POST" action="/operational/debt" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
@@ -852,10 +872,12 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Platform / Pemberi Pinjaman</label>
                         <select name="platform" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                            <option value="spinjam">Shopee Pinjam (SPinjam)</option>
                             <option value="seabank_pinjam">SeaBank Pinjam</option>
-                            <option value="spaylater">SPayLater</option>
                             <option value="gopay_pinjam">GoPay Pinjam</option>
-                            <option value="bank">Bank / KTA</option>
+                            <option value="superbank_pinjam">Superbank Pinjam</option>
+                            <option value="kredivo_pinjam">Kredivo Pinjam</option>
+                            <option value="bank">Pinjaman Bank Umum</option>
                             <option value="person">Pinjam ke Teman / Keluarga</option>
                             <option value="other">Lainnya</option>
                         </select>

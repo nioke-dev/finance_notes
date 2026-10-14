@@ -125,6 +125,69 @@ class OperationalWebController extends Controller
     }
 
     /**
+     * Nonaktifkan / Aktifkan Kembali Rekening Bank atau E-Wallet
+     */
+    public function toggleAccountActive(Request $request, int $id): RedirectResponse
+    {
+        $account = Account::findOrFail($id);
+
+        // Jika akan dinonaktifkan, periksa saldo harus Rp0
+        if ($account->is_active) {
+            if ($account->current_balance != 0) {
+                return redirect()->back()->with('error', "Rekening {$account->name} tidak dapat dinonaktifkan karena masih memiliki sisa saldo Rp " . number_format($account->current_balance, 0, ',', '.') . ". Pindahkan atau tarik seluruh saldo terlebih dahulu.");
+            }
+
+            $account->update(['is_active' => false]);
+
+            \App\Models\AuditLog::create([
+                'auditable_type' => Account::class,
+                'auditable_id' => $account->id,
+                'action' => 'deactivate_account',
+                'old_values' => ['is_active' => true],
+                'new_values' => ['is_active' => false],
+                'reason' => $request->input('reason', "Menonaktifkan / mengarsipkan rekening {$account->name}"),
+            ]);
+
+            return redirect()->back()->with('success', "Rekening {$account->name} berhasil dinonaktifkan / diarsipkan. Seluruh riwayat transaksi masa lalu tetap tersimpan utuh.");
+        }
+
+        // Aktifkan kembali
+        $account->update(['is_active' => true]);
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => Account::class,
+            'auditable_id' => $account->id,
+            'action' => 'activate_account',
+            'old_values' => ['is_active' => false],
+            'new_values' => ['is_active' => true],
+            'reason' => "Mengaktifkan kembali rekening {$account->name}",
+        ]);
+
+        return redirect()->back()->with('success', "Rekening {$account->name} berhasil diaktifkan kembali.");
+    }
+
+    /**
+     * Proteksi Hapus Akun: Dilarang hard delete jika sudah ada riwayat transaksi
+     */
+    public function destroyAccount(Request $request, int $id): RedirectResponse
+    {
+        $account = Account::findOrFail($id);
+
+        if ($account->ledgerEntries()->exists()) {
+            return redirect()->back()->with('error', "Rekening {$account->name} DILARANG dihapus karena sudah memiliki riwayat transaksi pembukuan. Untuk menutup rekening, gunakan fitur 'Nonaktifkan / Arsipkan Rekening'.");
+        }
+
+        if ($account->current_balance != 0) {
+            return redirect()->back()->with('error', "Rekening {$account->name} tidak dapat dihapus karena masih memiliki saldo.");
+        }
+
+        $name = $account->name;
+        $account->delete();
+
+        return redirect()->back()->with('success', "Rekening {$name} yang belum memiliki transaksi berhasil dihapus.");
+    }
+
+    /**
      * Set / Koreksi Saldo Awal Akun
      */
     public function setAccountInitialBalance(
@@ -387,7 +450,7 @@ class OperationalWebController extends Controller
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
             'name' => 'required|string|max:255',
-            'platform' => 'required|in:spaylater,seabank_pinjam,gopay_pinjam,bank,person,other',
+            'platform' => 'required|in:spinjam,seabank_pinjam,gopay_pinjam,superbank_pinjam,kredivo_pinjam,bank,person,other,spaylater',
             'borrower_name' => 'nullable|string|max:255',
             'principal_amount' => 'required|integer|min:1000',
             'fee_amount' => 'required|integer|min:0',
@@ -403,7 +466,7 @@ class OperationalWebController extends Controller
         $debt = Debt::create([
             'name' => $validated['name'],
             'platform' => $validated['platform'],
-            'borrower_name' => $validated['borrower_name'] ?: 'Self',
+            'borrower_name' => $validated['borrower_name'] ?? 'Self',
             'principal_amount' => (int) $validated['principal_amount'],
             'fee_amount' => (int) $validated['fee_amount'],
             'total_obligation' => $totalObligation,
@@ -427,7 +490,7 @@ class OperationalWebController extends Controller
     }
 
     /**
-     * Belanja Online Menggunakan SPayLater (Beli Barang Dulu, Bayar Nanti)
+     * Belanja Online Menggunakan PayLater (SPayLater / TikTok / Kredivo)
      */
     public function storeSPayLaterPurchase(
         Request $request,
@@ -435,18 +498,26 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
+            'platform' => 'nullable|string|in:spaylater,tiktok_paylater,kredivo_paylater',
             'item_name' => 'required|string|max:255',
             'total_price' => 'required|integer|min:1000',
             'tenor_months' => 'required|integer|min:1|max:24',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $platform = $validated['platform'] ?? 'spaylater';
+        $platformLabel = match($platform) {
+            'tiktok_paylater' => 'TikTok PayLater',
+            'kredivo_paylater' => 'Kredivo PayLater',
+            default => 'Shopee SPayLater',
+        };
+
         $totalPrice = (int) $validated['total_price'];
         $tenor = (int) $validated['tenor_months'];
 
         $debt = Debt::create([
-            'name' => 'Belanja Shopee SPayLater: ' . $validated['item_name'],
-            'platform' => 'spaylater',
+            'name' => "Belanja {$platformLabel}: " . $validated['item_name'],
+            'platform' => $platform,
             'borrower_name' => 'Self',
             'principal_amount' => $totalPrice,
             'fee_amount' => 0,
@@ -466,7 +537,7 @@ class OperationalWebController extends Controller
             ]
         );
 
-        $spaylaterLiabilityAccount = Account::firstOrCreate(
+        $paylaterLiabilityAccount = Account::firstOrCreate(
             ['name' => 'Kewajiban Utang - ' . $debt->name],
             [
                 'type' => AccountType::DEBT,
@@ -479,14 +550,14 @@ class OperationalWebController extends Controller
         $ledgerService->recordTransaction(
             workDay: $workDay,
             type: 'expense',
-            description: "Belanja SPayLater: {$validated['item_name']} ({$tenor}x Cicilan)",
+            description: "Belanja {$platformLabel}: {$validated['item_name']} ({$tenor}x Cicilan)",
             transactionTime: now(),
             entries: [
-                ['account_id' => $spaylaterLiabilityAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $totalPrice],
+                ['account_id' => $paylaterLiabilityAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $totalPrice],
                 ['account_id' => $shoppingExpenseAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $totalPrice],
             ],
             isEstimatedTime: false,
-            metadata: ['type' => 'spaylater_purchase', 'debt_id' => $debt->id]
+            metadata: ['type' => 'spaylater_purchase', 'debt_id' => $debt->id, 'platform' => $platform]
         );
 
         // Buat jadwal cicilan per bulan
@@ -507,7 +578,7 @@ class OperationalWebController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', "Belanja SPayLater {$validated['item_name']} berhasil dicatat! Jadwal cicilan telah dibuat.");
+        return redirect()->back()->with('success', "Belanja {$platformLabel} {$validated['item_name']} berhasil dicatat! Tagihan cicilan telah dibuat.");
     }
 
     /**

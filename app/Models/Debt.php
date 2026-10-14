@@ -31,9 +31,58 @@ class Debt extends Model
         'started_at' => 'date',
     ];
 
+    public const PLATFORMS_PAYLATER = ['spaylater', 'tiktok_paylater', 'kredivo_paylater'];
+    public const PLATFORMS_CASH_LOAN = ['spinjam', 'seabank_pinjam', 'gopay_pinjam', 'superbank_pinjam', 'kredivo_pinjam', 'bank', 'other'];
+
     public function isPaidOff(): bool
     {
         return $this->status === 'paid_off';
+    }
+
+    public function isPayLater(): bool
+    {
+        return in_array($this->platform, self::PLATFORMS_PAYLATER)
+            && ($this->borrower_name === null || $this->borrower_name === 'Self');
+    }
+
+    public function isCashLoan(): bool
+    {
+        return in_array($this->platform, self::PLATFORMS_CASH_LOAN)
+            && ($this->borrower_name === null || $this->borrower_name === 'Self');
+    }
+
+    public function isFriendLoan(): bool
+    {
+        return $this->platform === 'person' 
+            || (!empty($this->borrower_name) && $this->borrower_name !== 'Self');
+    }
+
+    public function getPlatformLabel(): string
+    {
+        return match($this->platform) {
+            'spaylater' => 'Shopee PayLater',
+            'tiktok_paylater' => 'TikTok PayLater',
+            'kredivo_paylater' => 'Kredivo PayLater',
+            'spinjam' => 'Shopee Pinjam (SPinjam)',
+            'seabank_pinjam' => 'SeaBank Pinjam',
+            'gopay_pinjam' => 'GoPay Pinjam',
+            'superbank_pinjam' => 'Superbank Pinjam',
+            'kredivo_pinjam' => 'Kredivo Pinjam',
+            'bank' => 'Pinjaman Bank',
+            'person' => 'Pinjaman Teman',
+            default => ucfirst(str_replace('_', ' ', $this->platform ?? 'Lainnya')),
+        };
+    }
+
+    public function getCategoryLabel(): string
+    {
+        if ($this->isFriendLoan()) {
+            return 'Piutang Teman';
+        }
+        if ($this->isPayLater()) {
+            return 'PayLater (Belanja Tempo)';
+        }
+        return 'Pinjaman Tunai (KTA)';
     }
 
     public function scopeActive(Builder $query): Builder
@@ -44,6 +93,32 @@ class Debt extends Model
     public function scopePaidOff(Builder $query): Builder
     {
         return $query->where('status', 'paid_off');
+    }
+
+    public function scopePayLater(Builder $query): Builder
+    {
+        return $query->whereIn('platform', self::PLATFORMS_PAYLATER)
+            ->where(function ($q) {
+                $q->whereNull('borrower_name')->orWhere('borrower_name', 'Self');
+            });
+    }
+
+    public function scopeCashLoan(Builder $query): Builder
+    {
+        return $query->whereIn('platform', self::PLATFORMS_CASH_LOAN)
+            ->where(function ($q) {
+                $q->whereNull('borrower_name')->orWhere('borrower_name', 'Self');
+            });
+    }
+
+    public function scopeFriendLoan(Builder $query): Builder
+    {
+        return $query->where(function ($q) {
+            $q->where('platform', 'person')
+              ->orWhere(function ($sub) {
+                  $sub->whereNotNull('borrower_name')->where('borrower_name', '!=', 'Self');
+              });
+        });
     }
 
     public function installments(): HasMany

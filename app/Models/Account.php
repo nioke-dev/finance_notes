@@ -50,4 +50,9 @@ class Account extends Model
             AccountType::RECEIVABLE->value,
         ]);
     }
+
+    public function ledgerEntries(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LedgerEntry::class);
+    }
 }
