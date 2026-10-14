@@ -605,10 +605,12 @@ class OperationalWebController extends Controller
             'fee_amount' => 'required|integer|min:0',
             'tenor_months' => 'required|integer|min:1|max:36',
             'destination_account_id' => 'required|exists:accounts,id',
+            'due_day_of_month' => 'nullable|integer|min:1|max:31',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
         $destinationAccount = Account::findOrFail($validated['destination_account_id']);
+        $dueDay = (int) ($validated['due_day_of_month'] ?? 5);
 
         $totalObligation = (int) $validated['principal_amount'] + (int) $validated['fee_amount'];
 
@@ -632,10 +634,145 @@ class OperationalWebController extends Controller
             netReceivedAmount: (int) $validated['principal_amount'],
             feeAmount: (int) $validated['fee_amount'],
             disbursedAt: now(),
-            dueDayOfMonth: 5
+            dueDayOfMonth: $dueDay
         );
 
         return redirect()->back()->with('success', "Pinjaman {$debt->name} berhasil dicatat & dana bersih masuk ke {$destinationAccount->name}");
+    }
+
+    /**
+     * Catat Saldo Utang / Tagihan Berjalan Masa Lalu (Tanpa Pencairan Kas Baru)
+     */
+    public function storeExistingDebt(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'platform' => 'required|in:spaylater,tiktok_paylater,seabank_pinjam,spinjam,gopay_pinjam,superbank_pinjam,kredivo_paylater,kredivo_pinjam,bank,person,other',
+            'total_obligation' => 'required|integer|min:1000',
+            'due_date' => 'required|date',
+            'tenor_months' => 'nullable|integer|min:1|max:36',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $tenor = (int) ($validated['tenor_months'] ?? 1);
+        $totalObligation = (int) $validated['total_obligation'];
+        $dueDate = Carbon::parse($validated['due_date']);
+
+        $debt = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $totalObligation, $tenor, $dueDate) {
+            $debt = Debt::create([
+                'name' => $validated['name'],
+                'platform' => $validated['platform'],
+                'borrower_name' => 'Self',
+                'principal_amount' => $totalObligation,
+                'fee_amount' => 0,
+                'total_obligation' => $totalObligation,
+                'tenor_months' => $tenor,
+                'status' => 'active',
+                'started_at' => now(),
+            ]);
+
+            // Catat akun kewajiban di neraca
+            $liabilityAccountName = 'Kewajiban Utang - ' . $debt->name;
+            Account::firstOrCreate(
+                ['name' => $liabilityAccountName],
+                [
+                    'type' => AccountType::DEBT,
+                    'current_balance' => $totalObligation,
+                    'initial_balance' => $totalObligation,
+                    'is_active' => true,
+                ]
+            );
+
+            // Buat jadwal cicilan / tagihan
+            $monthlyAmount = intdiv($totalObligation, $tenor);
+            $remainder = $totalObligation % $tenor;
+
+            for ($i = 1; $i <= $tenor; $i++) {
+                $installmentDueDate = $i === 1 ? $dueDate : $dueDate->copy()->addMonths($i - 1);
+                $amountDue = ($i === 1) ? $monthlyAmount + $remainder : $monthlyAmount;
+
+                DebtInstallment::create([
+                    'debt_id' => $debt->id,
+                    'installment_number' => $i,
+                    'due_date' => $installmentDueDate,
+                    'amount_due' => $amountDue,
+                    'amount_paid' => 0,
+                    'status' => 'unpaid',
+                ]);
+            }
+
+            \App\Models\AuditLog::create([
+                'auditable_type' => Debt::class,
+                'auditable_id' => $debt->id,
+                'action' => 'debt_registered',
+                'old_values' => null,
+                'new_values' => $debt->toArray(),
+                'reason' => "Pencatatan saldo tagihan utang berjalan {$debt->name} (Rp " . number_format($totalObligation, 0, ',', '.') . ") jatuh tempo {$dueDate->format('d/m/Y')}.",
+            ]);
+
+            return $debt;
+        });
+
+        return redirect()->back()->with('success', "Tagihan {$debt->getPlatformLabel()} ({$debt->name}) sebesar Rp " . number_format($totalObligation, 0, ',', '.') . " berhasil dicatat dengan jatuh tempo {$dueDate->translatedFormat('d M Y')}!");
+    }
+
+    /**
+     * Tambah Langganan / Tagihan Rutin Bulanan
+     */
+    public function storeSubscription(Request $request, \App\Services\SubscriptionService $subService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'category' => 'required|in:work_essential,living_expense,utilities,entertainment,other',
+            'amount' => 'required|integer|min:1000',
+            'due_day_of_month' => 'required|integer|min:1|max:31',
+            'payment_account_id' => 'nullable|exists:accounts,id',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $sub = $subService->createSubscription($validated);
+
+        return redirect()->back()->with('success', "Tagihan rutin '{$sub->name}' (Rp " . number_format($sub->amount, 0, ',', '.') . "/bln) berhasil didaftarkan!");
+    }
+
+    /**
+     * Bayar Langganan / Tagihan Rutin
+     */
+    public function paySubscription(Request $request, \App\Services\SubscriptionService $subService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'work_day_id' => 'required|exists:work_days,id',
+            'subscription_id' => 'required|exists:subscriptions,id',
+            'payment_account_id' => 'required|exists:accounts,id',
+            'actual_amount' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $subscription = \App\Models\Subscription::findOrFail($validated['subscription_id']);
+        $paymentAccount = Account::findOrFail($validated['payment_account_id']);
+
+        $subService->paySubscription(
+            workDay: $workDay,
+            subscription: $subscription,
+            paymentAccount: $paymentAccount,
+            actualAmount: (int) $validated['actual_amount'],
+            notes: $validated['notes'] ?? null
+        );
+
+        return redirect()->back()->with('success', "Tagihan rutin '{$subscription->name}' berhasil dibayar menggunakan {$paymentAccount->name}!");
+    }
+
+    /**
+     * Toggle status aktif tagihan rutin
+     */
+    public function toggleSubscription(int $id): RedirectResponse
+    {
+        $sub = \App\Models\Subscription::findOrFail($id);
+        $sub->update(['is_active' => !$sub->is_active]);
+
+        $statusMsg = $sub->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->back()->with('success', "Tagihan rutin '{$sub->name}' berhasil {$statusMsg}.");
     }
 
     /**

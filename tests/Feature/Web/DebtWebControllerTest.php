@@ -170,4 +170,98 @@ class DebtWebControllerTest extends TestCase
         // Dana bersih 1.000.000 masuk ke BCA (1.000.000 awal + 1.000.000 = 2.000.000)
         $this->assertEquals(2000000, $this->bcaAccount->fresh()->current_balance);
     }
+
+    public function test_user_can_record_existing_debt_without_cash_disbursement(): void
+    {
+        $initialBca = $this->bcaAccount->current_balance;
+
+        $response = $this->post('/operational/existing-debt', [
+            'name' => 'Tagihan SPayLater Oktober',
+            'platform' => 'spaylater',
+            'total_obligation' => 750000,
+            'due_date' => '2026-10-31',
+            'tenor_months' => 1,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $debt = Debt::where('name', 'Tagihan SPayLater Oktober')->first();
+        $this->assertNotNull($debt);
+        $this->assertEquals(750000, $debt->total_obligation);
+        $this->assertEquals('spaylater', $debt->platform);
+
+        // Pastikan tidak ada uang masuk ke rekening (karena utang berjalan masa lalu)
+        $this->assertEquals($initialBca, $this->bcaAccount->fresh()->current_balance);
+
+        // Pastikan cicilan dibuat dengan due_date 2026-10-31
+        $installment = $debt->installments->first();
+        $this->assertNotNull($installment);
+        $this->assertEquals('2026-10-31', $installment->due_date->toDateString());
+        $this->assertEquals(750000, $installment->amount_due);
+    }
+
+    public function test_user_can_create_and_pay_monthly_subscription(): void
+    {
+        $response = $this->post('/operational/subscriptions', [
+            'name' => 'Paket Data Telkomsel Narik 50GB',
+            'category' => 'work_essential',
+            'amount' => 60000,
+            'due_day_of_month' => 20,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $sub = \App\Models\Subscription::where('name', 'Paket Data Telkomsel Narik 50GB')->first();
+        $this->assertNotNull($sub);
+        $this->assertEquals(60000, $sub->amount);
+        $this->assertFalse($sub->isPaidThisMonth());
+
+        // Bayar langganan menggunakan BCA
+        $payResponse = $this->post("/operational/subscriptions/{$sub->id}/pay", [
+            'work_day_id' => $this->workDay->id,
+            'subscription_id' => $sub->id,
+            'payment_account_id' => $this->bcaAccount->id,
+            'actual_amount' => 60000,
+        ]);
+
+        $payResponse->assertRedirect();
+        $payResponse->assertSessionHas('success');
+
+        $sub->refresh();
+        $this->assertTrue($sub->isPaidThisMonth());
+        $this->assertEquals(940000, $this->bcaAccount->fresh()->current_balance);
+    }
+
+    public function test_dashboard_displays_debt_freedom_countdown_and_subscriptions(): void
+    {
+        // Catat SeaBank Pinjam jatuh tempo 31 Oktober
+        Debt::create([
+            'name' => 'SeaBank Pinjam Modal',
+            'platform' => 'seabank_pinjam',
+            'borrower_name' => 'Self',
+            'principal_amount' => 1600000,
+            'fee_amount' => 0,
+            'total_obligation' => 1600000,
+            'tenor_months' => 1,
+            'status' => 'active',
+            'started_at' => now()->toDateString(),
+        ]);
+        $debt = Debt::where('name', 'SeaBank Pinjam Modal')->first();
+        DebtInstallment::create([
+            'debt_id' => $debt->id,
+            'installment_number' => 1,
+            'due_date' => now()->endOfMonth()->toDateString(),
+            'amount_due' => 1600000,
+            'amount_paid' => 0,
+            'status' => 'unpaid',
+        ]);
+
+        $response = $this->get('/dashboard');
+        $response->assertStatus(200);
+        $response->assertSee('Misi Bebas Hutang 31 Oktober');
+        $response->assertSee('SeaBank Pinjam Modal');
+        $response->assertSee('Tagihan Rutin');
+    }
 }

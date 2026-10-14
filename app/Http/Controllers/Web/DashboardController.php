@@ -10,6 +10,7 @@ use App\Models\DebtInstallment;
 use App\Models\Transaction;
 use App\Models\WorkDay;
 use App\Models\FinancialGoal;
+use App\Models\Subscription;
 use App\Services\FinancialGoalService;
 use App\Services\ReconciliationEngineService;
 use Illuminate\Http\Request;
@@ -148,6 +149,39 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // 4. Misi Bebas Hutang 31 Oktober & Cicilan Jatuh Tempo Bulan Ini
+        $monthEnd = now()->endOfMonth();
+        $activeDebts = Debt::active()->with(['installments' => function($q) {
+            $q->orderBy('due_date', 'asc');
+        }])->get();
+        $totalDebtObligation = (int) $activeDebts->sum('total_obligation');
+        $totalDebtRemaining = (int) $activeDebts->sum('remaining_amount');
+
+        $thisMonthInstallments = DebtInstallment::with('debt')
+            ->where('status', 'unpaid')
+            ->where('due_date', '<=', $monthEnd)
+            ->orderBy('due_date', 'asc')
+            ->get();
+        $thisMonthDebtDue = (int) $thisMonthInstallments->sum('amount_due');
+        $daysRemainingInMonth = max(1, now()->diffInDays($monthEnd, false) + 1);
+        $dailyDebtQuota = (int) ceil($thisMonthDebtDue / $daysRemainingInMonth);
+
+        $debtFreedomData = [
+            'target_date' => $monthEnd,
+            'target_label' => $monthEnd->translatedFormat('d F Y'),
+            'days_remaining' => $daysRemainingInMonth,
+            'total_debt_remaining' => $totalDebtRemaining,
+            'this_month_due' => $thisMonthDebtDue,
+            'daily_quota' => $dailyDebtQuota,
+            'installments' => $thisMonthInstallments,
+        ];
+
+        // 5. Langganan & Tagihan Rutin Bulanan (Subscriptions)
+        $subscriptions = Subscription::orderBy('due_day_of_month', 'asc')->get();
+        $unpaidSubscriptions = $subscriptions->filter(fn($s) => $s->is_active && !$s->isPaidThisMonth());
+        $totalMonthlySubscriptions = (int) $subscriptions->where('is_active', true)->sum('amount');
+        $unpaidSubscriptionsAmount = (int) $unpaidSubscriptions->sum('amount');
+
         $safeToSpendData = $goalService->calculateSafeToSpend((int) ($totalDigital + $totalCash));
 
         // Akun digital wallet utama untuk sinkronisasi saldo malam hari
@@ -249,7 +283,12 @@ class DashboardController extends Controller
             'digitalReconAccounts',
             'driverWalletElements',
             'driverTotalBalance',
-            'shopeeReportData'
+            'shopeeReportData',
+            'debtFreedomData',
+            'subscriptions',
+            'unpaidSubscriptions',
+            'totalMonthlySubscriptions',
+            'unpaidSubscriptionsAmount'
         ));
     }
 }

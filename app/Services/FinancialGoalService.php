@@ -6,7 +6,9 @@ use App\Enums\AccountType;
 use App\Enums\EntryType;
 use App\Models\Account;
 use App\Models\AuditLog;
+use App\Models\DebtInstallment;
 use App\Models\FinancialGoal;
+use App\Models\Subscription;
 use App\Models\WorkDay;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -176,7 +178,7 @@ class FinancialGoalService
      * Mengisolasi uang survival agar tidak termakan jajan es krim / cilok
      *
      * @param int $totalLiquidAssets (Total Kas Fisik + Bank/E-Wallet)
-     * @return array{total_liquid: int, total_survival_reserved: int, total_wants_reserved: int, safe_to_spend: int}
+     * @return array{total_liquid: int, total_survival_reserved: int, total_wants_reserved: int, debt_reserved: int, subscription_reserved: int, safe_to_spend: int}
      */
     public function calculateSafeToSpend(int $totalLiquidAssets): array
     {
@@ -184,14 +186,30 @@ class FinancialGoalService
 
         $survivalReserved = (int) $activeGoals->whereIn('priority_level', [1, 2, 3])->sum('allocated_amount');
         $wantsReserved = (int) $activeGoals->whereIn('priority_level', [4, 5])->sum('allocated_amount');
-        $totalReserved = $survivalReserved + $wantsReserved;
 
+        // Kewajiban Cicilan Hutang yang jatuh tempo sampai akhir bulan berjalan
+        $debtReserved = (int) DebtInstallment::where('status', 'unpaid')
+            ->where('due_date', '<=', now()->endOfMonth())
+            ->sum('amount_due');
+
+        // Beban Langganan & Tagihan Rutin aktif yang belum dibayar di bulan berjalan
+        $activeSubscriptions = Subscription::active()->get();
+        $subscriptionReserved = 0;
+        foreach ($activeSubscriptions as $sub) {
+            if (!$sub->isPaidThisMonth()) {
+                $subscriptionReserved += $sub->amount;
+            }
+        }
+
+        $totalReserved = $survivalReserved + $wantsReserved + $debtReserved + $subscriptionReserved;
         $safeToSpend = max(0, $totalLiquidAssets - $totalReserved);
 
         return [
             'total_liquid' => $totalLiquidAssets,
             'total_survival_reserved' => $survivalReserved,
             'total_wants_reserved' => $wantsReserved,
+            'debt_reserved' => $debtReserved,
+            'subscription_reserved' => $subscriptionReserved,
             'safe_to_spend' => $safeToSpend,
         ];
     }

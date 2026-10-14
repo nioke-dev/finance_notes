@@ -23,7 +23,11 @@
                 </h2>
                 <p class="text-xs text-slate-400 mt-0.5">Pantau tagihan belanja bulanan, pinjaman tunai berbunga, dan uang kas yang dipinjam teman di lapangan.</p>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openModal('modal-existing-debt')" class="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1 shadow">
+                    <span>➕</span>
+                    <span>Catat Tagihan Berjalan</span>
+                </button>
                 <button type="button" onclick="openModal('modal-paylater')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1 shadow">
                     <span>🛍️</span>
                     <span>Belanja PayLater</span>
@@ -519,6 +523,73 @@
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-settle-friend')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
                     <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Pembayaran</button>
+                </div>
+            </form>
+        </div>
+    {{-- MODAL: Catat Tagihan Utang Berjalan (Existing Debt) --}}
+    <div id="modal-existing-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-purple-500/50 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <span class="text-2xl">📝</span>
+                <div>
+                    <h3 class="text-base font-extrabold text-white">Catat Tagihan Utang Berjalan</h3>
+                    <p class="text-xs text-slate-300">Masukkan tagihan PayLater/Pinjol yang sudah ada untuk target lunas bulan ini.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="/operational/existing-debt" class="space-y-3.5 mt-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform Utang <span class="text-rose-400">*</span></label>
+                    <select name="platform" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <option value="spaylater" selected>🛍️ Shopee PayLater (SPayLater)</option>
+                        <option value="tiktok_paylater">🎵 TikTok PayLater</option>
+                        <option value="seabank_pinjam">🏦 SeaBank Pinjam</option>
+                        <option value="spinjam">🟠 Shopee Pinjam (SPinjam)</option>
+                        <option value="gopay_pinjam">🟢 GoPay Pinjam</option>
+                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
+                        <option value="kredivo_pinjam">💰 Kredivo Pinjam</option>
+                        <option value="bank">🏛️ Pinjaman Bank Umum</option>
+                        <option value="other">📦 Utang / Pinjaman Lainnya</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama / Keterangan Tagihan <span class="text-rose-400">*</span></label>
+                    <input type="text" name="name" required placeholder="Contoh: Tagihan SPayLater Oktober / SeaBank Cicilan 2" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Total Tagihan (Rp) <span class="text-rose-400">*</span></label>
+                        <input type="number" inputmode="numeric" name="total_obligation" required min="1000" step="1000" placeholder="500000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Tenor (Bulan)</label>
+                        <input type="number" name="tenor_months" value="1" min="1" max="36" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Tanggal Jatuh Tempo <span class="text-rose-400">*</span></label>
+                        <div class="space-x-1">
+                            <button type="button" onclick="document.getElementById('debts-existing-due-date').value = '2026-10-31'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">31 Okt</button>
+                            <button type="button" onclick="document.getElementById('debts-existing-due-date').value = '2026-10-25'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">25 Okt</button>
+                            <button type="button" onclick="document.getElementById('debts-existing-due-date').value = '2026-10-20'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">20 Okt</button>
+                            <button type="button" onclick="document.getElementById('debts-existing-due-date').value = '2026-11-05'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">5 Nov</button>
+                        </div>
+                    </div>
+                    <input type="date" name="due_date" id="debts-existing-due-date" value="{{ now()->endOfMonth()->toDateString() }}" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl text-[11px] text-purple-200">
+                    💡 <strong>Tidak menambah saldo rekening:</strong> Tagihan ini murni dicatat sebagai beban kewajiban yang harus ditutup sebelum/pada tanggal jatuh tempo.
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-existing-debt')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl shadow">Simpan Tagihan Hutang</button>
                 </div>
             </form>
         </div>

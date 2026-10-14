@@ -703,7 +703,7 @@
                     </p>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2.5 pt-3 border-t border-slate-700/70 text-xs">
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-3 border-t border-slate-700/70 text-xs">
                     <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 space-y-0.5">
                         <span class="text-slate-300 block text-[10px] uppercase font-bold">Uang Likuid</span>
                         <span class="text-slate-100 font-extrabold block">Rp {{ number_format($safeToSpendData['total_liquid'], 0, ',', '.') }}</span>
@@ -715,6 +715,14 @@
                     <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-2.5 space-y-0.5">
                         <span class="text-amber-300 block text-[10px] uppercase font-bold">Wishlist (L4-5)</span>
                         <span class="text-amber-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['total_wants_reserved'], 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-purple-500/30 rounded-xl p-2.5 space-y-0.5">
+                        <span class="text-purple-300 block text-[10px] uppercase font-bold">Hutang Bln Ini</span>
+                        <span class="text-purple-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['debt_reserved'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-2.5 space-y-0.5 col-span-2 sm:col-span-1">
+                        <span class="text-indigo-300 block text-[10px] uppercase font-bold">Tagihan Rutin</span>
+                        <span class="text-indigo-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['subscription_reserved'] ?? 0, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
@@ -862,6 +870,202 @@
                             @endforeach
                         </div>
                     </details>
+                </div>
+            @endif
+        </div>
+
+        {{-- ================= MISI BEBAS HUTANG 31 OKTOBER (CLOSING BULAN INI LUNAS!) ================= --}}
+        <div id="tour-debt-freedom" class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/50 rounded-2xl p-6 shadow-2xl space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/80 pb-4">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-2xl">
+                        🎯
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2.5">
+                            <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Misi Bebas Hutang 31 Oktober</h3>
+                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+                                Target Lunas: {{ $debtFreedomData['target_label'] }} (Sisa {{ $debtFreedomData['days_remaining'] }} Hari)
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-0.5">
+                            Kendalikan dan lunasi seluruh beban PayLater & Pinjaman online tanpa merusak kebutuhan pokok hidup.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="openModal('modal-existing-debt')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center space-x-1.5">
+                        <span>➕</span>
+                        <span>Catat Tagihan Berjalan</span>
+                    </button>
+                    <button type="button" onclick="openModal('modal-pay-installment')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs rounded-xl shadow transition flex items-center space-x-1.5">
+                        <span>💳</span>
+                        <span>Bayar Cicilan</span>
+                    </button>
+                    <a href="/debts" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-purple-500/40 font-bold text-xs rounded-xl transition">
+                        Kelola Portofolio &rarr;
+                    </a>
+                </div>
+            </div>
+
+            {{-- 4 Kartu Metrik Bebas Hutang --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900/90 border border-purple-500/30 rounded-xl p-4 space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Seluruh Hutang Aktif</span>
+                    <span class="text-xl font-black text-purple-300 block">Rp {{ number_format($debtFreedomData['total_debt_remaining'], 0, ',', '.') }}</span>
+                    <span class="text-[11px] text-slate-400 block">SPayLater, SeaBank, TikTok, SPinjam, GoPay</span>
+                </div>
+                <div class="bg-slate-900/90 border border-rose-500/40 rounded-xl p-4 space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-rose-300 block">Jatuh Tempo Bulan Ini</span>
+                    <span class="text-xl font-black text-rose-400 block">Rp {{ number_format($debtFreedomData['this_month_due'], 0, ',', '.') }}</span>
+                    <span class="text-[11px] text-slate-400 block">Wajib ditutup sebelum tanggal 31</span>
+                </div>
+                <div class="bg-slate-900/90 border border-amber-500/40 rounded-xl p-4 space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-amber-300 block">Target Setor Narik / Hari</span>
+                    <span class="text-xl font-black text-amber-400 block">Rp {{ number_format($debtFreedomData['daily_quota'], 0, ',', '.') }}</span>
+                    <span class="text-[11px] text-slate-400 block">Disisihkan dari laba harian (16 hari sisa)</span>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-4 space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-300 block">Jatuh Tempo Terdekat</span>
+                    @if($debtFreedomData['installments']->isNotEmpty())
+                        @php $firstInst = $debtFreedomData['installments']->first(); @endphp
+                        <span class="text-sm font-extrabold text-white block truncate">{{ $firstInst->debt->name }}</span>
+                        <span class="text-[11px] text-amber-300 font-bold block">
+                            {{ $firstInst->due_date->translatedFormat('d M Y') }} &bull; Rp {{ number_format($firstInst->amount_due, 0, ',', '.') }}
+                        </span>
+                    @else
+                        <span class="text-sm font-extrabold text-emerald-400 block">Tidak Ada Tagihan!</span>
+                        <span class="text-[11px] text-slate-400 block">Bulan ini bebas dari tagihan mendesak</span>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Daftar Tagihan Jatuh Tempo Bulan Ini --}}
+            @if($debtFreedomData['installments']->isNotEmpty())
+                <div class="space-y-3 pt-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">Tagihan yang Wajib Ditutup Bulan Ini:</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        @foreach($debtFreedomData['installments'] as $inst)
+                            <div class="bg-slate-900/80 border border-slate-700/80 hover:border-purple-500/50 rounded-xl p-3.5 flex justify-between items-center space-x-3">
+                                <div class="min-w-0">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                            {{ $inst->debt->getPlatformLabel() }}
+                                        </span>
+                                        <span class="text-xs text-slate-300 font-medium">Cicilan #{{ $inst->installment_number }}</span>
+                                    </div>
+                                    <span class="text-xs font-bold text-white block mt-1 truncate">{{ $inst->debt->name }}</span>
+                                    <span class="text-[11px] text-amber-300 block mt-0.5">Jatuh Tempo: {{ $inst->due_date->translatedFormat('d M Y') }}</span>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="text-sm font-black text-rose-400 block">Rp {{ number_format($inst->amount_due, 0, ',', '.') }}</span>
+                                    <button type="button" onclick="openPayInstallmentModal({{ $inst->id }}, '{{ addslashes($inst->debt->name) }}', {{ $inst->amount_due }})" class="mt-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-lg shadow">
+                                        Bayar &rarr;
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <div class="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs text-emerald-300">
+                    <span>🎉 Belum ada tagihan berjalan yang terdaftar. Klik <strong>Catat Tagihan Berjalan</strong> untuk memasukkan tagihan SPayLater, SeaBank Pinjam, atau TikTok PayLater Anda.</span>
+                </div>
+            @endif
+        </div>
+
+        {{-- ================= TAGIHAN RUTIN & LANGGANAN BULANAN (SUBSCRIPTIONS) ================= --}}
+        <div id="tour-subscriptions" class="bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-900 border border-indigo-500/50 rounded-2xl p-6 shadow-2xl space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/80 pb-4">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-2xl">
+                        📅
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2.5">
+                            <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Tagihan Rutin & Langganan Bulanan</h3>
+                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
+                                Fixed Recurring Expenses
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-0.5">
+                            Beban berkala (Paket kuota internet narik, sewa kamar kos, wifi, listrik) yang mengunci Safe-to-Spend agar tidak terpakai jajan.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="openModal('modal-add-subscription')" class="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center space-x-1.5">
+                        <span>➕</span>
+                        <span>Tambah Tagihan Rutin</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-4 flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Beban Rutin / Bulan</span>
+                        <span class="text-xl font-black text-indigo-300 block">Rp {{ number_format($totalMonthlySubscriptions, 0, ',', '.') }}</span>
+                        <span class="text-[11px] text-slate-400 block">{{ $subscriptions->where('is_active', true)->count() }} langganan terdaftar</span>
+                    </div>
+                    <span class="text-3xl">📦</span>
+                </div>
+                <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-4 flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-amber-300 block">Belum Dibayar Bulan Ini</span>
+                        <span class="text-xl font-black text-amber-400 block">Rp {{ number_format($unpaidSubscriptionsAmount, 0, ',', '.') }}</span>
+                        <span class="text-[11px] text-slate-400 block">{{ $unpaidSubscriptions->count() }} tagihan menunggu pembayaran</span>
+                    </div>
+                    <span class="text-3xl">⏳</span>
+                </div>
+            </div>
+
+            @if($subscriptions->isEmpty())
+                <div class="py-8 text-center bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
+                    <span class="text-3xl block mb-1">📶</span>
+                    <h4 class="text-sm font-extrabold text-white">Belum Ada Tagihan Rutin Terdaftar</h4>
+                    <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                        Daftarkan paket data internet untuk narik atau sewa kamar kos bulanan agar sistem otomatis mengamankan uangnya sebelum terpakai jajan.
+                    </p>
+                    <button type="button" onclick="openModal('modal-add-subscription')" class="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow transition">
+                        + Tambah Paket Kuota / Kos Sekarang
+                    </button>
+                </div>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    @foreach($subscriptions as $sub)
+                        @php $isPaid = $sub->isPaidThisMonth(); @endphp
+                        <div class="bg-slate-900/90 border {{ $isPaid ? 'border-emerald-500/40' : 'border-slate-700/80' }} rounded-xl p-4 flex flex-col justify-between space-y-3">
+                            <div>
+                                <div class="flex justify-between items-start mb-1.5">
+                                    <span class="text-xs font-bold text-slate-300">{{ $sub->getCategoryLabel() }}</span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase {{ $isPaid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }}">
+                                        {{ $isPaid ? '✓ Lunas Bulan Ini' : 'Belum Dibayar' }}
+                                    </span>
+                                </div>
+                                <span class="text-sm font-extrabold text-white block">{{ $sub->name }}</span>
+                                <span class="text-xs text-slate-300 block mt-0.5">Tiap tanggal {{ $sub->due_day_of_month }} per bulan</span>
+                            </div>
+                            <div class="pt-3 border-t border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-semibold">Tarif:</span>
+                                    <span class="text-base font-black text-indigo-300">Rp {{ number_format($sub->amount, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    @if(!$isPaid)
+                                        <button type="button" onclick="openPaySubscriptionModal({{ $sub->id }}, '{{ addslashes($sub->name) }}', {{ $sub->amount }})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow">
+                                            Bayar Sekarang
+                                        </button>
+                                    @else
+                                        <span class="text-xs text-emerald-400 font-bold flex items-center space-x-1">
+                                            <span>✓</span>
+                                            <span>Lunas</span>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             @endif
         </div>
@@ -1634,13 +1838,14 @@
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Tagihan yang Ingin Dibayar</label>
-                    <select name="installment_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                        @foreach($activeInstallments as $inst)
+                    <select name="installment_id" id="pay-installment-select" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        @php $allInstallments = $debtFreedomData['installments']->isNotEmpty() ? $debtFreedomData['installments'] : $activeInstallments; @endphp
+                        @foreach($allInstallments as $inst)
                             <option value="{{ $inst->id }}">
                                 {{ $inst->debt->name }} (Cicilan #{{ $inst->installment_number }} - Rp {{ number_format($inst->amount_due, 0, ',', '.') }})
                             </option>
                         @endforeach
-                        @if($activeInstallments->isEmpty())
+                        @if($allInstallments->isEmpty())
                             <option value="" disabled selected>Tidak ada tagihan cicilan jatuh tempo saat ini</option>
                         @endif
                     </select>
@@ -1656,7 +1861,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Bayar (Rp)</label>
-                        <input type="number" name="actual_paid" min="1" placeholder="Nominal cicilan" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        <input type="number" name="actual_paid" id="pay-installment-amount" min="1" placeholder="Nominal cicilan" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Diskon Promo (Rp)</label>
@@ -2444,6 +2649,170 @@
         </div>
     </div>
 
+    {{-- ================= MODAL CATAT TAGIHAN UTANG BERJALAN (EXISTING DEBT) ================= --}}
+    <div id="modal-existing-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-purple-500/50 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <span class="text-2xl">📝</span>
+                <div>
+                    <h3 class="text-base font-extrabold text-white">Catat Tagihan Utang Berjalan</h3>
+                    <p class="text-xs text-slate-300">Masukkan tagihan PayLater/Pinjol yang sudah ada untuk target lunas bulan ini.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="/operational/existing-debt" class="space-y-3.5 mt-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform Utang <span class="text-rose-400">*</span></label>
+                    <select name="platform" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <option value="spaylater" selected>🛍️ Shopee PayLater (SPayLater)</option>
+                        <option value="tiktok_paylater">🎵 TikTok PayLater</option>
+                        <option value="seabank_pinjam">🏦 SeaBank Pinjam</option>
+                        <option value="spinjam">🟠 Shopee Pinjam (SPinjam)</option>
+                        <option value="gopay_pinjam">🟢 GoPay Pinjam</option>
+                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
+                        <option value="kredivo_pinjam">💰 Kredivo Pinjam</option>
+                        <option value="bank">🏛️ Pinjaman Bank Umum</option>
+                        <option value="other">📦 Utang / Pinjaman Lainnya</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama / Keterangan Tagihan <span class="text-rose-400">*</span></label>
+                    <input type="text" name="name" required placeholder="Contoh: Tagihan SPayLater Oktober / SeaBank Cicilan 2" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Total Tagihan (Rp) <span class="text-rose-400">*</span></label>
+                        <input type="number" inputmode="numeric" name="total_obligation" required min="1000" step="1000" placeholder="500000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Tenor (Bulan)</label>
+                        <input type="number" name="tenor_months" value="1" min="1" max="36" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Tanggal Jatuh Tempo <span class="text-rose-400">*</span></label>
+                        <div class="space-x-1">
+                            <button type="button" onclick="document.getElementById('existing-debt-due-date').value = '2026-10-31'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">31 Okt</button>
+                            <button type="button" onclick="document.getElementById('existing-debt-due-date').value = '2026-10-25'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">25 Okt</button>
+                            <button type="button" onclick="document.getElementById('existing-debt-due-date').value = '2026-10-20'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">20 Okt</button>
+                            <button type="button" onclick="document.getElementById('existing-debt-due-date').value = '2026-11-05'" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold hover:bg-purple-500/30">5 Nov</button>
+                        </div>
+                    </div>
+                    <input type="date" name="due_date" id="existing-debt-due-date" value="{{ now()->endOfMonth()->toDateString() }}" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl text-[11px] text-purple-200">
+                    💡 <strong>Tidak menambah saldo rekening:</strong> Tagihan ini murni dicatat sebagai beban kewajiban yang harus ditutup sebelum/pada tanggal jatuh tempo.
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-existing-debt')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl shadow">Simpan Tagihan Hutang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ================= MODAL TAMBAH LANGGANAN / TAGIHAN RUTIN ================= --}}
+    <div id="modal-add-subscription" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-indigo-500/50 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <span class="text-2xl">📅</span>
+                <div>
+                    <h3 class="text-base font-extrabold text-white">Tambah Tagihan Rutin Bulanan</h3>
+                    <p class="text-xs text-slate-300">Daftarkan paket data narik, kos, atau tagihan berulang.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="/operational/subscriptions" class="space-y-3.5 mt-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Tagihan Rutin <span class="text-rose-400">*</span></label>
+                    <input type="text" name="name" required placeholder="Contoh: Paket Data Telkomsel Narik 50GB / Sewa Kamar Kos" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Kategori Beban <span class="text-rose-400">*</span></label>
+                    <select name="category" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="work_essential" selected>🛵 Kuota / Perlengkapan Narik</option>
+                        <option value="living_expense">🏠 Kos & Tempat Tinggal</option>
+                        <option value="utilities">💡 Listrik / Air / WiFi</option>
+                        <option value="entertainment">🍿 Hiburan / Langganan Lain</option>
+                        <option value="other">📦 Rutin Lainnya</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Nominal per Bulan (Rp) <span class="text-rose-400">*</span></label>
+                        <input type="number" inputmode="numeric" name="amount" required min="1000" step="1000" placeholder="60000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Jatuh Tempo (Tiap Tgl) <span class="text-rose-400">*</span></label>
+                        <input type="number" name="due_day_of_month" required min="1" max="31" value="20" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-add-subscription')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow">Daftarkan Tagihan Rutin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ================= MODAL BAYAR LANGGANAN / TAGIHAN RUTIN ================= --}}
+    <div id="modal-pay-subscription" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-indigo-500/50 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <span class="text-2xl">💳</span>
+                <div>
+                    <h3 class="text-base font-extrabold text-white">Bayar Tagihan Rutin</h3>
+                    <p id="pay-sub-title" class="text-xs text-indigo-300 font-semibold">-</p>
+                </div>
+            </div>
+
+            <form id="form-pay-subscription" method="POST" action="" class="space-y-3.5 mt-4">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <input type="hidden" name="subscription_id" id="pay-sub-id" value="">
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan Saldo Rekening <span class="text-rose-400">*</span></label>
+                    <select name="payment_account_id" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        @foreach($accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])) as $acc)
+                            <option value="{{ $acc->id }}">
+                                {{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pembayaran (Rp) <span class="text-rose-400">*</span></label>
+                    <input type="number" inputmode="numeric" name="actual_amount" id="pay-sub-amount" required min="1000" step="500" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Catatan / Bukti Bayar (Opsional)</label>
+                    <input type="text" name="notes" placeholder="Contoh: Paket 50GB masa aktif s/d 20 Nov" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-pay-subscription')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">
+                        Bayar Tagihan Sekarang
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Script Modal Handling, Tabs, & Interactive Tour --}}
     <script>
         function openModal(id) {
@@ -2835,6 +3204,38 @@
             if (inputSpent) inputSpent.value = targetAmount;
 
             openModal('modal-achieve-goal');
+        }
+
+        function openPayInstallmentModal(installmentId, debtName, amount) {
+            const selectEl = document.getElementById('pay-installment-select');
+            if (selectEl) {
+                selectEl.value = installmentId;
+            }
+            const amountEl = document.getElementById('pay-installment-amount');
+            if (amountEl) {
+                amountEl.value = amount;
+            }
+            openModal('modal-pay-installment');
+        }
+
+        function openPaySubscriptionModal(subId, subName, amount) {
+            const form = document.getElementById('form-pay-subscription');
+            if (form) {
+                form.action = '/operational/subscriptions/' + subId + '/pay';
+            }
+            const titleEl = document.getElementById('pay-sub-title');
+            if (titleEl) {
+                titleEl.innerText = subName + ' (Tagihan: Rp ' + amount.toLocaleString('id-ID') + ')';
+            }
+            const idInput = document.getElementById('pay-sub-id');
+            if (idInput) {
+                idInput.value = subId;
+            }
+            const amountInput = document.getElementById('pay-sub-amount');
+            if (amountInput) {
+                amountInput.value = amount;
+            }
+            openModal('modal-pay-subscription');
         }
 
         // Interactive Tour menggunakan Driver.js

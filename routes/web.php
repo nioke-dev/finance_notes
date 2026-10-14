@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/personal-income', [\App\Http\Controllers\Web\OperationalWebController::class, 'storePersonalIncome'])->name('operational.personal-income');
     Route::post('/operational/field-incidental-expense', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFieldIncidentalExpense'])->name('operational.field-incidental-expense');
     Route::post('/operational/debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeDebt'])->name('operational.debt');
+    Route::post('/operational/existing-debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeExistingDebt'])->name('operational.existing-debt');
     Route::post('/operational/spaylater-purchase', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeSPayLaterPurchase'])->name('operational.spaylater-purchase');
     Route::post('/operational/pay-installment', [\App\Http\Controllers\Web\OperationalWebController::class, 'payInstallment'])->name('operational.pay-installment');
     Route::post('/operational/settle-friend-debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'settleFriendDebt'])->name('operational.settle-friend-debt');
@@ -63,6 +64,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/goals', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeGoal'])->name('operational.goals');
     Route::post('/operational/goals/{id}/allocate', [\App\Http\Controllers\Web\OperationalWebController::class, 'allocateGoalFunds'])->name('operational.goals.allocate');
     Route::post('/operational/goals/{id}/achieve', [\App\Http\Controllers\Web\OperationalWebController::class, 'achieveGoal'])->name('operational.goals.achieve');
+    Route::post('/operational/subscriptions', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeSubscription'])->name('operational.subscriptions');
+    Route::post('/operational/subscriptions/{id}/pay', [\App\Http\Controllers\Web\OperationalWebController::class, 'paySubscription'])->name('operational.subscriptions.pay');
+    Route::post('/operational/subscriptions/{id}/toggle', [\App\Http\Controllers\Web\OperationalWebController::class, 'toggleSubscription'])->name('operational.subscriptions.toggle');
 
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');
     Route::get('/analytics/fuel', [FuelAnalyticsController::class, 'index'])->name('analytics.fuel');
