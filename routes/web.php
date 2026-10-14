@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/spaylater-purchase', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeSPayLaterPurchase'])->name('operational.spaylater-purchase');
     Route::post('/operational/pay-installment', [\App\Http\Controllers\Web\OperationalWebController::class, 'payInstallment'])->name('operational.pay-installment');
     Route::post('/operational/settle-friend-debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'settleFriendDebt'])->name('operational.settle-friend-debt');
+    Route::post('/operational/lend-friend-cash', [\App\Http\Controllers\Web\OperationalWebController::class, 'lendFriendCash'])->name('operational.lend-friend-cash');
 
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');
     Route::get('/analytics/fuel', [FuelAnalyticsController::class, 'index'])->name('analytics.fuel');

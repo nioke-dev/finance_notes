@@ -100,6 +100,41 @@
                     </span>
                 </div>
 
+                {{-- Penanda Uang Rusak / Sobek (Opsional) --}}
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">✂️</span>
+                        <div>
+                            <span class="text-xs font-bold text-white block">Catatan Uang Rusak / Sobek (Opsional)</span>
+                            <span class="text-[10px] text-slate-400 block">Tandai jika ada uang sobek/rusak di dompet yang perlu segera dibelanjakan ke SPBU/minimarket.</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nominal Uang Rusak (Rp)</label>
+                            <input 
+                                type="number" 
+                                name="damaged_notes_amount" 
+                                min="0" 
+                                step="1000"
+                                value="{{ old('damaged_notes_amount', $denominations->damaged_notes_amount ?? 0) }}" 
+                                placeholder="0"
+                                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Keterangan / Kondisi</label>
+                            <input 
+                                type="text" 
+                                name="damaged_notes_note" 
+                                value="{{ old('damaged_notes_note', $denominations->damaged_notes_note ?? '') }}" 
+                                placeholder="Contoh: 1 lembar 50rb sobek ujung"
+                                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs"
+                            >
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Smart Denomination Analysis / Recommendations --}}
                 @php $closingRecs = $denominations->getRecommendations(); @endphp
                 @if(count($closingRecs) > 0)

@@ -24,6 +24,8 @@ class CashDenomination extends Model
         'bill_50000',
         'bill_100000',
         'total_physical_amount',
+        'damaged_notes_amount',
+        'damaged_notes_note',
     ];
 
     protected $casts = [
@@ -39,6 +41,8 @@ class CashDenomination extends Model
         'bill_50000' => 'integer',
         'bill_100000' => 'integer',
         'total_physical_amount' => 'integer',
+        'damaged_notes_amount' => 'integer',
+        'damaged_notes_note' => 'string',
     ];
 
     protected static function booted(): void
@@ -145,6 +149,17 @@ class CashDenomination extends Model
                 'count' => $smallBillsCount,
                 'type' => 'deposit_retail',
                 'message' => "Uang pecahan kecil di dompet menumpuk Rp " . number_format($smallBillsAmount, 0, ',', '.') . " ({$smallBillsCount} lembar/koin). Mesin ATM tidak menerima uang di bawah Rp50k. Anda bisa setor fisik via Top Up Tunai ShopeePay di kasir Indomaret/Alfamart (maksimal Rp2.000.000) agar dompet tidak tebal.",
+            ];
+        }
+
+        // 3. Deteksi lembaran uang rusak / sobek
+        if ($this->damaged_notes_amount > 0 || !empty($this->damaged_notes_note)) {
+            $recommendations[] = [
+                'field' => 'damaged_notes',
+                'label' => 'Perhatian Lembaran Uang Rusak / Sobek',
+                'count' => 1,
+                'type' => 'warning',
+                'message' => "Ada uang fisik rusak/sobek senilai Rp " . number_format($this->damaged_notes_amount, 0, ',', '.') . " (" . ($this->damaged_notes_note ?: 'Uang sobek/lusuh') . "). Prioritaskan uang ini untuk dibelanjakan ke SPBU/minimarket atau segera tukarkan ke Bank.",
             ];
         }
 

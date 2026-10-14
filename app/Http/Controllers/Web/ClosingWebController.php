@@ -49,6 +49,8 @@ class ClosingWebController extends Controller
             'coin_500' => 'nullable|integer|min:0',
             'coin_200' => 'nullable|integer|min:0',
             'coin_100' => 'nullable|integer|min:0',
+            'damaged_notes_amount' => 'nullable|integer|min:0',
+            'damaged_notes_note' => 'nullable|string|max:255',
         ]);
 
         $denomination = CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);

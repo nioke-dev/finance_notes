@@ -569,4 +569,93 @@ class OperationalWebController extends Controller
 
         return redirect()->back()->with('success', "Pembayaran dari {$debt->borrower_name} berhasil dicatat masuk ke {$receivingAccount->name}.");
     }
+
+    /**
+     * Catat Kas Fisik Dipinjamkan ke Teman / Talangan di Lapangan
+     */
+    public function lendFriendCash(
+        Request $request,
+        \App\Services\LedgerService $ledgerService
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'work_day_id' => 'required|exists:work_days,id',
+            'borrower_name' => 'required|string|max:100',
+            'amount' => 'required|integer|min:1000',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $cashAccount = Account::where('name', 'Cash')->firstOrFail();
+        $amount = (int) $validated['amount'];
+        $borrowerName = trim($validated['borrower_name']);
+
+        // 1. Akun Piutang Teman (Receivable Asset)
+        $receivableAccountName = 'Piutang Teman - ' . $borrowerName;
+        $receivableAccount = Account::firstOrCreate(
+            ['name' => $receivableAccountName],
+            [
+                'type' => \App\Enums\AccountType::RECEIVABLE,
+                'current_balance' => 0,
+                'initial_balance' => 0,
+                'is_active' => true,
+            ]
+        );
+
+        // 2. Buat record Debt dengan status active & borrower_name
+        $debt = Debt::create([
+            'name' => "Kas Dipinjam: {$borrowerName}",
+            'platform' => 'person',
+            'borrower_name' => $borrowerName,
+            'principal_amount' => $amount,
+            'fee_amount' => 0,
+            'total_obligation' => $amount,
+            'tenor_months' => 1,
+            'status' => 'active',
+            'started_at' => now(),
+        ]);
+
+        \App\Models\DebtInstallment::create([
+            'debt_id' => $debt->id,
+            'installment_number' => 1,
+            'due_date' => now()->addDays(7),
+            'amount_due' => $amount,
+            'amount_paid' => 0,
+            'status' => 'unpaid',
+        ]);
+
+        // 3. Jurnal: Kas Dompet berkurang (Credit), Piutang bertambah (Debit)
+        $desc = "Kas Dipinjam Teman: {$borrowerName} (Rp " . number_format($amount, 0, ',', '.') . ")";
+        if (!empty($validated['notes'])) {
+            $desc .= " - {$validated['notes']}";
+        }
+
+        $ledgerService->recordTransaction(
+            workDay: $workDay,
+            type: 'expense',
+            description: $desc,
+            transactionTime: now(),
+            entries: [
+                ['account_id' => $cashAccount->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => $amount],
+                ['account_id' => $receivableAccount->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => $amount],
+            ],
+            isEstimatedTime: false,
+            metadata: [
+                'type' => 'friend_loan_given',
+                'debt_id' => $debt->id,
+                'borrower_name' => $borrowerName,
+                'notes' => $validated['notes'] ?? null,
+            ]
+        );
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => Debt::class,
+            'auditable_id' => $debt->id,
+            'action' => 'lend_friend_cash',
+            'old_values' => null,
+            'new_values' => ['borrower_name' => $borrowerName, 'amount' => $amount],
+            'reason' => "Kas tunai dipinjam teman di lapangan: {$borrowerName}",
+        ]);
+
+        return redirect()->back()->with('success', "Kas Rp " . number_format($amount, 0, ',', '.') . " berhasil dipinjamkan ke {$borrowerName} & otomatis tercatat sebagai Piutang Teman.");
+    }
 }

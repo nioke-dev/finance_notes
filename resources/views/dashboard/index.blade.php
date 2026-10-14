@@ -351,11 +351,11 @@
                         <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Aksi Operasional Narik</h4>
                         <span class="text-[11px] text-slate-400">Aksi cepat saat sedang di jalan</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                         <button type="button" onclick="openModal('modal-open-day')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">🌅</span>
-                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Buka Shift Narik</span>
-                            <span class="text-[10px] text-slate-400">Modal Kas Kembalian</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Buka Hari Baru</span>
+                            <span class="text-[10px] text-slate-400">Narik / Hari Libur</span>
                         </button>
 
                         <button type="button" onclick="openModal('modal-cod')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
@@ -375,6 +375,18 @@
                             <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Motor</span>
                             <span class="text-[10px] text-slate-400">Mandiri / Ditanggung Resto</span>
                         </button>
+
+                        <button type="button" onclick="openModal('modal-lend-friend')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🤝</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Kas Dipinjam Teman</span>
+                            <span class="text-[10px] text-slate-400">Talangan di Basecamp</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-cash-withdraw')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🏧</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Tarik Tunai Modal</span>
+                            <span class="text-[10px] text-slate-400">Digital &rarr; Kas Dompet</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -386,7 +398,7 @@
                         <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi Layaknya Manusia</h4>
                         <span class="text-[11px] text-slate-400">Belanja, sarapan, belanja Shopee SPayLater, pinjaman, transfer</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
                         <button type="button" onclick="openModal('modal-expense')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">🍜</span>
                             <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Pengeluaran</span>
@@ -421,6 +433,12 @@
                             <span class="text-lg block mb-1">🔄</span>
                             <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Transfer Saldo</span>
                             <span class="text-[10px] text-slate-400">Pindah rekening / ATM</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-lend-friend')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🤝</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Kas Dipinjam Teman</span>
+                            <span class="text-[10px] text-slate-400">Pinjamkan kas / talangi</span>
                         </button>
                     </div>
                 </div>
@@ -1114,6 +1132,19 @@
                         </span>
                     </div>
 
+                    {{-- Alert Uang Rusak / Sobek jika ada --}}
+                    @if(($cashDenomination->damaged_notes_amount ?? 0) > 0 || !empty($cashDenomination->damaged_notes_note))
+                        <div class="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-start space-x-2.5">
+                            <span class="text-xl">✂️</span>
+                            <div>
+                                <span class="font-bold block">Uang Sobek / Rusak di Dompet: Rp {{ number_format($cashDenomination->damaged_notes_amount ?? 0, 0, ',', '.') }}</span>
+                                <span class="text-[11px] text-rose-200/90 block mt-0.5">
+                                    {{ $cashDenomination->damaged_notes_note ?: 'Ada lembaran rusak' }} &bull; Belanjakan segera ke SPBU Pertamina/minimarket.
+                                </span>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Uang Kertas --}}
                     <div>
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">💵 Uang Kertas (Lembaran):</span>
@@ -1182,6 +1213,182 @@
                     </a>
                 @endif
             </div>
+        </div>
+    </div>
+
+    {{-- 15. Modal Kas Dipinjam Teman / Talangan --}}
+    <div id="modal-lend-friend" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">🤝</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Kas Dipinjam Teman / Talangan</h3>
+                        <p class="text-[11px] text-slate-400">Dicatat sebagai piutang agar fisik kas dompet tetap akurat</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-lend-friend')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            @if(!$currentWorkDay)
+                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
+                    ⚠️ Silakan buka hari terlebih dahulu sebelum mencatat pinjaman kas.
+                </div>
+            @else
+                <form method="POST" action="{{ route('operational.lend-friend-cash') }}" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Nama Teman / Peminjam <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="borrower_name" 
+                            required 
+                            placeholder="Contoh: Budi Driver / Mas Joko"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Nominal Kas Dipinjamkan (Rp) <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            name="amount" 
+                            id="input-lend-amount"
+                            required 
+                            min="1000" 
+                            step="1000"
+                            placeholder="50000"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <div class="flex space-x-2 mt-2">
+                            <button type="button" onclick="document.getElementById('input-lend-amount').value = 20000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">20k</button>
+                            <button type="button" onclick="document.getElementById('input-lend-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                            <button type="button" onclick="document.getElementById('input-lend-amount').value = 100000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Catatan / Keperluan (Opsional)
+                        </label>
+                        <input 
+                            type="text" 
+                            name="notes" 
+                            placeholder="Contoh: Talang modal COD di resto McD Dinoyo"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                    </div>
+
+                    <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 text-[11px] text-slate-400">
+                        💡 Uang kas dompet Anda akan berkurang Rp <span class="font-bold text-white">sesuai nominal</span> dan langsung masuk ke daftar <strong>Piutang Teman</strong> di menu Utang & PayLater.
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                        <button type="button" onclick="closeModal('modal-lend-friend')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Simpan Pinjaman Kas</button>
+                    </div>
+                </form>
+            @endif
+        </div>
+    </div>
+
+    {{-- 16. Modal Tarik Tunai Tambah Modal Kas --}}
+    @php
+        $cashAccObj = $accounts->firstWhere('name', 'Cash') ?? $accounts->first(fn($a) => $a->type->value === 'cash');
+        $digitalAccs = $accounts->filter(fn($a) => in_array($a->type->value, ['bank', 'ewallet']));
+    @endphp
+    <div id="modal-cash-withdraw" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">🏧</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Tarik Tunai Tambah Modal Kas</h3>
+                        <p class="text-[11px] text-slate-400">Pindah saldo digital (BCA/ShopeePay) ke uang fisik dompet</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-cash-withdraw')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            @if(!$currentWorkDay)
+                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
+                    ⚠️ Silakan buka hari terlebih dahulu sebelum mencatat tarik tunai.
+                </div>
+            @elseif(!$cashAccObj)
+                <div class="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs">
+                    ⚠️ Akun Kas fisik belum tersedia di database.
+                </div>
+            @else
+                <form method="POST" action="{{ route('operational.transfer') }}" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                    <input type="hidden" name="destination_account_id" value="{{ $cashAccObj->id }}">
+                    <input type="hidden" name="note" value="Tarik Tunai Tambah Modal Kas Dompet">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Tarik Dari Rekening Digital <span class="text-rose-400">*</span>
+                        </label>
+                        <select name="source_account_id" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            @foreach($digitalAccs as $acc)
+                                <option value="{{ $acc->id }}">{{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Nominal Tarik Tunai (Rp) <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            name="amount" 
+                            id="input-withdraw-amount"
+                            required 
+                            min="10000" 
+                            step="10000"
+                            placeholder="100000"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <div class="flex space-x-2 mt-2">
+                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 100000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
+                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 200000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">200k</button>
+                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 500000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">500k</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Biaya Admin Penarikan (Rp)
+                        </label>
+                        <input 
+                            type="number" 
+                            name="admin_fee" 
+                            value="0" 
+                            min="0" 
+                            step="500"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <span class="text-[10px] text-slate-400 block mt-1">Biaya admin kasir minimarket atau ATM bersama (default Rp0).</span>
+                    </div>
+
+                    <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 text-[11px] text-slate-400">
+                        ✅ Saldo digital akan terpotong dan uang kas fisik dompet langsung bertambah untuk modal kembalian COD.
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                        <button type="button" onclick="closeModal('modal-cash-withdraw')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Catat Tarik Tunai</button>
+                    </div>
+                </form>
+            @endif
         </div>
     </div>
 
