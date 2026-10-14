@@ -36,6 +36,8 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'Beban Makanan & Minuman Driver', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Biaya Admin Transfer', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Sedekah & Bantuan Pribadi', 'type' => AccountType::EXPENSE],
+            ['name' => 'Beban Selisih Kas (Hilang/Kurang)', 'type' => AccountType::EXPENSE],
+            ['name' => 'Pendapatan Selisih Kas (Surplus Tak Terlacak)', 'type' => AccountType::INCOME],
         ];
 
         foreach ($accounts as $acc) {

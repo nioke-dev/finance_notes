@@ -86,4 +86,37 @@ class ClosingWebController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
+
+    /**
+     * Sesuaikan Kas Hilang / Lebih Tak Terlacak
+     */
+    public function adjustDiscrepancy(
+        Request $request,
+        int $id,
+        \App\Services\DiscrepancyResolutionService $resolutionService
+    ): RedirectResponse {
+        $workDay = WorkDay::findOrFail($id);
+
+        $validated = $request->validate([
+            'reason' => 'required|string|min:5',
+        ]);
+
+        $cashAccount = Account::where('name', 'Cash')->firstOrFail();
+        $physicalRecord = CashDenomination::where('work_day_id', $workDay->id)->first();
+        $physicalCashActual = $physicalRecord ? (int) $physicalRecord->total_physical_amount : 0;
+        $discrepancy = $physicalCashActual - (int) $cashAccount->current_balance;
+
+        if ($discrepancy === 0) {
+            return redirect()->back()->with('error', 'Saldo kas sudah seimbang (selisih Rp0), tidak perlu penyesuaian.');
+        }
+
+        $resolutionService->adjustUnresolvedCashDiscrepancy(
+            workDay: $workDay,
+            cashAccount: $cashAccount,
+            discrepancy: $discrepancy,
+            reason: $validated['reason']
+        );
+
+        return redirect()->back()->with('success', 'Penyesuaian selisih kas fisik berhasil dicatat. Saldo kas kini telah seimbang dan siap difinalisasi!');
+    }
 }

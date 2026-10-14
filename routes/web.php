@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/closing/{id}', [ClosingWebController::class, 'show'])->name('closing.show');
     Route::post('/closing/{id}/denominations', [ClosingWebController::class, 'saveDenominations'])->name('closing.denominations');
     Route::post('/closing/{id}/finalize', [ClosingWebController::class, 'finalize'])->name('closing.finalize');
+    Route::post('/closing/{id}/adjust-discrepancy', [ClosingWebController::class, 'adjustDiscrepancy'])->name('closing.adjust-discrepancy');
 
     // Operational Actions Form Submissions
     Route::post('/operational/open-day', [\App\Http\Controllers\Web\OperationalWebController::class, 'openWorkDay'])->name('operational.open-day');

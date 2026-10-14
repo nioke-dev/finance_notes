@@ -80,4 +80,38 @@ class ClosingWebPageTest extends TestCase
         $response->assertSee('Saldo Seimbang Sempurna');
         $response->assertDontSee('cursor-not-allowed');
     }
+
+    public function test_closing_shows_adjust_discrepancy_button_when_discrepancy_exists(): void
+    {
+        // Saldo buku 150.000, fisik 0 -> selisih -150.000
+        $response = $this->get('/closing/' . $this->workDay->id);
+
+        $response->assertStatus(200);
+        $response->assertSee('Sesuaikan Kas Hilang / Lebih Tak Terlacak');
+    }
+
+    public function test_user_can_adjust_cash_discrepancy_via_web_post(): void
+    {
+        // Set fisik kas 148.000 (selisih -2.000)
+        CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_100000' => 1,
+            'bill_20000' => 2,
+            'bill_5000' => 1,
+            'bill_2000' => 1,
+            'bill_1000' => 1,
+            'total_physical_amount' => 148000,
+        ]);
+
+        $response = $this->post('/closing/' . $this->workDay->id . '/adjust-discrepancy', [
+            'reason' => 'Uang receh Rp2.000 tercecer saat bayar parkir siang tadi',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Saldo kas buku turun dari 150.000 menjadi 148.000
+        $cash = Account::where('name', 'Cash')->first();
+        $this->assertEquals(148000, $cash->current_balance);
+    }
 }

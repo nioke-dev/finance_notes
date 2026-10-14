@@ -245,18 +245,45 @@
                 @if(!empty($cashRecommendations))
                     <div class="space-y-2.5">
                         @foreach($cashRecommendations as $rec)
-                            <div class="p-4 rounded-2xl border text-xs flex items-start space-x-3 shadow-lg {{ $rec['type'] === 'excess' ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300' }}">
-                                <span class="text-2xl mt-0.5">{{ $rec['type'] === 'excess' ? '⚠️' : '💡' }}</span>
+                            @php
+                                $cardClass = match($rec['type'] ?? '') {
+                                    'deposit_atm' => 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300',
+                                    'deposit_retail' => 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300',
+                                    'excess' => 'bg-amber-500/10 border-amber-500/30 text-amber-300',
+                                    default => 'bg-rose-500/10 border-rose-500/30 text-rose-300',
+                                };
+                                $icon = match($rec['type'] ?? '') {
+                                    'deposit_atm' => '🏧',
+                                    'deposit_retail' => '🏪',
+                                    'excess' => '⚠️',
+                                    default => '💡',
+                                };
+                                $title = match($rec['type'] ?? '') {
+                                    'deposit_atm' => 'Rekomendasi Setor Tunai ATM (Rp50k/Rp100k)',
+                                    'deposit_retail' => 'Rekomendasi Top Up ShopeePay (Indomaret/Alfamart)',
+                                    'excess' => 'Beban Lembaran/Koin Berlebih di Dompet',
+                                    default => 'Peringatan Pecahan Kembalian COD Menipis',
+                                };
+                            @endphp
+                            <div class="p-4 rounded-2xl border text-xs flex items-start space-x-3 shadow-lg {{ $cardClass }}">
+                                <span class="text-2xl mt-0.5">{{ $icon }}</span>
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-2 mb-0.5">
-                                        <span class="font-extrabold uppercase tracking-wider text-[11px] {{ $rec['type'] === 'excess' ? 'text-amber-400' : 'text-rose-400' }}">
-                                            {{ $rec['type'] === 'excess' ? 'Beban Lembaran/Koin Berlebih di Dompet' : 'Peringatan Pecahan Kembalian COD Menipis' }}
+                                        <span class="font-extrabold uppercase tracking-wider text-[11px]">
+                                            {{ $title }}
                                         </span>
                                         <span class="px-2 py-0.2 rounded-full text-[10px] font-bold bg-slate-900/60 border border-slate-700 text-slate-300">
                                             {{ $rec['count'] }} pcs
                                         </span>
                                     </div>
                                     <p class="text-slate-200 leading-relaxed font-medium">{{ $rec['message'] }}</p>
+                                    @if(in_array($rec['type'] ?? '', ['deposit_atm', 'deposit_retail']))
+                                        <div class="mt-2.5">
+                                            <button type="button" onclick="openModal('modal-transfer')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-white font-bold text-xs inline-flex items-center space-x-1 transition shadow">
+                                                <span>{{ $rec['type'] === 'deposit_atm' ? '🏧 Catat Setor Tunai ATM' : '🏪 Catat Top Up ShopeePay' }} &rarr;</span>
+                                            </button>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

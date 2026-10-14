@@ -119,6 +119,35 @@ class CashDenomination extends Model
             ];
         }
 
+        // 1. Deteksi uang pecahan besar (Rp100k & Rp50k) menumpuk -> Rekomendasi Setor Tunai ATM (CDM)
+        $largeBillsAmount = ($this->bill_100000 * 100000) + ($this->bill_50000 * 50000);
+        $largeBillsCount = $this->bill_100000 + $this->bill_50000;
+        if ($largeBillsAmount >= 1000000) {
+            $recommendations[] = [
+                'field' => 'large_bills_deposit',
+                'label' => 'Setor Tunai ATM (Rp50k/Rp100k)',
+                'count' => $largeBillsCount,
+                'type' => 'deposit_atm',
+                'message' => "Kas fisik besar di dompet mencapai Rp " . number_format($largeBillsAmount, 0, ',', '.') . " ({$largeBillsCount} lembar). Berisiko tinggi di jalan! Mesin ATM Setor Tunai (CDM) hanya menerima Rp50k & Rp100k — disarankan segera setor tunai ke rekening Bank (BCA/Mandiri).",
+            ];
+        }
+
+        // 2. Deteksi uang pecahan kecil (< Rp50k) menumpuk -> Rekomendasi Top Up ShopeePay via Indomaret/Alfamart
+        $smallBillsAmount = ($this->bill_20000 * 20000) + ($this->bill_10000 * 10000)
+            + ($this->bill_5000 * 5000) + ($this->bill_2000 * 2000) + ($this->bill_1000 * 1000)
+            + ($this->coin_1000 * 1000) + ($this->coin_500 * 500) + ($this->coin_200 * 200) + ($this->coin_100 * 100);
+        $smallBillsCount = $this->bill_20000 + $this->bill_10000 + $this->bill_5000 + $this->bill_2000 + $this->bill_1000
+            + $this->coin_1000 + $this->coin_500 + $this->coin_200 + $this->coin_100;
+        if ($smallBillsAmount >= 200000 || $smallBillsCount >= 25) {
+            $recommendations[] = [
+                'field' => 'small_bills_retail_deposit',
+                'label' => 'Top Up ShopeePay di Indomaret/Alfamart',
+                'count' => $smallBillsCount,
+                'type' => 'deposit_retail',
+                'message' => "Uang pecahan kecil di dompet menumpuk Rp " . number_format($smallBillsAmount, 0, ',', '.') . " ({$smallBillsCount} lembar/koin). Mesin ATM tidak menerima uang di bawah Rp50k. Anda bisa setor fisik via Top Up Tunai ShopeePay di kasir Indomaret/Alfamart (maksimal Rp2.000.000) agar dompet tidak tebal.",
+            ];
+        }
+
         return $recommendations;
     }
 

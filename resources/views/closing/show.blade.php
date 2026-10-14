@@ -104,13 +104,27 @@
                 @php $closingRecs = $denominations->getRecommendations(); @endphp
                 @if(count($closingRecs) > 0)
                     <div class="space-y-2 pt-2 border-t border-slate-700/60">
-                        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block">⚡ Analisis Beban Kas & Kembalian:</span>
+                        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block">⚡ Rekomendasi Kas & Beban Dompet:</span>
                         @foreach($closingRecs as $rec)
-                            <div class="p-3 rounded-xl border text-xs flex items-start space-x-2 {{ $rec['type'] === 'excess' ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300' }}">
-                                <span class="text-base">{{ $rec['type'] === 'excess' ? '⚠️' : '💡' }}</span>
-                                <div>
-                                    <span class="font-bold block">{{ $rec['type'] === 'excess' ? 'Beban Lembaran Berlebih' : 'Pecahan Kembalian COD Menipis' }}</span>
-                                    <span>{{ $rec['message'] }}</span>
+                            @php
+                                $cardClass = match($rec['type'] ?? '') {
+                                    'deposit_atm' => 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300',
+                                    'deposit_retail' => 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300',
+                                    'excess' => 'bg-amber-500/10 border-amber-500/30 text-amber-300',
+                                    default => 'bg-rose-500/10 border-rose-500/30 text-rose-300',
+                                };
+                                $icon = match($rec['type'] ?? '') {
+                                    'deposit_atm' => '🏧',
+                                    'deposit_retail' => '🏪',
+                                    'excess' => '⚠️',
+                                    default => '💡',
+                                };
+                            @endphp
+                            <div class="p-3 rounded-xl border text-xs flex items-start space-x-2.5 {{ $cardClass }}">
+                                <span class="text-base">{{ $icon }}</span>
+                                <div class="flex-1">
+                                    <span class="font-bold block">{{ $rec['label'] }}</span>
+                                    <span class="mt-0.5 block leading-relaxed">{{ $rec['message'] }}</span>
                                 </div>
                             </div>
                         @endforeach
@@ -146,7 +160,11 @@
                     </div>
 
                     {{-- Total Absolute Discrepancy --}}
-                    @php $isBalanced = ($reconciliationReport['total_absolute_discrepancy'] ?? 0) === 0; @endphp
+                    @php 
+                        $isBalanced = ($reconciliationReport['total_absolute_discrepancy'] ?? 0) === 0;
+                        $cashAccReport = collect($reconciliationReport['accounts'] ?? [])->firstWhere('account_name', 'Cash');
+                        $cashDiscrepancy = $cashAccReport['discrepancy'] ?? 0;
+                    @endphp
                     <div class="p-3.5 rounded-xl border {{ $isBalanced ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30' }} flex justify-between items-center">
                         <span class="text-xs font-bold {{ $isBalanced ? 'text-emerald-300' : 'text-rose-300' }}">
                             {{ $isBalanced ? '✓ Saldo Seimbang Sempurna (Rp0)' : '⚠️ Masih Ada Selisih' }}
@@ -155,6 +173,31 @@
                             Rp {{ number_format($reconciliationReport['total_absolute_discrepancy'] ?? 0, 0, ',', '.') }}
                         </span>
                     </div>
+
+                    {{-- Bantuan Selisih Tak Terlacak (Kas Hilang / Lebih) --}}
+                    @if(!$isBalanced && $cashDiscrepancy !== 0)
+                        <div class="p-4 rounded-xl border bg-amber-500/10 border-amber-500/30 space-y-3">
+                            <div class="flex items-start space-x-2.5">
+                                <span class="text-amber-400 text-base">💡</span>
+                                <div>
+                                    <span class="text-xs font-bold text-amber-200 block">
+                                        Selisih Kas Fisik: {{ $cashDiscrepancy > 0 ? '+Rp ' . number_format($cashDiscrepancy, 0, ',', '.') . ' (Lebih)' : '-Rp ' . number_format(abs($cashDiscrepancy), 0, ',', '.') . ' (Kurang)' }}
+                                    </span>
+                                    <span class="text-[11px] text-amber-300/80 block mt-0.5 leading-relaxed">
+                                        Sudah dicari tapi tetap tidak ketemu? Misal uang receh jatuh di jalan, tercecer, atau lupa kembalian. Anda bisa mencatat penyesuaian selisih secara resmi dengan catatan audit agar hari ini bisa langsung difinalisasi.
+                                    </span>
+                                </div>
+                            </div>
+                            <button 
+                                type="button" 
+                                onclick="openModal('modal-adjust-discrepancy')" 
+                                class="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition shadow flex items-center justify-center space-x-2"
+                            >
+                                <span>⚖️</span>
+                                <span>Sesuaikan Kas Hilang / Lebih Tak Terlacak</span>
+                            </button>
+                        </div>
+                    @endif
 
                     {{-- Form Finalisasi Hari Kerja --}}
                     <form method="POST" action="/closing/{{ $workDay->id }}/finalize" class="space-y-3 pt-2">
@@ -212,5 +255,76 @@
         document.querySelectorAll('input[name^="bill_"], input[name^="coin_"]').forEach(input => {
             input.addEventListener('input', calculateClosingTotal);
         });
+
+        function openModal(id) {
+            document.getElementById(id)?.classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id)?.classList.add('hidden');
+        }
     </script>
+
+    {{-- Modal Penyesuaian Selisih Kas Hilang / Tak Terlacak --}}
+    <div id="modal-adjust-discrepancy" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">⚖️</span>
+                    <h3 class="text-base font-bold text-white">Sesuaikan Selisih Kas Fisik</h3>
+                </div>
+                <button type="button" onclick="closeModal('modal-adjust-discrepancy')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            @php 
+                $cashAccModal = collect($reconciliationReport['accounts'] ?? [])->firstWhere('account_name', 'Cash'); 
+                $discModal = $cashAccModal['discrepancy'] ?? 0;
+            @endphp
+
+            <form method="POST" action="/closing/{{ $workDay->id }}/adjust-discrepancy" class="space-y-4">
+                @csrf
+                <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-1.5">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Saldo Menurut Sistem:</span>
+                        <span class="font-bold text-white">Rp {{ number_format($cashAccModal['ledger_balance'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Uang Fisik di Dompet:</span>
+                        <span class="font-bold text-white">Rp {{ number_format($cashAccModal['actual_balance'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between border-t border-slate-700 pt-1.5 font-bold">
+                        <span class="text-amber-400">Selisih yang Disesuaikan:</span>
+                        <span class="{{ $discModal < 0 ? 'text-rose-400' : 'text-emerald-400' }}">
+                            {{ $discModal < 0 ? '-Rp ' . number_format(abs($discModal), 0, ',', '.') . ' (Uang Kurang/Hilang)' : '+Rp ' . number_format($discModal, 0, ',', '.') . ' (Uang Lebih)' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Alasan / Catatan Audit Selisih <span class="text-rose-400">*</span>
+                    </label>
+                    <textarea 
+                        name="reason" 
+                        required 
+                        rows="3" 
+                        placeholder="Contoh: Uang koin Rp2.000 jatuh di jalan saat bayar parkir atau lupa minta kembalian di warung..."
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    ></textarea>
+                    <span class="text-[10px] text-slate-400 block mt-1">
+                        Wajib diisi minimal 5 karakter. Catatan ini disimpan permanen di riwayat audit.
+                    </span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-adjust-discrepancy')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow">
+                        Simpan & Seimbangkan Saldo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </x-layouts.app>

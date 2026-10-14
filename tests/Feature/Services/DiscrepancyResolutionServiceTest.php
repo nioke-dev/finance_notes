@@ -100,4 +100,66 @@ class DiscrepancyResolutionServiceTest extends TestCase
             reason: 'Lupa input saat istirahat'
         );
     }
+
+    public function test_adjust_unresolved_cash_shortage_reduces_cash_and_logs_audit(): void
+    {
+        $workDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        // Discrepancy -2000 (uang fisik di dompet kurang Rp2.000)
+        $tx = $this->service->adjustUnresolvedCashDiscrepancy(
+            workDay: $workDay,
+            cashAccount: $this->cashAccount,
+            discrepancy: -2000,
+            reason: 'Uang receh Rp2.000 tercecer di jalan saat bayar parkir'
+        );
+
+        $this->assertInstanceOf(Transaction::class, $tx);
+        $this->cashAccount->refresh();
+        $this->assertEquals(98000, $this->cashAccount->current_balance);
+
+        $auditLog = AuditLog::where('action', 'adjust_discrepancy')->first();
+        $this->assertNotNull($auditLog);
+        $this->assertStringContainsString('tercecer di jalan', $auditLog->reason);
+    }
+
+    public function test_adjust_unresolved_cash_surplus_increases_cash_and_logs_audit(): void
+    {
+        $workDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        // Discrepancy +3000 (uang fisik di dompet lebih Rp3.000)
+        $tx = $this->service->adjustUnresolvedCashDiscrepancy(
+            workDay: $workDay,
+            cashAccount: $this->cashAccount,
+            discrepancy: 3000,
+            reason: 'Kembalian warung lebih Rp3.000 tidak diketahui'
+        );
+
+        $this->assertInstanceOf(Transaction::class, $tx);
+        $this->cashAccount->refresh();
+        $this->assertEquals(103000, $this->cashAccount->current_balance);
+    }
+
+    public function test_adjust_unresolved_discrepancy_fails_if_reason_too_short(): void
+    {
+        $workDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Alasan penyesuaian selisih kas wajib diisi minimal 5 karakter');
+
+        $this->service->adjustUnresolvedCashDiscrepancy(
+            workDay: $workDay,
+            cashAccount: $this->cashAccount,
+            discrepancy: -1000,
+            reason: 'lupa'
+        );
+    }
 }
