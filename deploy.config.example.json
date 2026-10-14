@@ -1,0 +1,6 @@
+{
+  "host": "your-server-ip-or-domain",
+  "port": 22,
+  "user": "your-ssh-username",
+  "remote_path": "/home/username/public_html/keuangan"
+}
