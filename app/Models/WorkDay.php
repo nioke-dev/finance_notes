@@ -86,4 +86,9 @@ class WorkDay extends Model
     {
         return $this->hasOne(DriverSnapshot::class)->latestOfMany();
     }
+
+    public function activeCodOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ActiveCodOrder::class);
+    }
 }

@@ -63,10 +63,10 @@ class DashboardController extends Controller
                 $type = $meta['type'] ?? '';
 
                 // Operasional Narik ShopeeFood
-                if ($type === 'cod_order') {
+                if ($type === 'cod_order' || $type === 'cod_order_completed') {
                     $dayOrdersCount++;
                     $dayRegularIncome += (int) ($meta['bill_amount'] ?? 0);
-                    $dayTipIncome += (int) ($meta['surplus_amount'] ?? 0);
+                    $dayTipIncome += (int) ($meta['tip_amount'] ?? $meta['surplus_amount'] ?? 0);
                 } elseif ($type === 'quick_fuel') {
                     $dayFuelExpense += $tx->amount;
                 } elseif ($type === 'quick_parking') {
@@ -127,6 +127,10 @@ class DashboardController extends Controller
         $isLateNightHours = (now()->hour >= 0 && now()->hour < 5);
         $yesterdayUnfinalized = $unfinalizedDays->first();
 
+        $activeCodOrders = $currentWorkDay 
+            ? $currentWorkDay->activeCodOrders()->onDelivery()->orderBy('accepted_at', 'asc')->get() 
+            : collect();
+
         return view('dashboard.index', compact(
             'accounts',
             'totalDigital',
@@ -153,7 +157,8 @@ class DashboardController extends Controller
             'cashDenomination',
             'cashRecommendations',
             'isLateNightHours',
-            'yesterdayUnfinalized'
+            'yesterdayUnfinalized',
+            'activeCodOrders'
         ));
     }
 }

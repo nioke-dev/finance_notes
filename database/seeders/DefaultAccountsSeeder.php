@@ -22,6 +22,7 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'GoPay Merchant', 'type' => AccountType::EWALLET],
             ['name' => 'Cash', 'type' => AccountType::CASH],
             ['name' => 'Flazz / e-money', 'type' => AccountType::EWALLET],
+            ['name' => 'Talangan Pesanan COD', 'type' => AccountType::RECEIVABLE],
 
             // Income
             ['name' => 'Pendapatan Hub ShopeeFood', 'type' => AccountType::INCOME],

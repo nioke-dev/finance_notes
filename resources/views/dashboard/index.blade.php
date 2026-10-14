@@ -346,6 +346,80 @@
                     </div>
                 @endif
 
+                {{-- Card Pesanan COD Aktif di Jalan (Multi-Order On-Delivery) --}}
+                @if(isset($activeCodOrders) && $activeCodOrders->isNotEmpty())
+                    <div class="bg-gradient-to-r from-emerald-950/80 via-slate-900/90 to-slate-900 border-2 border-emerald-500/60 rounded-2xl p-5 shadow-2xl space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-emerald-500/30 pb-3">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="text-2xl animate-bounce">🛵</span>
+                                <div>
+                                    <h3 class="text-sm font-extrabold text-white flex items-center space-x-2">
+                                        <span>Pesanan COD Sedang Diantar</span>
+                                        <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-xs font-black">
+                                            {{ $activeCodOrders->count() }} Order Aktif
+                                        </span>
+                                    </h3>
+                                    <p class="text-[11px] text-slate-300">Bawa dobel/tiga order? Selesaikan satu per satu dengan kalkulator kilat saat tiba di customer.</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="openAcceptCodModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center space-x-1.5 self-end sm:self-auto">
+                                <span>+</span>
+                                <span>Tambah COD Lagi (Double COD)</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                            @foreach($activeCodOrders as $cod)
+                                <div class="bg-slate-900/90 border border-slate-700/80 hover:border-emerald-500/60 rounded-xl p-4 space-y-3 transition group">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-black text-sm rounded-lg tracking-wider">
+                                                #{{ $cod->order_code }}
+                                            </span>
+                                            <div>
+                                                <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition">
+                                                    {{ $cod->merchant_name ?: 'Resto ShopeeFood' }}
+                                                </h4>
+                                                <span class="text-[10px] text-slate-400">
+                                                    Diterima: {{ $cod->accepted_at ? $cod->accepted_at->format('H:i') : '' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onclick="openCancelCodModal('{{ $cod->id }}', '{{ $cod->order_code }}')" 
+                                            class="text-slate-500 hover:text-rose-400 text-xs p-1 rounded transition" 
+                                            title="Batalkan Pesanan (Resto Tutup/Dibatalkan)"
+                                        >
+                                            ✕ Batal
+                                        </button>
+                                    </div>
+
+                                    <div class="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 block">Tagihan Asli Shopee:</span>
+                                            <span class="font-bold text-slate-200">Rp {{ number_format($cod->bill_amount, 0, ',', '.') }}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-[10px] text-amber-400/90 font-semibold block">Saran Bayar (Bulat):</span>
+                                            <span class="font-black text-amber-400 text-sm">Rp {{ number_format($cod->rounded_bill_amount, 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        type="button" 
+                                        onclick="openCompleteCodModal('{{ $cod->id }}', '{{ $cod->order_code }}', '{{ addslashes($cod->merchant_name ?? '') }}', '{{ $cod->bill_amount }}', '{{ $cod->rounded_bill_amount }}')"
+                                        class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl transition shadow flex items-center justify-center space-x-2"
+                                    >
+                                        <span>🧮</span>
+                                        <span>Buka Kalkulator & Selesaikan (#{{ $cod->order_code }})</span>
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
                     <div class="flex justify-between items-center mb-3">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Aksi Operasional Narik</h4>
@@ -358,10 +432,10 @@
                             <span class="text-[10px] text-slate-400">Narik / Hari Libur</span>
                         </button>
 
-                        <button type="button" onclick="openModal('modal-cod')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                        <button type="button" onclick="openAcceptCodModal()" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">💵</span>
-                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Pesanan COD</span>
-                            <span class="text-[10px] text-slate-400">Tagihan & Tip Customer</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Order COD Baru</span>
+                            <span class="text-[10px] text-slate-400">Talangi ShopeePay & Antar</span>
                         </button>
 
                         <button type="button" onclick="openModal('modal-fuel')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
@@ -701,30 +775,338 @@
         </div>
     </div>
 
-    {{-- 4. Modal Pesanan COD ShopeeFood --}}
-    <div id="modal-cod" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
-            <h3 class="text-base font-bold text-white mb-1">💵 Catat Orderan COD ShopeeFood</h3>
-            <p class="text-xs text-slate-400 mb-4">Sistem otomatis mencatat pertambahan uang fisik di dompet & kelebihan tip jika ada.</p>
-            <form method="POST" action="/operational/cod" class="space-y-4">
+    {{-- 4. MODAL TERIMA ORDER COD BARU (Fase 1: ShopeePay Dipotong Otomatis) --}}
+    <div id="modal-accept-cod" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">🛵</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Order COD Masuk</h3>
+                        <p class="text-[11px] text-slate-400">Talangi pesanan resto dengan saldo ShopeePay</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-accept-cod')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            @if(!$currentWorkDay)
+                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
+                    ⚠️ Silakan buka shift hari kerja terlebih dahulu sebelum mencatat order COD.
+                </div>
+            @else
+                <form method="POST" action="{{ route('operational.cod-orders.accept') }}" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                    <input type="hidden" name="latitude" id="accept-cod-lat">
+                    <input type="hidden" name="longitude" id="accept-cod-lng">
+                    <input type="hidden" name="rounded_bill_amount" id="accept-cod-rounded">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Kode Pesanan (1 - 3 Digit Angka) <span class="text-emerald-400">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-base font-black text-emerald-400">#</span>
+                            <input 
+                                type="text" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                name="order_code" 
+                                id="accept-order-code"
+                                required 
+                                placeholder="Contoh: 633" 
+                                class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-3 py-2.5 text-white text-lg font-black tracking-widest focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            >
+                        </div>
+                        <span class="text-[10px] text-slate-400 block mt-1">Sesuai 3 digit kode di aplikasi Shopee (misal 633 atau 385).</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Nama Restoran / Merchant (Opsional)</label>
+                        <input 
+                            type="text" 
+                            name="merchant_name" 
+                            placeholder="Contoh: Geprek Kak Rose Dinoyo / Mie Gacoan" 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Nominal Tagihan COD di Shopee (Rp) <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            name="bill_amount" 
+                            id="accept-cod-bill"
+                            required 
+                            min="100" 
+                            placeholder="Contoh: 51700" 
+                            oninput="updateAcceptRounding()"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <div class="flex space-x-2 mt-2">
+                            <button type="button" onclick="document.getElementById('accept-cod-bill').value = 35000; updateAcceptRounding()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">35k</button>
+                            <button type="button" onclick="document.getElementById('accept-cod-bill').value = 50000; updateAcceptRounding()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                            <button type="button" onclick="document.getElementById('accept-cod-bill').value = 75000; updateAcceptRounding()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">75k</button>
+                            <button type="button" onclick="document.getElementById('accept-cod-bill').value = 100000; updateAcceptRounding()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs space-y-1">
+                        <div class="flex justify-between items-center text-slate-400">
+                            <span>Saran Bayar Lapangan (Bulat):</span>
+                            <span id="accept-rounded-display" class="font-bold text-amber-400">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-400">
+                            <span>Saldo ShopeePay Terpotong:</span>
+                            <span id="accept-bill-display" class="font-bold text-rose-400">Rp 0</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 pt-1 border-t border-slate-700 leading-relaxed">
+                            💡 Saldo ShopeePay Anda akan langsung berkurang untuk talangan pesanan ini. Order akan masuk ke status <strong>Sedang Diantar</strong> sampai Anda menyelesaikannya di rumah pelanggan.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                        <button type="button" onclick="closeModal('modal-accept-cod')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                        <button type="submit" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
+                            <span>🛵</span>
+                            <span>Ambil Order & Potong ShopeePay</span>
+                        </button>
+                    </div>
+                </form>
+            @endif
+        </div>
+    </div>
+
+    {{-- 4B. MODAL KALKULATOR PENYELESAIAN COD (Fase 2: Di Depan Rumah Customer) --}}
+    <div id="modal-complete-cod" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-900 border-2 border-emerald-500/50 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4 my-8 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-2xl">🧮</span>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-base font-extrabold text-white">Selesaikan Pesanan</h3>
+                            <span id="calc-order-code" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black rounded-lg"></span>
+                        </div>
+                        <p id="calc-merchant-name" class="text-xs text-slate-400 font-semibold"></p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-complete-cod')" class="text-slate-400 hover:text-white text-lg">&times;</button>
+            </div>
+
+            <form id="form-complete-cod" method="POST" action="" class="space-y-4">
                 @csrf
-                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nomor Pesanan</label>
-                    <input type="text" name="order_number" placeholder="Contoh: SPF-8921" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                <input type="hidden" name="payment_method" id="calc-payment-method" value="cash">
+                <input type="hidden" name="received_amount" id="input-final-received-amount">
+                <input type="hidden" name="latitude" id="complete-cod-lat">
+                <input type="hidden" name="longitude" id="complete-cod-lng">
+
+                {{-- Ringkasan Tagihan & Saran Pembulatan --}}
+                <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
+                    <div>
+                        <span class="text-[11px] text-slate-400 block">Tagihan Asli Resto:</span>
+                        <span id="calc-bill-amount-label" class="text-sm font-bold text-white block mt-0.5"></span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[11px] text-amber-400/90 font-semibold block">Saran Bayar (Bulat):</span>
+                        <span id="calc-rounded-amount-label" class="text-base font-black text-amber-400 block mt-0.5"></span>
+                    </div>
                 </div>
+
+                {{-- Pilihan Metode Pembayaran (Tunai vs QRIS) --}}
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Total Tagihan COD (Rp)</label>
-                    <input type="number" name="bill_amount" placeholder="Contoh: 45000" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">Metode Bayar Customer</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btn-method-cash" onclick="setCodPaymentMethod('cash')" class="p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-2 bg-emerald-600 text-white border-emerald-500">
+                            <span>💵</span>
+                            <span>Uang Tunai (Cash)</span>
+                        </button>
+                        <button type="button" id="btn-method-qris" onclick="setCodPaymentMethod('qris')" class="p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-2 bg-slate-900 text-slate-400 border-slate-700">
+                            <span>📱</span>
+                            <span>QRIS / E-Wallet</span>
+                        </button>
+                    </div>
                 </div>
+
+                {{-- 1. Kalkulator Uang Tunai (Numpad Ramah Driver) --}}
+                <div id="calc-cash-calculator-section" class="space-y-3.5">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-300">
+                                Uang Dikasihkan Customer (Rp) <span class="text-rose-400">*</span>
+                            </label>
+                            <span class="text-[11px] text-slate-400">
+                                Kembalian Normal: <span id="calc-std-change-display" class="text-amber-400 font-extrabold">Rp 0</span>
+                            </span>
+                        </div>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            id="calc-gave-amount" 
+                            name="customer_gave_amount"
+                            oninput="onGaveAmountChanged()"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-black text-base focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <div class="flex flex-wrap gap-1.5 mt-2">
+                            <button type="button" onclick="setGavePreset('pas')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-emerald-400 font-bold rounded-lg border border-emerald-500/30">Uang Pas</button>
+                            <button type="button" onclick="setGavePreset(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                            <button type="button" onclick="setGavePreset(100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
+                            <button type="button" onclick="setGavePreset(150000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">150k</button>
+                            <button type="button" onclick="setGavePreset(200000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">200k</button>
+                        </div>
+                    </div>
+
+                    {{-- Kembalian yang Diserahkan (Scenario Nyata: Kembalian 20k Saja Mas) --}}
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Kembalian yang Diserahkan ke Customer (Rp)
+                        </label>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            id="calc-change-returned" 
+                            name="change_returned"
+                            oninput="recalculateCodAmounts()"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                        <div class="flex flex-wrap gap-1.5 mt-2">
+                            <button type="button" onclick="setChangePreset('full')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">Kembalian Penuh</button>
+                            <button type="button" onclick="setChangePreset(20000)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 font-semibold rounded-lg">Kembalikan 20k Saja</button>
+                            <button type="button" onclick="setChangePreset(10000)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 font-semibold rounded-lg">Kembalikan 10k Saja</button>
+                            <button type="button" onclick="setChangePreset(0)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-emerald-300 font-bold rounded-lg border border-emerald-500/40">Rp0 (Ambil Semua)</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 2. Section QRIS (Jika Customer Transfer) --}}
+                <div id="calc-qris-section" class="space-y-3 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Rekening / E-Wallet Penampung QRIS <span class="text-rose-400">*</span>
+                        </label>
+                        <select name="settlement_account_id" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            @foreach($accounts->filter(fn($a) => in_array($a->type->value, ['bank', 'ewallet'])) as $acc)
+                                <option value="{{ $acc->id }}">{{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Nominal yang Ditransfer Customer (Rp) <span class="text-rose-400">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            id="calc-qris-amount" 
+                            oninput="recalculateCodAmounts()"
+                            placeholder="Contoh: 55000" 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                    </div>
+                </div>
+
+                {{-- Checkbox Ganti Uang Parkir Resto --}}
+                <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-2">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="chk-reimburse-parking" 
+                            onchange="toggleParkingReimburse(this.checked)"
+                            class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500"
+                        >
+                        <span class="text-xs font-bold text-slate-200">Customer mengganti uang parkir resto?</span>
+                    </label>
+
+                    <div id="div-calc-parking" class="hidden pl-6 pt-1 space-y-1.5">
+                        <label class="block text-[10px] font-semibold text-slate-400">Nominal Parkir yang Diganti (Rp)</label>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            name="parking_reimbursed" 
+                            id="calc-parking-amount" 
+                            value="0" 
+                            min="0" 
+                            step="500"
+                            oninput="recalculateCodAmounts()"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs"
+                        >
+                        <div class="flex space-x-2">
+                            <button type="button" onclick="document.getElementById('calc-parking-amount').value = 1000; recalculateCodAmounts()" class="px-2 py-0.5 bg-slate-800 text-[10px] text-slate-300 rounded">1k</button>
+                            <button type="button" onclick="document.getElementById('calc-parking-amount').value = 2000; recalculateCodAmounts()" class="px-2 py-0.5 bg-slate-800 text-[10px] text-slate-300 rounded">2k</button>
+                            <button type="button" onclick="document.getElementById('calc-parking-amount').value = 3000; recalculateCodAmounts()" class="px-2 py-0.5 bg-slate-800 text-[10px] text-slate-300 rounded">3k</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Hasil Perhitungan Bersih (Hasil Akhir) --}}
+                <div class="p-3.5 bg-emerald-950/40 border border-emerald-500/40 rounded-xl space-y-1 text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300 font-bold">Uang Masuk ke Kantong/Akun:</span>
+                        <span id="calc-net-received-display" class="text-lg font-black text-emerald-400">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] text-slate-400 pt-1 border-t border-emerald-500/20">
+                        <span>Pemulihan Modal ShopeePay:</span>
+                        <span id="calc-breakdown-shopee" class="text-slate-300 font-semibold">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] text-slate-400">
+                        <span>Surplus Bersih (Tip + Parkir):</span>
+                        <span id="calc-breakdown-surplus" class="text-amber-400 font-extrabold">Rp 0</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-complete-cod')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow flex items-center space-x-2">
+                        <span>🚀</span>
+                        <span>Selesaikan & Masukkan ke Kas</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 4C. MODAL BATALKAN ORDER COD --}}
+    <div id="modal-cancel-cod" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">⚠️</span>
+                    <h3 class="text-base font-bold text-white">Batalkan Order COD <span id="cancel-cod-code"></span></h3>
+                </div>
+                <button type="button" onclick="closeModal('modal-cancel-cod')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            <form id="form-cancel-cod" method="POST" action="" class="space-y-4">
+                @csrf
+                <p class="text-xs text-slate-400">
+                    Gunakan jika resto tutup atau customer membatalkan pesanan. Saldo ShopeePay Anda yang tadi terpotong akan <strong>otomatis dipulihkan utuh</strong>.
+                </p>
+
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Uang Tunai Fisik Diterima (Rp)</label>
-                    <input type="number" name="received_amount" placeholder="Contoh: 50000" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                    <span class="text-[10px] text-slate-500">Jika customer kasih lebih (misal tagihan 45rb bayar 50rb ikhlas), otomatis tercatat sebagai Tip Surplus Kas.</span>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Alasan Pembatalan <span class="text-rose-400">*</span>
+                    </label>
+                    <textarea 
+                        name="reason" 
+                        required 
+                        rows="2" 
+                        placeholder="Contoh: Resto tutup saat driver sampai di lokasi..."
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                    ></textarea>
                 </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('modal-cod')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Order COD</button>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-cancel-cod')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Tutup</button>
+                    <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow">Batalkan & Pulihkan Saldo</button>
                 </div>
             </form>
         </div>
@@ -1613,6 +1995,218 @@
                 btn.classList.add('border-indigo-500', 'text-indigo-400');
                 btn.classList.remove('border-transparent', 'text-slate-400');
             }
+        }
+
+        // ================= JAVASCRIPT LOGIKA KALKULATOR COD PINTAR =================
+        let currentCompleteCod = {
+            id: null,
+            billAmount: 0,
+            roundedAmount: 0,
+            paymentMethod: 'cash'
+        };
+
+        function openAcceptCodModal() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = document.getElementById('accept-cod-lat');
+                    const lng = document.getElementById('accept-cod-lng');
+                    if (lat) lat.value = pos.coords.latitude;
+                    if (lng) lng.value = pos.coords.longitude;
+                }, () => {}, { timeout: 5000 });
+            }
+            openModal('modal-accept-cod');
+        }
+
+        function updateAcceptRounding() {
+            const billInput = document.getElementById('accept-cod-bill');
+            const bill = parseInt(billInput?.value) || 0;
+            const rounded = bill > 0 ? (bill % 1000 === 0 ? bill : Math.ceil(bill / 1000) * 1000) : 0;
+            const billDisp = document.getElementById('accept-bill-display');
+            const roundDisp = document.getElementById('accept-rounded-display');
+            const roundInput = document.getElementById('accept-cod-rounded');
+            if (billDisp) billDisp.innerText = 'Rp ' + bill.toLocaleString('id-ID');
+            if (roundDisp) roundDisp.innerText = 'Rp ' + rounded.toLocaleString('id-ID');
+            if (roundInput) roundInput.value = rounded;
+        }
+
+        function openCompleteCodModal(id, code, merchant, billAmount, roundedAmount) {
+            currentCompleteCod.id = id;
+            currentCompleteCod.billAmount = parseInt(billAmount);
+            currentCompleteCod.roundedAmount = parseInt(roundedAmount);
+            currentCompleteCod.paymentMethod = 'cash';
+
+            const form = document.getElementById('form-complete-cod');
+            if (form) form.action = '/operational/cod-orders/' + id + '/complete';
+
+            const codeEl = document.getElementById('calc-order-code');
+            if (codeEl) codeEl.innerText = '#' + code;
+
+            const merchEl = document.getElementById('calc-merchant-name');
+            if (merchEl) merchEl.innerText = merchant || 'Resto ShopeeFood';
+
+            const billLabel = document.getElementById('calc-bill-amount-label');
+            if (billLabel) billLabel.innerText = 'Rp ' + currentCompleteCod.billAmount.toLocaleString('id-ID');
+
+            const roundLabel = document.getElementById('calc-rounded-amount-label');
+            if (roundLabel) roundLabel.innerText = 'Rp ' + currentCompleteCod.roundedAmount.toLocaleString('id-ID');
+
+            // Set default gave amount = rounded amount
+            const gaveInput = document.getElementById('calc-gave-amount');
+            if (gaveInput) gaveInput.value = currentCompleteCod.roundedAmount;
+
+            // Reset parkir
+            const chkParkir = document.getElementById('chk-reimburse-parking');
+            if (chkParkir) chkParkir.checked = false;
+            toggleParkingReimburse(false);
+
+            // Set payment method to cash by default
+            setCodPaymentMethod('cash');
+
+            // Recalculate
+            onGaveAmountChanged();
+
+            // Try get GPS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = document.getElementById('complete-cod-lat');
+                    const lng = document.getElementById('complete-cod-lng');
+                    if (lat) lat.value = pos.coords.latitude;
+                    if (lng) lng.value = pos.coords.longitude;
+                }, () => {}, { timeout: 5000 });
+            }
+
+            openModal('modal-complete-cod');
+        }
+
+        function setCodPaymentMethod(method) {
+            currentCompleteCod.paymentMethod = method;
+            const methodInput = document.getElementById('calc-payment-method');
+            if (methodInput) methodInput.value = method;
+
+            const btnCash = document.getElementById('btn-method-cash');
+            const btnQris = document.getElementById('btn-method-qris');
+            const qrisSection = document.getElementById('calc-qris-section');
+            const cashSection = document.getElementById('calc-cash-calculator-section');
+
+            if (method === 'cash') {
+                if (btnCash) {
+                    btnCash.classList.add('bg-emerald-600', 'text-white', 'border-emerald-500');
+                    btnCash.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-700');
+                }
+                if (btnQris) {
+                    btnQris.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-500');
+                    btnQris.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-700');
+                }
+                if (qrisSection) qrisSection.classList.add('hidden');
+                if (cashSection) cashSection.classList.remove('hidden');
+            } else {
+                if (btnQris) {
+                    btnQris.classList.add('bg-emerald-600', 'text-white', 'border-emerald-500');
+                    btnQris.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-700');
+                }
+                if (btnCash) {
+                    btnCash.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-500');
+                    btnCash.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-700');
+                }
+                if (qrisSection) qrisSection.classList.remove('hidden');
+                if (cashSection) cashSection.classList.add('hidden');
+                const qrisAmountInput = document.getElementById('calc-qris-amount');
+                if (qrisAmountInput && !qrisAmountInput.value) {
+                    qrisAmountInput.value = currentCompleteCod.roundedAmount;
+                }
+            }
+            recalculateCodAmounts();
+        }
+
+        function onGaveAmountChanged() {
+            const gaveInput = document.getElementById('calc-gave-amount');
+            const gave = parseInt(gaveInput?.value) || 0;
+            const stdChange = Math.max(0, gave - currentCompleteCod.roundedAmount);
+
+            const stdChangeDisp = document.getElementById('calc-std-change-display');
+            if (stdChangeDisp) stdChangeDisp.innerText = 'Rp ' + stdChange.toLocaleString('id-ID');
+
+            // Default change returned = stdChange
+            const changeInput = document.getElementById('calc-change-returned');
+            if (changeInput) changeInput.value = stdChange;
+
+            recalculateCodAmounts();
+        }
+
+        function setGavePreset(amount) {
+            const gaveInput = document.getElementById('calc-gave-amount');
+            if (gaveInput) {
+                gaveInput.value = amount === 'pas' ? currentCompleteCod.roundedAmount : amount;
+                onGaveAmountChanged();
+            }
+        }
+
+        function setChangePreset(amount) {
+            const changeInput = document.getElementById('calc-change-returned');
+            const gaveInput = document.getElementById('calc-gave-amount');
+            const gave = parseInt(gaveInput?.value) || 0;
+            const stdChange = Math.max(0, gave - currentCompleteCod.roundedAmount);
+
+            if (changeInput) {
+                if (amount === 'full') {
+                    changeInput.value = stdChange;
+                } else {
+                    changeInput.value = amount;
+                }
+                recalculateCodAmounts();
+            }
+        }
+
+        function toggleParkingReimburse(show) {
+            const sec = document.getElementById('div-calc-parking');
+            const input = document.getElementById('calc-parking-amount');
+            if (sec) {
+                if (show) {
+                    sec.classList.remove('hidden');
+                    if (input && (!input.value || input.value == 0)) input.value = 2000;
+                } else {
+                    sec.classList.add('hidden');
+                    if (input) input.value = 0;
+                }
+            }
+            recalculateCodAmounts();
+        }
+
+        function recalculateCodAmounts() {
+            let received = 0;
+            if (currentCompleteCod.paymentMethod === 'cash') {
+                const gave = parseInt(document.getElementById('calc-gave-amount')?.value) || 0;
+                const returned = parseInt(document.getElementById('calc-change-returned')?.value) || 0;
+                received = Math.max(0, gave - returned);
+            } else {
+                received = parseInt(document.getElementById('calc-qris-amount')?.value) || 0;
+            }
+
+            const bill = currentCompleteCod.billAmount;
+            const parking = parseInt(document.getElementById('calc-parking-amount')?.value) || 0;
+            const totalSurplus = Math.max(0, received - bill);
+            const actualTip = Math.max(0, totalSurplus - parking);
+
+            // Update displays
+            const netReceivedInput = document.getElementById('input-final-received-amount');
+            if (netReceivedInput) netReceivedInput.value = received;
+
+            const netReceivedDisp = document.getElementById('calc-net-received-display');
+            if (netReceivedDisp) netReceivedDisp.innerText = 'Rp ' + received.toLocaleString('id-ID');
+
+            const breakdownShopee = document.getElementById('calc-breakdown-shopee');
+            if (breakdownShopee) breakdownShopee.innerText = 'Rp ' + bill.toLocaleString('id-ID');
+
+            const breakdownSurplus = document.getElementById('calc-breakdown-surplus');
+            if (breakdownSurplus) breakdownSurplus.innerText = 'Rp ' + totalSurplus.toLocaleString('id-ID');
+        }
+
+        function openCancelCodModal(id, code) {
+            const form = document.getElementById('form-cancel-cod');
+            if (form) form.action = '/operational/cod-orders/' + id + '/cancel';
+            const codeEl = document.getElementById('cancel-cod-code');
+            if (codeEl) codeEl.innerText = '#' + code;
+            openModal('modal-cancel-cod');
         }
 
         // Interactive Tour menggunakan Driver.js

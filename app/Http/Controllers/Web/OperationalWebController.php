@@ -6,9 +6,11 @@ use App\Enums\AccountType;
 use App\Enums\EntryType;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\ActiveCodOrder;
 use App\Models\Debt;
 use App\Models\DebtInstallment;
 use App\Models\WorkDay;
+use App\Services\ActiveCodOrderService;
 use App\Services\CodOrderService;
 use App\Services\FriendDebtSettlementService;
 use App\Services\InitialBalanceService;
@@ -299,7 +301,99 @@ class OperationalWebController extends Controller
     }
 
     /**
-     * Catat Pesanan COD ShopeeFood
+     * Terima Order COD Baru di Jalan (ShopeePay otomatis terpotong untuk talangan resto)
+     */
+    public function acceptCodOrder(
+        Request $request,
+        ActiveCodOrderService $service
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'work_day_id' => 'required|exists:work_days,id',
+            'order_code' => 'required|string|max:20',
+            'bill_amount' => 'required|integer|min:100',
+            'merchant_name' => 'nullable|string|max:255',
+            'rounded_bill_amount' => 'nullable|integer|min:100',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+
+        $order = $service->acceptCodOrder(
+            workDay: $workDay,
+            orderCode: $validated['order_code'],
+            billAmount: (int) $validated['bill_amount'],
+            merchantName: $validated['merchant_name'] ?? null,
+            roundedBillAmount: !empty($validated['rounded_bill_amount']) ? (int) $validated['rounded_bill_amount'] : null,
+            latitude: !empty($validated['latitude']) ? (float) $validated['latitude'] : null,
+            longitude: !empty($validated['longitude']) ? (float) $validated['longitude'] : null,
+            notes: $validated['notes'] ?? null
+        );
+
+        return redirect()->back()->with('success', "Pesanan COD #{$order->order_code} berhasil diterima. Saldo ShopeePay otomatis terpotong Rp " . number_format($order->bill_amount, 0, ',', '.') . ".");
+    }
+
+    /**
+     * Selesaikan Pesanan COD di Lokasi Customer (Kalkulator Sederhana & Masuk Kas/QRIS)
+     */
+    public function completeCodOrder(
+        Request $request,
+        int $id,
+        ActiveCodOrderService $service
+    ): RedirectResponse {
+        $order = ActiveCodOrder::findOrFail($id);
+
+        $validated = $request->validate([
+            'received_amount' => 'required|integer|min:1',
+            'payment_method' => 'required|in:cash,qris',
+            'customer_gave_amount' => 'nullable|integer|min:0',
+            'change_returned' => 'nullable|integer|min:0',
+            'settlement_account_id' => 'nullable|exists:accounts,id',
+            'parking_reimbursed' => 'nullable|integer|min:0',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $completed = $service->completeCodOrder(
+            order: $order,
+            receivedAmount: (int) $validated['received_amount'],
+            paymentMethod: $validated['payment_method'],
+            customerGaveAmount: !empty($validated['customer_gave_amount']) ? (int) $validated['customer_gave_amount'] : null,
+            changeReturned: isset($validated['change_returned']) ? (int) $validated['change_returned'] : null,
+            settlementAccountId: !empty($validated['settlement_account_id']) ? (int) $validated['settlement_account_id'] : null,
+            parkingReimbursed: (int) ($validated['parking_reimbursed'] ?? 0),
+            latitude: !empty($validated['latitude']) ? (float) $validated['latitude'] : null,
+            longitude: !empty($validated['longitude']) ? (float) $validated['longitude'] : null,
+            notes: $validated['notes'] ?? null
+        );
+
+        $methodLabel = $completed->payment_method === 'cash' ? 'Kas Dompet' : 'Rekening Digital (QRIS)';
+        return redirect()->back()->with('success', "Pesanan COD #{$completed->order_code} selesai diantar! Uang Rp " . number_format($completed->received_amount, 0, ',', '.') . " berhasil masuk ke {$methodLabel}.");
+    }
+
+    /**
+     * Batalkan Pesanan COD & Pulihkan Saldo ShopeePay
+     */
+    public function cancelCodOrder(
+        Request $request,
+        int $id,
+        ActiveCodOrderService $service
+    ): RedirectResponse {
+        $order = ActiveCodOrder::findOrFail($id);
+
+        $validated = $request->validate([
+            'reason' => 'required|string|min:5',
+        ]);
+
+        $cancelled = $service->cancelCodOrder($order, $validated['reason']);
+
+        return redirect()->back()->with('success', "Pesanan COD #{$cancelled->order_code} telah dibatalkan & saldo ShopeePay telah dipulihkan.");
+    }
+
+    /**
+     * Catat Pesanan COD ShopeeFood (Legacy Langsung)
      */
     public function storeCod(
         Request $request,

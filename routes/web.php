@@ -47,6 +47,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/fuel', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFuel'])->name('operational.fuel');
     Route::post('/operational/parking', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeParking'])->name('operational.parking');
     Route::post('/operational/cod', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeCod'])->name('operational.cod');
+    Route::post('/operational/cod-orders/accept', [\App\Http\Controllers\Web\OperationalWebController::class, 'acceptCodOrder'])->name('operational.cod-orders.accept');
+    Route::post('/operational/cod-orders/{id}/complete', [\App\Http\Controllers\Web\OperationalWebController::class, 'completeCodOrder'])->name('operational.cod-orders.complete');
+    Route::post('/operational/cod-orders/{id}/cancel', [\App\Http\Controllers\Web\OperationalWebController::class, 'cancelCodOrder'])->name('operational.cod-orders.cancel');
     Route::post('/operational/transfer', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeTransfer'])->name('operational.transfer');
     Route::post('/operational/personal-expense', [\App\Http\Controllers\Web\OperationalWebController::class, 'storePersonalExpense'])->name('operational.personal-expense');
     Route::post('/operational/personal-income', [\App\Http\Controllers\Web\OperationalWebController::class, 'storePersonalIncome'])->name('operational.personal-income');

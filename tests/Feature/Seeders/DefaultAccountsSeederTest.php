@@ -32,6 +32,7 @@ class DefaultAccountsSeederTest extends TestCase
             'Beban Bensin Kendaraan' => AccountType::EXPENSE,
             'Beban Parkir' => AccountType::EXPENSE,
             'Beban Serba-serbi & Insidental Lapangan' => AccountType::EXPENSE,
+            'Talangan Pesanan COD' => AccountType::RECEIVABLE,
         ];
 
         foreach ($essentialAccounts as $name => $expectedType) {
@@ -42,7 +43,7 @@ class DefaultAccountsSeederTest extends TestCase
             $this->assertTrue($account->is_active);
         }
 
-        $this->assertEquals(20, Account::count());
+        $this->assertEquals(21, Account::count());
     }
 
     /**
@@ -51,10 +52,10 @@ class DefaultAccountsSeederTest extends TestCase
     public function test_seeder_can_run_multiple_times_without_duplicate_errors(): void
     {
         $this->seed(DefaultAccountsSeeder::class);
-        $this->assertEquals(20, Account::count());
+        $this->assertEquals(21, Account::count());
 
         // Jalankan kedua kali
         $this->seed(DefaultAccountsSeeder::class);
-        $this->assertEquals(20, Account::count());
+        $this->assertEquals(21, Account::count());
     }
 }
