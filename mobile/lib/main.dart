@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 
+import 'features/main_navigation_screen.dart';
+
 void main() {
   runApp(
     const ProviderScope(
@@ -19,18 +21,7 @@ class DriverFinanceApp extends StatelessWidget {
       title: 'Driver Finance Malang',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            'Driver Finance Malang',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
+      home: const MainNavigationScreen(),
     );
   }
 }

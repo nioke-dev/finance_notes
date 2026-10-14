@@ -249,8 +249,14 @@ class DashboardController extends Controller
             'total_income' => $dayTotalIncome,
         ];
 
+        // Voice Memos (Kotak Hitam Helm) Hari Ini
+        $todayVoiceMemos = $currentWorkDay
+            ? $currentWorkDay->voiceMemos()->latest('recorded_at')->get()
+            : collect();
+
         return view('dashboard.index', compact(
             'accounts',
+            'todayVoiceMemos',
             'totalDigital',
             'totalCash',
             'totalDebt',

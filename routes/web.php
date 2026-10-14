@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/subscriptions', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeSubscription'])->name('operational.subscriptions');
     Route::post('/operational/subscriptions/{id}/pay', [\App\Http\Controllers\Web\OperationalWebController::class, 'paySubscription'])->name('operational.subscriptions.pay');
     Route::post('/operational/subscriptions/{id}/toggle', [\App\Http\Controllers\Web\OperationalWebController::class, 'toggleSubscription'])->name('operational.subscriptions.toggle');
+    Route::post('/operational/voice-memo', [\App\Http\Controllers\Api\VoiceMemoController::class, 'upload'])->name('operational.voice-memo');
 
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');
     Route::get('/analytics/fuel', [FuelAnalyticsController::class, 'index'])->name('analytics.fuel');
@@ -77,3 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/shopee-bonus', [ShopeeBonusSettingController::class, 'update'])->name('settings.shopee-bonus.update');
     Route::get('/audit-logs', [AuditLogWebController::class, 'index'])->name('audit-logs.index');
 });
+
+// Download Langsung APK Rilis Android
+Route::get('/download/driver-finance-latest.apk', [\App\Http\Controllers\Api\AppUpdateController::class, 'downloadApk'])->name('app.download');
+

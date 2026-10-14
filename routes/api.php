@@ -27,6 +27,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/debts/upcoming', [\App\Http\Controllers\Api\DebtScheduleController::class, 'upcoming']);
     Route::post('/reconciliation/finalize-day', [\App\Http\Controllers\Api\ReconciliationController::class, 'finalizeDay']);
     Route::get('/reconciliation/unfinalized-dates', [\App\Http\Controllers\Api\UnfinalizedDatesBannerController::class, 'index']);
+
+    // In-App OTA Auto-Update Endpoint
+    Route::get('/app/check-update', [\App\Http\Controllers\Api\AppUpdateController::class, 'checkUpdate']);
 });
 
 Route::match(['get', 'post'], '/deploy', [\App\Http\Controllers\Api\DeployWebhookController::class, 'handle']);

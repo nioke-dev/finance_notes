@@ -591,7 +591,50 @@
                             <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Tarik Tunai Modal</span>
                             <span class="text-[10px] text-slate-400">Digital &rarr; Kas Dompet</span>
                         </button>
+
+                        <button type="button" onclick="openVoiceRecorderModal()" class="p-3 bg-gradient-to-br from-rose-950/50 to-slate-900 hover:from-rose-900/60 hover:to-slate-800 border border-rose-500/50 hover:border-rose-400 rounded-xl text-left transition group shadow-lg">
+                            <span class="text-lg block mb-1">🎙️</span>
+                            <span class="text-xs font-bold text-rose-300 block group-hover:text-rose-200">Intercom Helm</span>
+                            <span class="text-[10px] text-slate-400">Catat Suara + GPS</span>
+                        </button>
                     </div>
+                </div>
+
+                {{-- WIDGET KOTAK HITAM & MEMO SUARA HELM HARI INI --}}
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-700/80 pb-3">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 font-bold text-base">
+                                🎙️
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-white">Kotak Hitam & Memo Suara Helm Hari Ini</h4>
+                                <span class="text-[11px] text-slate-400 block mt-0.5">Bukti suara transaksi cepat di jalan & investigasi selisih closing malam</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 font-bold">
+                                {{ $todayVoiceMemos->count() }} Rekaman
+                            </span>
+                            <button type="button" onclick="openVoiceRecorderModal()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition shadow flex items-center space-x-1">
+                                <span>+ Rekam Memo</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    @if($todayVoiceMemos->isNotEmpty())
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            @foreach($todayVoiceMemos as $memo)
+                                <x-voice-memo-player :memo="$memo" />
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-6 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                            <span class="text-2xl block mb-1">🎧</span>
+                            <span class="text-xs font-semibold text-slate-300 block">Belum ada rekaman suara helm untuk shift ini.</span>
+                            <span class="text-[11px] text-slate-500 block mt-0.5">Tekan tombol mikrofon di kanan bawah saat di lampu merah/menunggu resto untuk merekam cepat.</span>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -2813,6 +2856,89 @@
         </div>
     </div>
 
+    {{-- MODAL PEREKAM FAST VOICE MEMO (INTERCOM HELM) --}}
+    <div id="modal-voice-recorder" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-rose-500/50 rounded-2xl max-w-sm w-full p-6 space-y-5 text-center shadow-2xl relative">
+            <button type="button" onclick="closeVoiceRecorderModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+            
+            <div class="space-y-1">
+                <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30">
+                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                    <span>Kotak Hitam Helm &bull; Fast Memo</span>
+                </span>
+                <h3 class="text-base font-black text-white pt-1">Intercom Rekam Suara Cepat</h3>
+                <p class="text-xs text-slate-400">Rekam catatan pengeluaran, parkir liar, atau komplain COD di jalan.</p>
+            </div>
+
+            {{-- Status GPS --}}
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm">📍</span>
+                    <span id="gps-status-text" class="text-slate-400 font-mono text-[11px]">Mencari koordinat GPS...</span>
+                </div>
+                <button type="button" onclick="detectGps()" class="text-xs text-emerald-400 hover:underline font-semibold">Refresh</button>
+            </div>
+
+            {{-- Timer & Gelombang Rekaman --}}
+            <div class="py-4 space-y-2">
+                <div id="recording-timer" class="text-4xl font-mono font-black text-white tracking-widest">
+                    00:00
+                </div>
+                <div id="recording-pulse" class="flex justify-center items-center space-x-1 hidden">
+                    <span class="w-1.5 h-6 bg-rose-500 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-10 bg-amber-400 rounded-full animate-bounce delay-75"></span>
+                    <span class="w-1.5 h-4 bg-rose-400 rounded-full animate-bounce delay-150"></span>
+                    <span class="w-1.5 h-8 bg-rose-600 rounded-full animate-bounce delay-200"></span>
+                    <span class="w-1.5 h-5 bg-amber-500 rounded-full animate-bounce delay-100"></span>
+                </div>
+                <span id="record-status-label" class="text-xs text-slate-300 font-medium block">
+                    Tekan tombol merah di bawah untuk mulai rekam
+                </span>
+            </div>
+
+            {{-- Tombol Utama 1-Tap Record / Stop --}}
+            <div class="flex flex-col items-center justify-center space-y-3">
+                <button 
+                    type="button" 
+                    id="btn-record-toggle" 
+                    onclick="toggleVoiceRecording()" 
+                    class="w-20 h-20 rounded-full bg-gradient-to-tr from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white flex items-center justify-center shadow-xl shadow-rose-950/80 border-4 border-slate-800 transition transform active:scale-90"
+                >
+                    <svg id="icon-mic" class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                    <svg id="icon-stop" class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                </button>
+                <span class="text-[11px] text-slate-500">Audio akan otomatis disimpan ke Kotak Hitam hari ini.</span>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+                <span>Shift ID: #{{ $currentWorkDay ? $currentWorkDay->id : 'Belum Buka' }}</span>
+                <button type="button" onclick="closeVoiceRecorderModal()" class="text-slate-400 hover:text-white">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- FLOATING ACTION BUTTON VOICE RECORDER (DESKTOP & MOBILE HIGH VISIBILITY) --}}
+    <div class="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-40">
+        <button 
+            type="button" 
+            onclick="openVoiceRecorderModal()" 
+            class="flex items-center space-x-2 bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-extrabold px-4 py-3 rounded-full shadow-2xl shadow-rose-950/80 border-2 border-slate-900 group transition transform active:scale-95"
+            title="Kotak Hitam Memo Suara Helm (Audio + GPS)"
+        >
+            <span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+            <span class="text-xs tracking-wider uppercase font-black hidden sm:inline">Intercom Helm</span>
+        </button>
+    </div>
+
     {{-- Script Modal Handling, Tabs, & Interactive Tour --}}
     <script>
         function openModal(id) {
@@ -2820,6 +2946,174 @@
         }
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
+        }
+
+        // Voice Recorder Logic (Web MediaRecorder & Geolocation)
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingTimer = null;
+        let recordingSeconds = 0;
+        let currentWorkDayId = {{ $currentWorkDay ? $currentWorkDay->id : 'null' }};
+        let currentGpsCoords = { lat: null, lng: null };
+
+        function openVoiceRecorderModal() {
+            openModal('modal-voice-recorder');
+            detectGps();
+        }
+
+        function closeVoiceRecorderModal() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                if (confirm('Rekaman sedang berjalan. Ingin menghentikan dan membatalkan?')) {
+                    mediaRecorder.stop();
+                    clearInterval(recordingTimer);
+                    resetRecorderUI();
+                    closeModal('modal-voice-recorder');
+                }
+            } else {
+                closeModal('modal-voice-recorder');
+            }
+        }
+
+        window.triggerVoiceRecorder = function() {
+            openVoiceRecorderModal();
+        };
+
+        function detectGps() {
+            const statusEl = document.getElementById('gps-status-text');
+            if (!('geolocation' in navigator)) {
+                if (statusEl) statusEl.innerText = 'GPS tidak didukung browser';
+                return;
+            }
+            if (statusEl) statusEl.innerText = 'Mencari sinyal GPS...';
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    currentGpsCoords.lat = pos.coords.latitude;
+                    currentGpsCoords.lng = pos.coords.longitude;
+                    if (statusEl) {
+                        statusEl.innerText = 'GPS Terkunci: ' + pos.coords.latitude.toFixed(4) + ', ' + pos.coords.longitude.toFixed(4);
+                        statusEl.classList.remove('text-slate-400');
+                        statusEl.classList.add('text-emerald-400');
+                    }
+                },
+                (err) => {
+                    console.warn('Geolocation error:', err);
+                    if (statusEl) statusEl.innerText = 'GPS: Opsional (Tidak Terkunci)';
+                },
+                { enableHighAccuracy: true, timeout: 6000 }
+            );
+        }
+
+        async function toggleVoiceRecording() {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                await startVoiceRecording();
+            } else if (mediaRecorder.state === 'recording') {
+                stopVoiceRecording();
+            }
+        }
+
+        async function startVoiceRecording() {
+            if (!currentWorkDayId) {
+                alert('Shift hari ini belum dibuka. Silakan buka shift narik terlebih dahulu.');
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioChunks = [];
+                let mimeType = 'audio/webm';
+                if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                    if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                        mimeType = 'audio/mp4';
+                    } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                        mimeType = 'audio/ogg';
+                    }
+                }
+
+                mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+                mediaRecorder.onstop = () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    uploadVoiceMemo(mimeType);
+                };
+
+                mediaRecorder.start();
+                recordingSeconds = 0;
+                document.getElementById('recording-timer').innerText = '00:00';
+                document.getElementById('icon-mic').classList.add('hidden');
+                document.getElementById('icon-stop').classList.remove('hidden');
+                document.getElementById('btn-record-toggle').classList.replace('from-rose-600', 'from-amber-600');
+                document.getElementById('btn-record-toggle').classList.replace('to-rose-500', 'to-amber-500');
+                document.getElementById('recording-pulse').classList.remove('hidden');
+                document.getElementById('record-status-label').innerText = '🔴 Merekam suara helm... Tap tombol untuk simpan';
+
+                recordingTimer = setInterval(() => {
+                    recordingSeconds++;
+                    const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+                    const secs = String(recordingSeconds % 60).padStart(2, '0');
+                    document.getElementById('recording-timer').innerText = mins + ':' + secs;
+                }, 1000);
+            } catch (err) {
+                alert('Gagal mengakses mikrofon: ' + err.message + '\nIzinkan mikrofon di pengaturan browser Anda.');
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                clearInterval(recordingTimer);
+                document.getElementById('recording-pulse').classList.add('hidden');
+                document.getElementById('record-status-label').innerText = '⏳ Mengunggah ke Kotak Hitam...';
+                mediaRecorder.stop();
+            }
+        }
+
+        function resetRecorderUI() {
+            document.getElementById('icon-mic').classList.remove('hidden');
+            document.getElementById('icon-stop').classList.add('hidden');
+            document.getElementById('btn-record-toggle').classList.replace('from-amber-600', 'from-rose-600');
+            document.getElementById('btn-record-toggle').classList.replace('to-amber-500', 'to-rose-500');
+            document.getElementById('recording-timer').innerText = '00:00';
+            document.getElementById('record-status-label').innerText = 'Tekan tombol merah di bawah untuk mulai rekam';
+            recordingSeconds = 0;
+        }
+
+        async function uploadVoiceMemo(mimeType) {
+            const ext = mimeType.includes('mp4') ? 'mp4' : (mimeType.includes('ogg') ? 'ogg' : 'webm');
+            const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
+            const formData = new FormData();
+            formData.append('work_day_id', currentWorkDayId);
+            formData.append('audio_file', audioBlob, `memo_${Date.now()}.${ext}`);
+            formData.append('duration_seconds', recordingSeconds);
+            if (currentGpsCoords.lat && currentGpsCoords.lng) {
+                formData.append('latitude', currentGpsCoords.lat);
+                formData.append('longitude', currentGpsCoords.lng);
+            }
+
+            try {
+                const response = await fetch('/operational/voice-memo', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const resData = await response.json();
+                if (response.ok) {
+                    document.getElementById('record-status-label').innerText = '✓ Berhasil disimpan ke Kotak Hitam!';
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 800);
+                } else {
+                    alert('Gagal upload: ' + (resData.message || 'Terjadi kesalahan'));
+                    resetRecorderUI();
+                }
+            } catch (err) {
+                alert('Kesalahan jaringan: ' + err.message);
+                resetRecorderUI();
+            }
         }
 
         // Kalkulator Denominasi Modal Awal Akun

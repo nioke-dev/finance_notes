@@ -27,7 +27,7 @@
     </div>
 
     <audio controls class="w-full h-8 rounded-lg accent-emerald-500 focus:outline-none">
-        <source src="{{ $memo->audio_url }}" type="audio/mp4">
+        <source src="{{ $memo->audio_url }}">
         Browser Anda tidak mendukung pemutar audio HTML5.
     </audio>
 </div>

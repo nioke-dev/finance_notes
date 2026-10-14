@@ -78,4 +78,38 @@ class DashboardPageTest extends TestCase
         $response->assertSee('Hari Kerja Belum Difinalisasi');
         $response->assertSee('Investigasi Sekarang');
     }
+
+    public function test_dashboard_renders_voice_memo_intercom_fab_and_modal(): void
+    {
+        $response = $this->get('/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Intercom Helm');
+        $response->assertSee('modal-voice-recorder');
+        $response->assertSee('Kotak Hitam & Memo Suara Helm Hari Ini', false);
+    }
+
+    public function test_dashboard_displays_today_voice_memos_with_gps(): void
+    {
+        $todayWorkDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        \App\Models\VoiceMemo::create([
+            'work_day_id' => $todayWorkDay->id,
+            'file_path' => 'voice_memos/test_memo.webm',
+            'duration_seconds' => 12,
+            'latitude' => -7.9826,
+            'longitude' => 112.6308,
+            'recorded_at' => now(),
+        ]);
+
+        $response = $this->get('/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('1 Rekaman');
+        $response->assertSee('12s');
+        $response->assertSee('maps?q=-7.9826,112.6308', false);
+    }
 }
