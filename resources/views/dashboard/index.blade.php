@@ -50,7 +50,7 @@
                 <span class="text-2xl">📅</span>
                 <div>
                     <h3 class="text-sm font-bold text-white">Evaluasi & Filter Aktivitas Harian</h3>
-                    <p class="text-xs text-slate-400">Pilih tanggal untuk melihat breakdown pendapatan narik & pengeluaran hari tersebut.</p>
+                    <p class="text-xs text-slate-400">Pilih tanggal untuk melihat perbandingan pendapatan driver vs keuangan pribadi hari tersebut.</p>
                 </div>
             </div>
             <form method="GET" action="/dashboard" class="flex items-center space-x-2 w-full sm:w-auto">
@@ -59,81 +59,103 @@
             </form>
         </div>
 
-        {{-- 1. KOTAK KINERJA HARIAN DRIVER SHOPEEFOOD (Breakdown Pendapatan Bersih vs Kotor) --}}
-        <div id="tour-driver-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-slate-700/60">
-                <div>
-                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold mb-2">
-                        <span>🛵</span>
-                        <span>Performa ShopeeFood Tanggal: {{ \Illuminate\Support\Carbon::parse($selectedDate)->translatedFormat('l, d F Y') }}</span>
-                    </div>
-                    <div class="flex items-baseline space-x-3">
-                        <h2 class="text-3xl sm:text-4xl font-extrabold text-white">
+        {{-- DUA KARTU KOMPARASI HARIAN: 1. OPERASIONAL DRIVER VS 2. KEUANGAN PRIBADI SEHARI-HARI --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {{-- KARTU 1: KINERJA OPERASIONAL DRIVER SHOPEEFOOD --}}
+            <div id="tour-driver-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl p-5 shadow-2xl space-y-4">
+                <div class="flex justify-between items-start border-b border-slate-700/60 pb-3">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold mb-1">
+                            <span>🛵</span>
+                            <span>Operasional Driver ShopeeFood</span>
+                        </div>
+                        <h3 class="text-2xl font-extrabold text-white">
                             Rp {{ number_format($dayNetProfit, 0, ',', '.') }}
-                        </h2>
-                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                        </h3>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
                             Profit Bersih Narik (Netto)
                         </span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-1">
-                        (Pendapatan Kotor: Rp {{ number_format($dayTotalIncome, 0, ',', '.') }} &bull; Pengeluaran Operasional On-Beat: Rp {{ number_format($dayFuelExpense + $dayParkingExpense, 0, ',', '.') }})
-                    </p>
-                </div>
-
-                <div class="flex flex-wrap gap-2.5">
                     @if($currentWorkDay)
-                        <a id="tour-closing-btn" href="/closing/{{ $currentWorkDay->id }}" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5">
+                        <a id="tour-closing-btn" href="/closing/{{ $currentWorkDay->id }}" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1">
                             <span>🔒</span>
-                            <span>Closing Kas Shift Ini &rarr;</span>
+                            <span>Closing Kas &rarr;</span>
                         </a>
                     @endif
-                    <button type="button" onclick="startDriverTour()" class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition flex items-center space-x-1.5 shadow">
+                </div>
+
+                {{-- Grid 4 Metrik Driver --}}
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3">
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Ongkir / Tagihan COD</span>
+                        <span class="text-sm font-bold text-white block mt-0.5">Rp {{ number_format($dayRegularIncome, 0, ',', '.') }}</span>
+                        <span class="text-[10px] text-slate-500 block">{{ $dayOrdersCount }} pesanan</span>
+                    </div>
+
+                    <div class="bg-slate-900/80 border border-emerald-500/20 rounded-xl p-3">
+                        <span class="text-emerald-400 text-[10px] uppercase font-semibold block">Tip Bersih Pelanggan</span>
+                        <span class="text-sm font-bold text-emerald-400 block mt-0.5">+Rp {{ number_format($dayTipIncome, 0, ',', '.') }}</span>
+                        <span class="text-[10px] text-slate-500 block">Surplus kembalian ikhlas</span>
+                    </div>
+
+                    <div class="bg-slate-900/80 border border-rose-500/20 rounded-xl p-3">
+                        <span class="text-rose-400 text-[10px] uppercase font-semibold block">Beban Bensin (BBM)</span>
+                        <span class="text-sm font-bold text-rose-400 block mt-0.5">-Rp {{ number_format($dayFuelExpense, 0, ',', '.') }}</span>
+                        <span class="text-[10px] text-slate-500 block">Operasional motor</span>
+                    </div>
+
+                    <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3">
+                        <span class="text-amber-400 text-[10px] uppercase font-semibold block">Parkir Motor Driver</span>
+                        <span class="text-sm font-bold text-amber-400 block mt-0.5">-Rp {{ number_format($dayParkingExpense, 0, ',', '.') }}</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold block">✓ {{ $dayRestoPaidParkingCount }} gratis/resto</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- KARTU 2: KEUANGAN PRIBADI & KEBUTUHAN SEHARI-HARI --}}
+            <div id="tour-personal-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 shadow-2xl space-y-4">
+                <div class="flex justify-between items-start border-b border-slate-700/60 pb-3">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold mb-1">
+                            <span>☕</span>
+                            <span>Kebutuhan Hidup & Finansial Pribadi</span>
+                        </div>
+                        <h3 class="text-2xl font-extrabold text-white">
+                            Rp {{ number_format($dayPersonalIncome - $dayPersonalExpense - $dayDebtRepayment, 0, ',', '.') }}
+                        </h3>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">
+                            Arus Kas Pribadi Hari Ini
+                        </span>
+                    </div>
+                    <button type="button" onclick="startDriverTour()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition flex items-center space-x-1 shadow">
                         <span>✨</span>
-                        <span>Panduan Animasi</span>
+                        <span>Panduan Audio & Animasi</span>
                     </button>
                 </div>
-            </div>
 
-            {{-- Breakdown Grid 4 Metrik Utama --}}
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
-                {{-- Pendapatan Reguler --}}
-                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3.5">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">1. Ongkir / Tagihan COD</span>
-                    <span class="text-lg font-bold text-white mt-1 block">
-                        Rp {{ number_format($dayRegularIncome, 0, ',', '.') }}
-                    </span>
-                    <span class="text-[10px] text-slate-500 block mt-0.5">Dari {{ $dayOrdersCount }} pesanan hari ini</span>
-                </div>
+                {{-- Grid 3 Metrik Pribadi --}}
+                <div class="grid grid-cols-3 gap-3 text-xs">
+                    <div class="bg-slate-900/80 border border-emerald-500/20 rounded-xl p-3">
+                        <span class="text-emerald-400 text-[10px] uppercase font-semibold block">Pemasukan Pribadi</span>
+                        <span class="text-sm font-bold text-emerald-400 block mt-0.5">+Rp {{ number_format($dayPersonalIncome, 0, ',', '.') }}</span>
+                        <span class="text-[10px] text-slate-500 block">Jual barang, project, transfer</span>
+                    </div>
 
-                {{-- Tip Pelanggan --}}
-                <div class="bg-slate-900/80 border border-emerald-500/20 rounded-xl p-3.5">
-                    <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block">2. Tip Bersih Pelanggan</span>
-                    <span class="text-lg font-bold text-emerald-400 mt-1 block">
-                        +Rp {{ number_format($dayTipIncome, 0, ',', '.') }}
-                    </span>
-                    <span class="text-[10px] text-slate-500 block mt-0.5">Surplus uang kembalian ikhlas</span>
-                </div>
+                    <div class="bg-slate-900/80 border border-rose-500/20 rounded-xl p-3">
+                        <span class="text-rose-400 text-[10px] uppercase font-semibold block">Makan & Belanja</span>
+                        <span class="text-sm font-bold text-rose-400 block mt-0.5">-Rp {{ number_format($dayPersonalExpense, 0, ',', '.') }}</span>
+                        <span class="text-[10px] text-slate-500 block">Sarapan, jajan, kebutuhan</span>
+                    </div>
 
-                {{-- Bensin Motor --}}
-                <div class="bg-slate-900/80 border border-rose-500/20 rounded-xl p-3.5">
-                    <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider block">3. Biaya Bensin (BBM)</span>
-                    <span class="text-lg font-bold text-rose-400 mt-1 block">
-                        -Rp {{ number_format($dayFuelExpense, 0, ',', '.') }}
-                    </span>
-                    <span class="text-[10px] text-slate-500 block mt-0.5">Beban motor operasional</span>
-                </div>
-
-                {{-- Biaya Parkir & Resto Free --}}
-                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3.5">
-                    <span class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block">4. Parkir Motor Driver</span>
-                    <span class="text-lg font-bold text-amber-400 mt-1 block">
-                        -Rp {{ number_format($dayParkingExpense, 0, ',', '.') }}
-                    </span>
-                    <span class="text-[10px] text-emerald-400 font-semibold block mt-0.5">
-                        ✓ {{ $dayRestoPaidParkingCount }} resto gratis / ditanggung
-                    </span>
+                    <div class="bg-slate-900/80 border border-amber-500/20 rounded-xl p-3">
+                        <span class="text-amber-400 text-[10px] uppercase font-semibold block">Bayar Cicilan</span>
+                        <span class="text-sm font-bold text-amber-400 block mt-0.5">-Rp {{ number_format($dayDebtRepayment, 0, ',', '.') }}</span>
+                        <span class="text-[10px] text-slate-500 block">SPayLater & Pinjaman</span>
+                    </div>
                 </div>
             </div>
+
         </div>
 
         {{-- TAB NAVIGASI: PEMISAHAN ANTARA OPERASIONAL DRIVER (ON-BID) VS KEBUTUHAN SEHARI-HARI --}}
@@ -184,31 +206,49 @@
                 </div>
             </div>
 
-            {{-- 2. TAB KONTEN KEBUTUHAN SEHARI-HARI --}}
+            {{-- 2. TAB KONTEN KEBUTUHAN SEHARI-HARI LENGKAP --}}
             <div id="tab-daily" class="tab-content py-4 space-y-4 hidden">
                 <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi</h4>
-                        <span class="text-[11px] text-slate-400">Makan pagi/malam, belanja dapur, transfer tabungan</span>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi Layaknya Manusia</h4>
+                        <span class="text-[11px] text-slate-400">Belanja, sarapan, belanja Shopee SPayLater, pinjaman, transfer</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                         <button type="button" onclick="openModal('modal-expense')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">🍜</span>
-                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Pengeluaran Pribadi</span>
-                            <span class="text-[10px] text-slate-400">Sarapan, jajan, rokok, kebutuhan rumah</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Pengeluaran</span>
+                            <span class="text-[10px] text-slate-400">Sarapan, jajan, rokok</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-personal-income')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">💰</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pemasukan Lain</span>
+                            <span class="text-[10px] text-slate-400">Jual barang, project luar</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-spaylater-purchase')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🛍️</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Belanja SPayLater</span>
+                            <span class="text-[10px] text-slate-400">Beli di Shopee cicil</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-apply-loan')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">🏦</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pinjam Uang / Bank</span>
+                            <span class="text-[10px] text-slate-400">Pinjol / SeaBank / Teman</span>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-pay-installment')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
+                            <span class="text-lg block mb-1">💳</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Bayar Cicilan</span>
+                            <span class="text-[10px] text-slate-400">Lunasi tagihan berjalan</span>
                         </button>
 
                         <button type="button" onclick="openModal('modal-transfer')" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group">
                             <span class="text-lg block mb-1">🔄</span>
-                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pindah Uang / Tarik Tunai</span>
-                            <span class="text-[10px] text-slate-400">Transfer antar BCA, ShopeePay, DANA</span>
+                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Transfer Saldo</span>
+                            <span class="text-[10px] text-slate-400">Pindah rekening / ATM</span>
                         </button>
-
-                        <a href="/debts" class="p-3 bg-slate-900/60 hover:bg-slate-700/70 border border-slate-700 rounded-xl text-left transition group block">
-                            <span class="text-lg block mb-1">💳</span>
-                            <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Bayar Cicilan / SPayLater</span>
-                            <span class="text-[10px] text-slate-400">Kelola tagihan & utang teman</span>
-                        </a>
                     </div>
                 </div>
             </div>
@@ -236,19 +276,23 @@
             </div>
         </div>
 
-        {{-- Grid Kartu Akun Driver & Inisialisasi Saldo Permanen --}}
+        {{-- Grid Kartu Akun Driver & Tambah Rekening / Dompet Baru --}}
         <div id="tour-accounts-grid">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
                 <div>
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Daftar Akun Keuangan Aktif</h3>
-                    <p class="text-xs text-slate-500">Saldo modal awal hanya diatur sekali saat pendaftaran akun baru.</p>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Daftar Akun Keuangan & Rekening Bank</h3>
+                    <p class="text-xs text-slate-500">Kelola dompet fisik, rekening bank baru (BCA, Mandiri, BRI), atau e-wallet (GoPay, DANA, OVO).</p>
                 </div>
                 <div class="flex items-center space-x-2">
+                    <button type="button" onclick="openModal('modal-add-account')" class="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-bold transition flex items-center space-x-1">
+                        <span>➕</span>
+                        <span>Tambah Rekening Baru</span>
+                    </button>
                     <button type="button" onclick="openModal('modal-init-account')" class="px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition">
-                        🔒 Kunci Saldo Awal Akun Baru
+                        🔒 Kunci Saldo Awal
                     </button>
                     <button type="button" onclick="openModal('modal-correct-account')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-xs font-semibold transition">
-                        📝 Koreksi Audit Saldo
+                        📝 Koreksi Audit
                     </button>
                 </div>
             </div>
@@ -290,7 +334,7 @@
         {{-- Riwayat Transaksi Terbaru --}}
         @if($recentTransactions->isNotEmpty())
             <div id="tour-recent-tx" class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow">
-                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">15 Transaksi Terakhir</h3>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">20 Transaksi Terakhir</h3>
                 <div class="divide-y divide-slate-700/50">
                     @foreach($recentTransactions as $tx)
                         <div class="py-3 flex justify-between items-center text-xs">
@@ -311,11 +355,11 @@
 
     {{-- ================= MODALS SECTION ================= --}}
 
-    {{-- 1. Modal Buka Shift & Modal Kas Shift --}}
+    {{-- 1. Modal Buka Shift Narik --}}
     <div id="modal-open-day" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <h3 class="text-base font-bold text-white mb-1">🌅 Buka Hari Kerja (Shift Baru)</h3>
-            <p class="text-xs text-slate-400 mb-4">Membuka hari kerja baru dan menginput modal kas fisik di dompet untuk kembalian hari ini.</p>
+            <p class="text-xs text-slate-400 mb-4">Membuka shift hari ini dan menginput modal kas fisik di dompet untuk kembalian.</p>
             <form method="POST" action="/operational/open-day" class="space-y-4">
                 @csrf
                 <div>
@@ -372,7 +416,7 @@
         </div>
     </div>
 
-    {{-- 3. Modal Parkir Motor (Mendukung Parkir Mandiri vs Ditanggung Resto) --}}
+    {{-- 3. Modal Parkir Motor --}}
     <div id="modal-parking" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <h3 class="text-base font-bold text-white mb-1">🅿️ Catat Parkir Motor Driver</h3>
@@ -432,7 +476,239 @@
         </div>
     </div>
 
-    {{-- 5. Modal Transfer Antar Rekening --}}
+    {{-- 5. Modal Tambah Rekening / Akun Baru --}}
+    <div id="modal-add-account" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-1">➕ Buka Rekening / Dompet Baru</h3>
+            <p class="text-xs text-slate-400 mb-4">Tambahkan rekening bank baru (Mandiri, BRI, SeaBank) atau e-wallet (DANA, OVO, GoPay).</p>
+            <form method="POST" action="/operational/account" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Rekening / Akun</label>
+                    <input type="text" name="name" placeholder="Misal: Bank Mandiri / DANA / SeaBank" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Tipe Akun</label>
+                    <select name="type" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        <option value="bank">Rekening Bank</option>
+                        <option value="ewallet">E-Wallet (Digital)</option>
+                        <option value="cash">Uang Kas Fisik</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Saldo Modal Awal Rekening (Rp)</label>
+                    <input type="number" name="initial_balance" min="0" placeholder="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-add-account')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow">Simpan Rekening Baru</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 6. Modal Pengeluaran Pribadi Sehari-hari (Makan, Pulsa, Dapur) --}}
+    <div id="modal-expense" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-1">🍜 Pengeluaran Sehari-hari / Pribadi</h3>
+            <p class="text-xs text-slate-400 mb-4">Catat sarapan pagi jam 7, makan siang, kopi, belanja dapur, atau kebutuhan rumah tangga.</p>
+            <form method="POST" action="/operational/personal-expense" class="space-y-4">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Pengeluaran</label>
+                    <input type="text" name="description" placeholder="Contoh: Sarapan pagi jam 7 sebelum narik" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan</label>
+                    <select name="source_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pengeluaran (Rp)</label>
+                    <input type="number" name="amount" min="1" placeholder="15000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-expense')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Pengeluaran</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 7. Modal Pemasukan Pribadi (Project Luar / Jual Barang / Transferan) --}}
+    <div id="modal-personal-income" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-1">💰 Pemasukan Pribadi di Luar Driver</h3>
+            <p class="text-xs text-slate-400 mb-4">Catat honor freelance, hasil jual barang bekas, atau transferan keluarga (tidak dicampur ke omzet ShopeeFood).</p>
+            <form method="POST" action="/operational/personal-income" class="space-y-4">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Sumber Pemasukan</label>
+                    <input type="text" name="description" placeholder="Contoh: Jual helm second / Honor project freelance" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Masuk ke Rekening / Dompet</label>
+                    <select name="destination_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}">{{ $acc->name }} (Saat ini: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Uang Masuk (Rp)</label>
+                    <input type="number" name="amount" min="1" placeholder="100000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-personal-income')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Pemasukan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 8. Modal Belanja Online Pakai SPayLater --}}
+    <div id="modal-spaylater-purchase" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-1">🛍️ Belanja Shopee Pakai SPayLater</h3>
+            <p class="text-xs text-slate-400 mb-4">Catat belanja barang di Shopee pakai cicilan PayLater. Tagihan otomatis terbuat ke jadwal cicilan bulanan.</p>
+            <form method="POST" action="/operational/spaylater-purchase" class="space-y-4">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Barang / Belanjaan</label>
+                    <input type="text" name="item_name" placeholder="Contoh: Jas Hujan Motor / Sepatu / Oli" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Total Harga Barang (Rp)</label>
+                        <input type="number" name="total_price" min="1000" placeholder="150000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Pilihan Cicilan (Tenor)</label>
+                        <select name="tenor_months" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                            <option value="1">1 Bulan (Bayar Bulan Depan)</option>
+                            <option value="3">3 Bulan</option>
+                            <option value="6">6 Bulan</option>
+                            <option value="12">12 Bulan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-spaylater-purchase')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Belanja SPayLater</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 9. Modal Pinjam Uang / Pinjol / Bank / SeaBank --}}
+    <div id="modal-apply-loan" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-1">🏦 Pinjam Uang / Pinjaman Online / Bank</h3>
+            <p class="text-xs text-slate-400 mb-4">Catat penerimaan pinjaman dari SeaBank Pinjam, GoPay Pinjam, Bank, atau Teman.</p>
+            <form method="POST" action="/operational/debt" class="space-y-4">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Pinjaman / Keterangan</label>
+                    <input type="text" name="name" placeholder="Misal: Pinjaman Modal Usaha SeaBank" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Platform / Pemberi Pinjaman</label>
+                        <select name="platform" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                            <option value="seabank_pinjam">SeaBank Pinjam</option>
+                            <option value="spaylater">SPayLater</option>
+                            <option value="gopay_pinjam">GoPay Pinjam</option>
+                            <option value="bank">Bank / KTA</option>
+                            <option value="person">Pinjam ke Teman / Keluarga</option>
+                            <option value="other">Lainnya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Lama Tenor (Bulan)</label>
+                        <input type="number" name="tenor_months" value="3" min="1" max="36" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Dana Bersih Diterima (Rp)</label>
+                        <input type="number" name="principal_amount" min="1000" placeholder="1000000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Bunga / Biaya Provisi (Rp)</label>
+                        <input type="number" name="fee_amount" value="0" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Dana Ditransfer Masuk ke Rekening</label>
+                    <select name="destination_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}">{{ $acc->name }} (Saat ini: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-apply-loan')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Cairkan Pinjaman</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 10. Modal Bayar Cicilan SPayLater / Pinjaman --}}
+    <div id="modal-pay-installment" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-1">💳 Bayar Tagihan Cicilan / PayLater</h3>
+            <p class="text-xs text-slate-400 mb-4">Lunasi cicilan pinjaman bulanan agar kewajiban berkurang.</p>
+            <form method="POST" action="/operational/pay-installment" class="space-y-4">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Tagihan yang Ingin Dibayar</label>
+                    <select name="installment_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        @foreach($activeInstallments as $inst)
+                            <option value="{{ $inst->id }}">
+                                {{ $inst->debt->name }} (Cicilan #{{ $inst->installment_number }} - Rp {{ number_format($inst->amount_due, 0, ',', '.') }})
+                            </option>
+                        @endforeach
+                        @if($activeInstallments->isEmpty())
+                            <option value="" disabled selected>Tidak ada tagihan cicilan jatuh tempo saat ini</option>
+                        @endif
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan Saldo Rekening</label>
+                    <select name="payment_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}">{{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Bayar (Rp)</label>
+                        <input type="number" name="actual_paid" min="1" placeholder="Nominal cicilan" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Diskon Promo (Rp)</label>
+                        <input type="number" name="promo_discount" value="0" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-pay-installment')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Bayar Cicilan Sekarang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 11. Modal Transfer Antar Rekening --}}
     <div id="modal-transfer" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <h3 class="text-base font-bold text-white mb-1">🔄 Transfer Saldo Antar Rekening</h3>
@@ -474,39 +750,7 @@
         </div>
     </div>
 
-    {{-- 6. Modal Pengeluaran Pribadi Sehari-hari --}}
-    <div id="modal-expense" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
-            <h3 class="text-base font-bold text-white mb-1">🍜 Pengeluaran Sehari-hari / Pribadi</h3>
-            <p class="text-xs text-slate-400 mb-4">Catat sarapan pagi, makan malam, kopi, belanja, atau kebutuhan rumah di luar operasional motor.</p>
-            <form method="POST" action="/operational/personal-expense" class="space-y-4">
-                @csrf
-                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Pengeluaran</label>
-                    <input type="text" name="description" placeholder="Contoh: Sarapan pagi jam 7 sebelum narik" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan</label>
-                    <select name="source_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                        @foreach($accounts as $acc)
-                            <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pengeluaran (Rp)</label>
-                    <input type="number" name="amount" min="1" placeholder="15000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('modal-expense')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Pengeluaran</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    {{-- 7. Modal Inisialisasi Saldo Akun PERTAMA KALI (Sekali Seumur Hidup & Terkunci) --}}
+    {{-- 12. Modal Inisialisasi Saldo Akun PERTAMA KALI (Sekali Seumur Hidup & Terkunci) --}}
     <div id="modal-init-account" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <div class="flex items-center space-x-2 mb-1">
@@ -544,7 +788,7 @@
         </div>
     </div>
 
-    {{-- 8. Modal Koreksi Audit Khusus (Dengan Alasan Wajib Minimal 5 Karakter) --}}
+    {{-- 13. Modal Koreksi Audit Khusus (Dengan Alasan Wajib Minimal 5 Karakter) --}}
     <div id="modal-correct-account" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <div class="flex items-center space-x-2 mb-1">
@@ -633,8 +877,17 @@
                     { 
                         element: '#tour-driver-summary', 
                         popover: { 
-                            title: '🛵 Kinerja & Profit Bersih Harian', 
-                            description: 'Menampilkan pendapatan riil ShopeeFood harian Anda: Total Ongkir COD, Tip Bersih Customer, dikurangi Biaya Bensin & Parkir.',
+                            title: '🛵 Kinerja Driver ShopeeFood Hari Ini', 
+                            description: 'Menampilkan uang riil hasil narik hari ini: Total Ongkir COD, Tip Bersih Customer, dikurangi Biaya Bensin dan Biaya Parkir.',
+                            side: "bottom", 
+                            align: 'start' 
+                        } 
+                    },
+                    { 
+                        element: '#tour-personal-summary', 
+                        popover: { 
+                            title: '☕ Keuangan Hidup & Pribadi Sehari-Hari', 
+                            description: 'Memperlihatkan uang masuk dan keluar di luar pekerjaan driver: Sarapan pagi jam 7, belanja pribadi, pemasukan freelance/jual barang, dan bayar cicilan.',
                             side: "bottom", 
                             align: 'start' 
                         } 
@@ -652,7 +905,7 @@
                         element: '#btn-tab-daily', 
                         popover: { 
                             title: '☕ Tab Kebutuhan Sehari-Hari', 
-                            description: 'Pisahkan uang narik dengan kebutuhan hidup! Di sini tempat mencatat sarapan pagi jam 7, belanja pribadi, dan bayar tagihan PayLater.',
+                            description: 'Pusat aksi manusiawi: Catat makan & sarapan, belanja Shopee SPayLater, pinjam uang Bank/Pinjol, dan bayar cicilan bulanan.',
                             side: "bottom", 
                             align: 'start' 
                         } 
@@ -669,8 +922,8 @@
                     { 
                         element: '#tour-accounts-grid', 
                         popover: { 
-                            title: '🏦 Daftar Akun & Kunci Saldo Awal', 
-                            description: 'Saldo modal awal diatur SEKALI saja saat pendaftaran akun baru agar tidak mengubah baseline keuangan.',
+                            title: '🏦 Tambah Rekening & Kunci Saldo', 
+                            description: 'Di sini Anda bisa bebas menambah rekening bank baru (Mandiri, BRI, SeaBank, DANA) dan mengunci saldo modal awal secara permanen.',
                             side: "top", 
                             align: 'center' 
                         } 

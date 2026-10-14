@@ -6,6 +6,7 @@ use App\Enums\AccountType;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Debt;
+use App\Models\DebtInstallment;
 use App\Models\Transaction;
 use App\Models\WorkDay;
 use App\Services\ReconciliationEngineService;
@@ -38,7 +39,7 @@ class DashboardController extends Controller
         $currentWorkDay = WorkDay::whereDate('work_date', $selectedDate)->first()
             ?? WorkDay::latest('work_date')->first();
 
-        // Metrik Breakdown Pendapatan & Biaya Operasional Hari Terpilih
+        // 1. Metrik Operasional Narik Driver
         $dayOrdersCount = 0;
         $dayRegularIncome = 0;
         $dayTipIncome = 0;
@@ -46,7 +47,11 @@ class DashboardController extends Controller
         $dayFuelExpense = 0;
         $dayParkingExpense = 0;
         $dayRestoPaidParkingCount = 0;
+
+        // 2. Metrik Kebutuhan Hidup & Finansial Pribadi
         $dayPersonalExpense = 0;
+        $dayPersonalIncome = 0;
+        $dayDebtRepayment = 0;
 
         if ($currentWorkDay) {
             $dayTransactions = Transaction::where('work_day_id', $currentWorkDay->id)
@@ -57,6 +62,7 @@ class DashboardController extends Controller
                 $meta = $tx->metadata ?? [];
                 $type = $meta['type'] ?? '';
 
+                // Operasional Narik ShopeeFood
                 if ($type === 'cod_order') {
                     $dayOrdersCount++;
                     $dayRegularIncome += (int) ($meta['bill_amount'] ?? 0);
@@ -69,21 +75,36 @@ class DashboardController extends Controller
                     } else {
                         $dayParkingExpense += $tx->amount;
                     }
-                } elseif ($type === 'personal_on_beat_expense' || $type === 'personal_lifestyle_expense') {
-                    $dayPersonalExpense += $tx->amount;
                 } elseif ($type === 'shopeepay_bonus_disbursement') {
                     $dayBonusIncome += (int) ($meta['amount'] ?? 0);
+                }
+
+                // Kebutuhan Sehari-hari & Pribadi
+                elseif ($type === 'personal_lifestyle_expense' || $type === 'personal_on_beat_expense' || $type === 'spaylater_purchase') {
+                    $dayPersonalExpense += $tx->amount;
+                } elseif ($type === 'personal_external_income') {
+                    $dayPersonalIncome += $tx->amount;
+                } elseif ($type === 'debt_repayment') {
+                    $dayDebtRepayment += $tx->amount;
                 }
             }
         }
 
+        // Perhitungan Total
         $dayTotalIncome = $dayRegularIncome + $dayTipIncome + $dayBonusIncome;
         $dayNetProfit = $dayTotalIncome - ($dayFuelExpense + $dayParkingExpense);
 
-        // Riwayat transaksi terbaru (bisa difilter mode on-beat / personal)
+        // Cicilan aktif yang belum lunas untuk modal bayar cicilan cepat
+        $activeInstallments = DebtInstallment::with('debt')
+            ->where('status', 'unpaid')
+            ->orderBy('due_date', 'asc')
+            ->take(5)
+            ->get();
+
+        // Riwayat transaksi terbaru
         $recentTransactions = Transaction::with(['workDay', 'entries.account'])
             ->latest('transaction_time')
-            ->take(15)
+            ->take(20)
             ->get();
 
         return view('dashboard.index', compact(
@@ -103,8 +124,11 @@ class DashboardController extends Controller
             'dayFuelExpense',
             'dayParkingExpense',
             'dayRestoPaidParkingCount',
-            'dayPersonalExpense',
             'dayNetProfit',
+            'dayPersonalExpense',
+            'dayPersonalIncome',
+            'dayDebtRepayment',
+            'activeInstallments',
             'recentTransactions'
         ));
     }
