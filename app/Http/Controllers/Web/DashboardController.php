@@ -6,6 +6,7 @@ use App\Enums\AccountType;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Debt;
+use App\Models\Transaction;
 use App\Models\WorkDay;
 use App\Services\ReconciliationEngineService;
 use Illuminate\View\View;
@@ -30,13 +31,25 @@ class DashboardController extends Controller
             ->orderBy('work_date', 'asc')
             ->get();
 
+        // Hari kerja aktif hari ini (atau hari kerja terakhir yang belum closing)
+        $currentWorkDay = WorkDay::whereDate('work_date', now()->toDateString())->first()
+            ?? WorkDay::latest('work_date')->first();
+
+        // Riwayat transaksi terbaru
+        $recentTransactions = Transaction::with(['workDay', 'entries.account'])
+            ->latest('transaction_time')
+            ->take(10)
+            ->get();
+
         return view('dashboard.index', compact(
             'accounts',
             'totalDigital',
             'totalCash',
             'totalDebt',
             'netWorth',
-            'unfinalizedDays'
+            'unfinalizedDays',
+            'currentWorkDay',
+            'recentTransactions'
         ));
     }
 }

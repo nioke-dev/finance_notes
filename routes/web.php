@@ -33,6 +33,18 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/closing/{id}', [ClosingWebController::class, 'show'])->name('closing.show');
+    Route::post('/closing/{id}/denominations', [ClosingWebController::class, 'saveDenominations'])->name('closing.denominations');
+    Route::post('/closing/{id}/finalize', [ClosingWebController::class, 'finalize'])->name('closing.finalize');
+
+    // Operational Actions Form Submissions
+    Route::post('/operational/open-day', [\App\Http\Controllers\Web\OperationalWebController::class, 'openWorkDay'])->name('operational.open-day');
+    Route::post('/operational/set-initial-balance', [\App\Http\Controllers\Web\OperationalWebController::class, 'setAccountInitialBalance'])->name('operational.set-initial-balance');
+    Route::post('/operational/fuel', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFuel'])->name('operational.fuel');
+    Route::post('/operational/parking', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeParking'])->name('operational.parking');
+    Route::post('/operational/cod', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeCod'])->name('operational.cod');
+    Route::post('/operational/transfer', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeTransfer'])->name('operational.transfer');
+    Route::post('/operational/personal-expense', [\App\Http\Controllers\Web\OperationalWebController::class, 'storePersonalExpense'])->name('operational.personal-expense');
+
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');
     Route::get('/analytics/fuel', [FuelAnalyticsController::class, 'index'])->name('analytics.fuel');
     Route::get('/debts', [DebtWebController::class, 'index'])->name('debts.index');
