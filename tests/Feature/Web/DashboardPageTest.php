@@ -49,7 +49,7 @@ class DashboardPageTest extends TestCase
         $response = $this->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('DRIVER FINANCE');
+        $response->assertSee('DRIVER FINANCES');
         $response->assertSee('Total Kekayaan Bersih (Net Worth)');
     }
 

@@ -17,7 +17,7 @@ class MasterLayoutRenderingTest extends TestCase
             ]
         );
 
-        $this->assertStringContainsString('DRIVER FINANCE', $renderedHtml);
+        $this->assertStringContainsString('DRIVER FINANCES', $renderedHtml);
         $this->assertStringContainsString('Test Dashboard Layout', $renderedHtml);
         $this->assertStringContainsString('Dashboard', $renderedHtml);
         $this->assertStringContainsString('Closing & Rekonsiliasi', $renderedHtml);

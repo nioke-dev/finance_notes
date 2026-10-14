@@ -15,7 +15,7 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="font-extrabold text-base tracking-wide text-white">DRIVER FINANCE</span>
+                <span class="font-extrabold text-base tracking-wide text-white">DRIVER FINANCES</span>
             </div>
             <div class="hidden md:flex items-center space-x-5 text-sm font-medium text-slate-300">
                 <a href="/dashboard" class="hover:text-emerald-400 transition">Dashboard</a>
