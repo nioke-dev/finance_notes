@@ -107,15 +107,21 @@ class DashboardController extends Controller
             ->take(20)
             ->get();
 
-        // Denominasi Kas Fisik & Rekomendasi Beban Dompet
+        // Denominasi Kas Fisik & Rekomendasi Beban Dompet (Hasil Closing Terakhir)
         $cashDenomination = null;
         $cashRecommendations = [];
         if ($currentWorkDay) {
             $currentWorkDay->load('cashDenomination');
             $cashDenomination = $currentWorkDay->cashDenomination;
-            if ($cashDenomination) {
-                $cashRecommendations = $cashDenomination->getRecommendations();
-            }
+        }
+
+        // Jika shift saat ini belum ada hitungan fisik, ambil dari closing fisik terakhir yang pernah dicatat
+        if (!$cashDenomination) {
+            $cashDenomination = \App\Models\CashDenomination::with('workDay')->latest()->first();
+        }
+
+        if ($cashDenomination) {
+            $cashRecommendations = $cashDenomination->getRecommendations();
         }
 
         return view('dashboard.index', compact(

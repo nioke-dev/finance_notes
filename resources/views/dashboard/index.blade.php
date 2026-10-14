@@ -236,27 +236,32 @@
                 {{-- Ringkasan Pecahan Uang Fisik di Dompet (Denomination Card) --}}
                 @if($cashDenomination)
                     <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
-                        <div class="flex justify-between items-center mb-3">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-base">👛</span>
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Rincian Fisik Kas di Dompet (Shift Aktif)</h4>
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-base">👛</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Rincian Fisik Kas di Dompet (Hasil Closing Terakhir)</h4>
+                                </div>
+                                <span class="text-[11px] text-slate-400 block mt-0.5">
+                                    Shift: <strong class="text-slate-200">{{ $cashDenomination->workDay?->work_date ? $cashDenomination->workDay->work_date->translatedFormat('l, d F Y') : 'Terakhir' }}</strong> &bull; Diperbarui setiap malam closingan
+                                </span>
                             </div>
-                            <div class="text-right">
-                                <span class="text-xs text-slate-400">Total:</span>
+                            <div class="text-left sm:text-right bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-1.5">
+                                <span class="text-xs text-slate-400">Total Fisik:</span>
                                 <span class="text-sm font-extrabold text-white ml-1">Rp {{ number_format($cashDenomination->total_physical_amount, 0, ',', '.') }}</span>
-                                <span class="text-[10px] text-slate-400">({{ $cashDenomination->total_pieces }} pcs)</span>
+                                <span class="text-[10px] text-slate-400 block sm:inline">({{ $cashDenomination->total_pieces }} lembar & koin)</span>
                             </div>
                         </div>
 
                         {{-- Uang Kertas --}}
                         <div class="mb-3">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Uang Kertas:</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Uang Kertas (Lembaran):</span>
                             <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
                                 @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
                                     @php $field = 'bill_' . $nom; $count = $cashDenomination->$field ?? 0; @endphp
-                                    <div class="bg-slate-900/80 border {{ $count >= 20 ? 'border-amber-500/50 bg-amber-500/5' : 'border-slate-700/60' }} rounded-xl p-2 text-center">
-                                        <span class="text-[10px] text-slate-400 block font-semibold">Rp{{ $label }}</span>
-                                        <span class="text-xs font-extrabold {{ $count >= 20 ? 'text-amber-400' : 'text-white' }}">{{ $count }} <span class="text-[9px] font-normal text-slate-400">lbr</span></span>
+                                    <div class="bg-slate-900/80 border {{ $nom === 5000 ? 'border-amber-500/60 bg-amber-500/10' : ($count >= 20 ? 'border-amber-500/50 bg-amber-500/5' : 'border-slate-700/60') }} rounded-xl p-2 text-center">
+                                        <span class="text-[10px] {{ $nom === 5000 ? 'text-amber-300 font-bold' : 'text-slate-400' }} block font-semibold">Rp{{ $label }}</span>
+                                        <span class="text-xs font-extrabold {{ $nom === 5000 ? 'text-amber-400' : ($count >= 20 ? 'text-amber-400' : 'text-white') }}">{{ $count }} <span class="text-[9px] font-normal text-slate-400">lbr</span></span>
                                     </div>
                                 @endforeach
                             </div>
@@ -275,6 +280,12 @@
                                 @endforeach
                             </div>
                         </div>
+                    </div>
+                @else
+                    <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl text-center">
+                        <span class="text-3xl block mb-2">👛</span>
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-1">Belum Ada Rekaman Fisik Pecahan Kas</h4>
+                        <p class="text-xs text-slate-400 max-w-md mx-auto">Jumlah lembar Rp5.000, Rp2.000, dst. akan otomatis muncul di sini setelah Anda melakukan <strong>Buka Shift</strong> atau <strong>Closing Kas Malam Hari</strong>.</p>
                     </div>
                 @endif
 
@@ -405,32 +416,46 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($accounts as $acc)
                     @php $isLocked = $acc->initial_balance > 0; @endphp
-                    <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between shadow hover:border-slate-600 transition">
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider block">
-                                    {{ $acc->name }}
+                    <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-4 flex flex-col justify-between shadow hover:border-slate-600 transition">
+                        <div class="flex items-center justify-between w-full">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider block">
+                                        {{ $acc->name }}
+                                    </span>
+                                    @if($isLocked)
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold" title="Saldo Awal Sudah Terkunci Permanen">
+                                            🔒 Locked
+                                        </span>
+                                    @else
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold" title="Belum Diinisialisasi">
+                                            ⚠️ Unset
+                                        </span>
+                                    @endif
+                                </div>
+                                <span class="text-lg font-bold text-white mt-1 block">
+                                    Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
                                 </span>
-                                @if($isLocked)
-                                    <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold" title="Saldo Awal Sudah Terkunci Permanen">
-                                        🔒 Locked
-                                    </span>
-                                @else
-                                    <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold" title="Belum Diinisialisasi">
-                                        ⚠️ Unset
-                                    </span>
-                                @endif
+                                <span class="text-[10px] text-slate-500 block">
+                                    Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
+                                </span>
                             </div>
-                            <span class="text-lg font-bold text-white mt-1 block">
-                                Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
-                            </span>
-                            <span class="text-[10px] text-slate-500 block">
-                                Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-700/60 text-slate-300 uppercase">
+                                {{ $acc->type->value ?? $acc->type }}
                             </span>
                         </div>
-                        <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-700/60 text-slate-300 uppercase">
-                            {{ $acc->type->value ?? $acc->type }}
-                        </span>
+
+                        @if($acc->type === \App\Enums\AccountType::CASH)
+                            <div class="mt-3 pt-2.5 border-t border-slate-700/60 w-full">
+                                <button type="button" onclick="openModal('modal-view-cash-denomination')" class="w-full py-2 px-3 bg-slate-900/90 hover:bg-slate-700 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-bold flex items-center justify-between transition group shadow">
+                                    <span class="flex items-center space-x-1.5">
+                                        <span>👛</span>
+                                        <span>Lihat Rincian Lembaran Kas</span>
+                                    </span>
+                                    <span class="group-hover:translate-x-0.5 transition">&rarr;</span>
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -1038,6 +1063,109 @@
                     <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow">Simpan Koreksi Audit</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    {{-- 14. Modal Rincian Lembaran Fisik Kas Dompet (Hasil Closing Terakhir) --}}
+    <div id="modal-view-cash-denomination" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-lg w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-4 pb-3 border-b border-slate-700/80">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-2xl">👛</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Rincian Fisik Lembaran Kas</h3>
+                        <p class="text-xs text-slate-400">
+                            Hasil hitungan closing shift: 
+                            <span class="font-bold text-emerald-400">
+                                {{ $cashDenomination?->workDay?->work_date ? $cashDenomination->workDay->work_date->translatedFormat('l, d F Y') : ($currentWorkDay ? $currentWorkDay->work_date->translatedFormat('l, d F Y') : 'Belum Ada Shift') }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-view-cash-denomination')" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+
+            @if($cashDenomination)
+                <div class="space-y-4">
+                    {{-- Total Banner --}}
+                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex justify-between items-center shadow-inner">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Uang Fisik Terhitung:</span>
+                            <span class="text-xs text-slate-300 font-semibold">{{ $cashDenomination->total_pieces }} lembar & koin</span>
+                        </div>
+                        <span class="text-xl font-extrabold text-emerald-400">
+                            Rp {{ number_format($cashDenomination->total_physical_amount, 0, ',', '.') }}
+                        </span>
+                    </div>
+
+                    {{-- Uang Kertas --}}
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">💵 Uang Kertas (Lembaran):</span>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            @foreach([100000 => 'Rp 100.000', 50000 => 'Rp 50.000', 20000 => 'Rp 20.000', 10000 => 'Rp 10.000', 5000 => 'Rp 5.000', 2000 => 'Rp 2.000', 1000 => 'Rp 1.000'] as $nom => $label)
+                                @php 
+                                    $field = 'bill_' . $nom; 
+                                    $count = $cashDenomination->$field ?? 0; 
+                                    $subtotal = $count * $nom;
+                                @endphp
+                                <div class="bg-slate-900/80 border {{ $nom === 5000 ? 'border-amber-500/60 bg-amber-500/10' : ($count >= 20 ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-700/60') }} rounded-xl p-2.5 flex justify-between items-center">
+                                    <div>
+                                        <span class="font-bold text-white block">{{ $label }}</span>
+                                        <span class="text-[10px] text-slate-400">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                                    </div>
+                                    <span class="text-sm font-extrabold {{ $nom === 5000 ? 'text-amber-400 font-black' : ($count >= 20 ? 'text-amber-400' : 'text-white') }}">
+                                        {{ $count }} <span class="text-[10px] font-normal text-slate-400">lbr</span>
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Uang Logam --}}
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">🪙 Uang Logam (Koin):</span>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            @foreach([1000 => 'Rp 1.000', 500 => 'Rp 500', 200 => 'Rp 200', 100 => 'Rp 100'] as $nom => $label)
+                                @php 
+                                    $field = 'coin_' . $nom; 
+                                    $count = $cashDenomination->$field ?? 0; 
+                                    $subtotal = $count * $nom;
+                                @endphp
+                                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-2.5 flex justify-between items-center">
+                                    <div>
+                                        <span class="font-bold text-white block">{{ $label }}</span>
+                                        <span class="text-[10px] text-slate-400">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                                    </div>
+                                    <span class="text-sm font-extrabold text-white">
+                                        {{ $count }} <span class="text-[10px] font-normal text-slate-400">koin</span>
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-900/60 border border-slate-700 rounded-xl text-[11px] text-slate-400">
+                        ℹ️ <strong>Catatan:</strong> Data lembaran kas fisik ini direkam setiap malam saat Anda melakukan <strong>Closing Kas Shift</strong> sepulang narik.
+                    </div>
+                </div>
+            @else
+                <div class="py-8 text-center space-y-2">
+                    <span class="text-3xl block">👛</span>
+                    <h4 class="text-sm font-bold text-white">Belum Ada Rekaman Pecahan Fisik</h4>
+                    <p class="text-xs text-slate-400 max-w-xs mx-auto">
+                        Lakukan closing shift malam hari atau buka shift narik untuk merekam jumlah lembaran pertama kali.
+                    </p>
+                </div>
+            @endif
+
+            <div class="flex justify-end space-x-2 pt-4 border-t border-slate-700/80 mt-4">
+                <button type="button" onclick="closeModal('modal-view-cash-denomination')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Tutup</button>
+                @if($currentWorkDay)
+                    <a href="/closing/{{ $currentWorkDay->id }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">
+                        Perbarui di Closing Shift &rarr;
+                    </a>
+                @endif
+            </div>
         </div>
     </div>
 
