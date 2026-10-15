@@ -2837,17 +2837,20 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform Utang <span class="text-rose-400">*</span></label>
                     <select name="platform" onchange="toggleCustomPlatform(this, 'dashboard-existing-custom-platform-wrap')" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
-                        <option value="spaylater" selected>🛍️ Shopee PayLater (SPayLater)</option>
-                        <option value="gopay_later">🟢 GoPay Later (GoPay Cicil)</option>
-                        <option value="tiktok_paylater">🎵 TikTok PayLater</option>
-                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
-                        <option value="akulaku_paylater">🔴 Akulaku PayLater</option>
-                        <option value="indodana_paylater">🟡 Indodana PayLater</option>
-                        <option value="seabank_pinjam">🏦 SeaBank Pinjam</option>
-                        <option value="spinjam">🟠 Shopee Pinjam (SPinjam)</option>
-                        <option value="gopay_pinjam">🟢 GoPay Pinjam</option>
-                        <option value="kredivo_pinjam">💰 Kredivo Pinjam</option>
-                        <option value="bank">🏛️ Pinjaman Bank Umum</option>
+                        @if(isset($paylaterProviders) && $paylaterProviders->isNotEmpty())
+                            <optgroup label="🛍️ Wadah PayLater Terdaftar">
+                                @foreach($paylaterProviders as $provider)
+                                    <option value="{{ $provider->slug }}">{{ $provider->icon ?: '🛍️' }} {{ $provider->name }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endif
+                        <optgroup label="🏦 Pinjaman Tunai / Bank">
+                            <option value="seabank_pinjam">🏦 SeaBank Pinjam</option>
+                            <option value="spinjam">🟠 Shopee Pinjam (SPinjam)</option>
+                            <option value="gopay_pinjam">🟢 GoPay Pinjam</option>
+                            <option value="kredivo_pinjam">💰 Kredivo Pinjam</option>
+                            <option value="bank">🏛️ Pinjaman Bank Umum</option>
+                        </optgroup>
                         <option value="other">➕ Platform / Pinjaman Lainnya (Ketik Manual)</option>
                     </select>
                 </div>

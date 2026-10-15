@@ -57,11 +57,11 @@
             <span class="text-[10px] tracking-tight">Dashboard</span>
         </a>
 
-        <a href="/dashboard#tour-driver-summary" class="flex flex-col items-center justify-center py-1 px-2 text-slate-300 hover:text-amber-400 transition min-w-[56px]">
+        <a href="/wallets" class="flex flex-col items-center justify-center py-1 px-1.5 transition min-w-[52px] {{ request()->is('wallets*') ? 'text-emerald-400 font-bold' : 'text-slate-300 hover:text-emerald-400' }}">
             <svg class="w-5 h-5 mb-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
             </svg>
-            <span class="text-[10px] tracking-tight font-medium">On-Bid</span>
+            <span class="text-[10px] tracking-tight font-medium">Wadah</span>
         </a>
 
         {{-- Center Voice Recorder Action Pill --}}

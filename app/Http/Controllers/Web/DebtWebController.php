@@ -61,6 +61,7 @@ class DebtWebController extends Controller
             ->get();
 
         $paymentAccounts = Account::where('is_active', true)->orderBy('name', 'asc')->get();
+        $paylaterProviders = \App\Models\PaylaterProvider::active()->get();
         $currentWorkDay = \App\Models\WorkDay::whereDate('work_date', now()->toDateString())->first() 
             ?? \App\Models\WorkDay::latest('work_date')->first();
 
@@ -75,6 +76,7 @@ class DebtWebController extends Controller
             'totalReceivable',
             'upcomingInstallments',
             'paymentAccounts',
+            'paylaterProviders',
             'currentWorkDay'
         ));
     }
