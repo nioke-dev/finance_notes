@@ -113,7 +113,86 @@
         </div>
     </div>
 
+    {{-- Global Floating Toast Alert (Tetap Terlihat Di Mana Pun Posisi Layar) --}}
+    @if(session('success') || session('error') || session('status'))
+        @php
+            $isError = session()->has('error');
+            $toastMsg = session('success') ?? session('error') ?? session('status');
+        @endphp
+        <div id="global-floating-toast" class="fixed top-14 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 transform transition-all duration-300 ease-out flex items-center justify-between p-3.5 rounded-2xl shadow-2xl backdrop-blur-md {{ $isError ? 'bg-rose-950/95 border border-rose-500/60 text-rose-200' : 'bg-slate-900/95 border border-emerald-500/60 text-emerald-300' }}">
+            <div class="flex items-center space-x-2.5">
+                <span class="text-base">{{ $isError ? '⚠️' : '✓' }}</span>
+                <span class="text-xs font-bold leading-snug">{{ $toastMsg }}</span>
+            </div>
+            <button type="button" onclick="document.getElementById('global-floating-toast')?.remove()" class="text-slate-400 hover:text-white ml-2 p-1 rounded-lg text-sm leading-none">
+                &times;
+            </button>
+        </div>
+        <script>
+            setTimeout(() => {
+                const toast = document.getElementById('global-floating-toast');
+                if (toast) {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-10px)';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4500);
+        </script>
+    @endif
+
+    {{-- Floating Back to Top Button --}}
+    <button id="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hidden fixed bottom-16 right-3 md:bottom-8 md:right-8 z-30 p-2.5 rounded-full bg-slate-800/90 text-emerald-400 border border-slate-700 shadow-xl backdrop-blur transition hover:bg-slate-700 active:scale-90" title="Kembali ke Atas">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
+        </svg>
+    </button>
+
     <script>
+        // ================= SISTEM PRESERVASI POSISI SCROLL (ANTI-CAPEK SCROLL ULANG) =================
+        function saveScrollPosition() {
+            sessionStorage.setItem('scroll_pos_' + window.location.pathname, window.scrollY);
+        }
+
+        window.addEventListener('beforeunload', saveScrollPosition);
+
+        document.addEventListener('submit', () => {
+            saveScrollPosition();
+        });
+
+        function restoreScrollPosition() {
+            const savedPos = sessionStorage.getItem('scroll_pos_' + window.location.pathname);
+            if (savedPos !== null) {
+                const pos = parseInt(savedPos, 10);
+                if (pos > 0) {
+                    window.scrollTo({ top: pos, behavior: 'instant' });
+                    setTimeout(() => {
+                        window.scrollTo({ top: pos, behavior: 'instant' });
+                    }, 50);
+                    setTimeout(() => {
+                        window.scrollTo({ top: pos, behavior: 'instant' });
+                    }, 150);
+                }
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', restoreScrollPosition);
+        } else {
+            restoreScrollPosition();
+        }
+
+        // Floating Back-to-Top Toggle
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('btn-back-to-top');
+            if (btn) {
+                if (window.scrollY > 350) {
+                    btn.classList.remove('hidden');
+                } else {
+                    btn.classList.add('hidden');
+                }
+            }
+        });
+
         window.addEventListener('pwa-install-ready', () => {
             const banner = document.getElementById('pwa-install-banner');
             if (banner && !window.matchMedia('(display-mode: standalone)').matches) {

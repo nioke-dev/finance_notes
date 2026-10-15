@@ -3476,22 +3476,39 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-button').forEach(el => {
-                el.classList.remove('border-emerald-500', 'text-emerald-400');
+                el.classList.remove('border-emerald-500', 'text-emerald-400', 'border-indigo-500', 'text-indigo-400');
                 el.classList.add('border-transparent', 'text-slate-300');
             });
 
-            document.getElementById(tabId).classList.remove('hidden');
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                localStorage.setItem('dashboard_active_tab', tabId);
+            }
 
             if (tabId === 'tab-onbeat') {
                 const btn = document.getElementById('btn-tab-onbeat');
-                btn.classList.add('border-emerald-500', 'text-emerald-400');
-                btn.classList.remove('border-transparent', 'text-slate-300');
+                if (btn) {
+                    btn.classList.add('border-emerald-500', 'text-emerald-400');
+                    btn.classList.remove('border-transparent', 'text-slate-300');
+                }
             } else {
                 const btn = document.getElementById('btn-tab-daily');
-                btn.classList.add('border-indigo-500', 'text-indigo-400');
-                btn.classList.remove('border-transparent', 'text-slate-300');
+                if (btn) {
+                    btn.classList.add('border-indigo-500', 'text-indigo-400');
+                    btn.classList.remove('border-transparent', 'text-slate-300');
+                }
             }
         }
+
+        // Restore active tab upon page load or reload
+        document.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash ? window.location.hash.substring(1) : null;
+            const savedTab = hash || localStorage.getItem('dashboard_active_tab');
+            if (savedTab && document.getElementById(savedTab)) {
+                switchTab(savedTab);
+            }
+        });
 
         // ================= JAVASCRIPT LOGIKA KALKULATOR COD PINTAR =================
         let currentCompleteCod = {
