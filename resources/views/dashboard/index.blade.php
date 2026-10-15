@@ -1172,34 +1172,46 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 @foreach($accounts as $acc)
-                    @php $isLocked = $acc->initial_balance > 0; @endphp
+                    @php 
+                        $isAsset = in_array($acc->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET, \App\Enums\AccountType::RECEIVABLE]);
+                        $isLocked = $acc->initial_balance > 0;
+                    @endphp
                     <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 rounded-2xl p-5 flex flex-col justify-between shadow-lg transition space-y-3">
-                        <div class="flex items-center justify-between w-full">
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-xs font-extrabold uppercase text-slate-200 tracking-wider block">
-                                        {{ $acc->name }}
+                        <div class="flex items-start justify-between gap-3 w-full">
+                            <div class="flex-1 min-w-0">
+                                <span class="text-xs font-extrabold uppercase text-slate-200 tracking-wider block leading-snug">
+                                    {{ $acc->name }}
+                                </span>
+                                <span class="text-xl font-black text-white mt-2 block tracking-tight">
+                                    Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
+                                </span>
+                                @if($isAsset)
+                                    <span class="text-xs text-slate-300 font-medium block mt-0.5">
+                                        Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
                                     </span>
+                                @else
+                                    <span class="text-xs text-slate-400 font-medium block mt-0.5">
+                                        Akumulasi Berjalan
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 uppercase border border-slate-700 tracking-wide">
+                                    {{ $acc->type->value ?? $acc->type }}
+                                </span>
+                                @if($isAsset)
                                     @if($isLocked)
-                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold" title="Saldo Awal Terkunci">
+                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold whitespace-nowrap" title="Saldo Awal Terkunci">
                                             🔒 Locked
                                         </span>
                                     @else
-                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold" title="Belum Diinisialisasi">
+                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap" title="Belum Diinisialisasi">
                                             ⚠️ Unset
                                         </span>
                                     @endif
-                                </div>
-                                <span class="text-xl font-black text-white mt-1.5 block">
-                                    Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
-                                </span>
-                                <span class="text-xs text-slate-300 font-medium block mt-0.5">
-                                    Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
-                                </span>
+                                @endif
                             </div>
-                            <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 uppercase border border-slate-700">
-                                {{ $acc->type->value ?? $acc->type }}
-                            </span>
                         </div>
 
                         <div class="pt-3 border-t border-slate-800 w-full flex items-center justify-between text-xs">
