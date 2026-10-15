@@ -18,7 +18,9 @@ class ClosingWebController extends Controller
     public function show(int $id, ReconciliationEngineService $reconciliationService): View
     {
         $workDay = WorkDay::with('voiceMemos')->findOrFail($id);
-        $accounts = Account::active()->get();
+        $accounts = Account::active()
+            ->whereIn('type', [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])
+            ->get();
         $denominations = CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
         $reconciliationReport = $reconciliationService->reconcileWorkDay($workDay, []);
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Enums\AccountType;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Debt;
@@ -60,7 +61,10 @@ class DebtWebController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        $paymentAccounts = Account::where('is_active', true)->orderBy('name', 'asc')->get();
+        $paymentAccounts = Account::where('is_active', true)
+            ->whereIn('type', [AccountType::CASH, AccountType::BANK, AccountType::EWALLET])
+            ->orderBy('name', 'asc')
+            ->get();
         $paylaterProviders = \App\Models\PaylaterProvider::active()->get();
         $currentWorkDay = \App\Models\WorkDay::whereDate('work_date', now()->toDateString())->first() 
             ?? \App\Models\WorkDay::latest('work_date')->first();

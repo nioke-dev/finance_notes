@@ -1208,7 +1208,7 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                @foreach($accounts as $acc)
+                @foreach($accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])) as $acc)
                     @php 
                         $isAsset = in_array($acc->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET, \App\Enums\AccountType::RECEIVABLE]);
                         $isLocked = $acc->initial_balance > 0;
@@ -2197,12 +2197,15 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Akun yang Belum Dikunci</label>
+                    @php
+                        $unlockedAssetAccounts = $accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET]) && $a->initial_balance == 0);
+                    @endphp
                     <select name="account_id" id="init_account_select" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                        @foreach($accounts->where('initial_balance', 0) as $acc)
+                        @foreach($unlockedAssetAccounts as $acc)
                             <option value="{{ $acc->id }}" data-type="{{ $acc->type->value }}">{{ $acc->name }} ({{ strtoupper($acc->type->value) }} &bull; Saat ini: Rp 0)</option>
                         @endforeach
-                        @if($accounts->where('initial_balance', 0)->isEmpty())
-                            <option value="" disabled selected>Semua akun sudah memiliki saldo awal terkunci</option>
+                        @if($unlockedAssetAccounts->isEmpty())
+                            <option value="" disabled selected>Semua wadah simpanan sudah memiliki saldo awal terkunci</option>
                         @endif
                     </select>
                 </div>
@@ -2282,7 +2285,7 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Akun yang Ingin Dikoreksi</label>
                     <select name="account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                        @foreach($accounts as $acc)
+                        @foreach($accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])) as $acc)
                             <option value="{{ $acc->id }}">{{ $acc->name }} (Modal Awal Saat ini: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }})</option>
                         @endforeach
                     </select>

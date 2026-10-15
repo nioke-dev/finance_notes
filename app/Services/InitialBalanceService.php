@@ -14,6 +14,10 @@ class InitialBalanceService
      */
     public function setInitialBalance(Account $account, int $amount): Account
     {
+        if (!$account->type->isAsset()) {
+            throw new InvalidArgumentException("Hanya akun aset / wadah simpanan kas (Bank, E-Wallet, Kas) yang dapat memiliki saldo awal.");
+        }
+
         if ($amount < 0) {
             throw new InvalidArgumentException("Saldo awal tidak boleh negatif.");
         }
@@ -42,6 +46,10 @@ class InitialBalanceService
      */
     public function correctInitialBalance(Account $account, int $newAmount, string $reason): Account
     {
+        if (!$account->type->isAsset()) {
+            throw new InvalidArgumentException("Hanya akun aset / wadah simpanan kas (Bank, E-Wallet, Kas) yang dapat memiliki saldo awal.");
+        }
+
         if (strlen(trim($reason)) < 5) {
             throw new InvalidArgumentException("Alasan koreksi saldo awal wajib diisi minimal 5 karakter.");
         }

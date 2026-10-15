@@ -334,6 +334,10 @@ class OperationalWebController extends Controller
         $amount = $calculatedDenom > 0 ? $calculatedDenom : (int) ($validated['amount'] ?? 0);
 
         $account = Account::findOrFail($validated['account_id']);
+        if (!$account->type->isAsset()) {
+            return redirect()->back()->with('error', "Hanya akun aset / wadah simpanan kas (Bank, E-Wallet, Kas) yang dapat memiliki saldo awal.");
+        }
+
         if ($account->initial_balance == 0) {
             $initialBalanceService->setInitialBalance($account, $amount);
         } else {

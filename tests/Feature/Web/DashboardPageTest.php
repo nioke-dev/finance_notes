@@ -122,4 +122,50 @@ class DashboardPageTest extends TestCase
         $response->assertSee('Buka hari kerja untuk mulai mencatat target harian');
         $response->assertSee('Buka Hari Kerja Sekarang');
     }
+
+    public function test_dashboard_does_not_display_expense_or_income_accounts_in_cards_or_init_modal(): void
+    {
+        $expense = Account::create([
+            'name' => 'Beban Bensin Kendaraan',
+            'type' => AccountType::EXPENSE,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        $income = Account::create([
+            'name' => 'Pendapatan Hub ShopeeFood',
+            'type' => AccountType::INCOME,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        $response = $this->get('/dashboard');
+
+        $response->assertStatus(200);
+        // Memastikan akun beban dan pendapatan tidak muncul di daftar kartu rekening maupun opsi atur saldo awal
+        $response->assertDontSee('Beban Bensin Kendaraan (EXPENSE &bull; Saat ini: Rp 0)', false);
+        $response->assertDontSee('Pendapatan Hub ShopeeFood (INCOME &bull; Saat ini: Rp 0)', false);
+    }
+
+    public function test_cannot_set_initial_balance_on_expense_account_via_web(): void
+    {
+        $expense = Account::create([
+            'name' => 'Beban Parkir',
+            'type' => AccountType::EXPENSE,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/operational/set-initial-balance', [
+            'account_id' => $expense->id,
+            'amount' => 50000,
+        ]);
+
+        $response->assertSessionHas('error', 'Hanya akun aset / wadah simpanan kas (Bank, E-Wallet, Kas) yang dapat memiliki saldo awal.');
+        $this->assertEquals(0, $expense->fresh()->initial_balance);
+        $this->assertEquals(0, $expense->fresh()->current_balance);
+    }
 }

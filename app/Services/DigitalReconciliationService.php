@@ -46,23 +46,36 @@ class DigitalReconciliationService
                 $adjustedCount++;
 
                 if ($diff > 0) {
-                    // Surplus terdeteksi (Tip QRIS nyusul di GoPay/Merchant atau penambahan saldo ShopeeFood Driver)
+                    // Surplus terdeteksi (Gaji/ongkir ShopeeFood di ShopeePay, Tip QRIS di GoPay/Merchant, atau penambahan saldo lain)
                     $totalSurplus += $diff;
 
-                    $surplusAccount = in_array($account->name, ['GoPay', 'GoPay Merchant', 'ShopeePay'])
-                        ? Account::firstOrCreate(
+                    if ($account->name === 'ShopeePay') {
+                        $surplusAccount = Account::firstOrCreate(
+                            ['name' => 'Pendapatan Hub ShopeeFood'],
+                            ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                        );
+                        $txDesc = "Penyelarasan Saldo ShopeePay Driver: +Rp " . number_format($diff, 0, ',', '.');
+                        $auditReason = "Penyelarasan saldo ShopeePay: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai pendapatan narik ShopeeFood.";
+                    } elseif (in_array($account->name, ['GoPay', 'GoPay Merchant'])) {
+                        $surplusAccount = Account::firstOrCreate(
                             ['name' => 'Pendapatan QRIS / Tip Non-Tunai'],
                             ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
-                        )
-                        : Account::firstOrCreate(
+                        );
+                        $txDesc = "Surplus QRIS Tip Nyusul {$account->name}: +Rp " . number_format($diff, 0, ',', '.');
+                        $auditReason = "Penyelarasan saldo digital {$account->name}: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai tip QRIS non-tunai.";
+                    } else {
+                        $surplusAccount = Account::firstOrCreate(
                             ['name' => 'Pendapatan Selisih Kas (Surplus Tak Terlacak)'],
                             ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
                         );
+                        $txDesc = "Surplus Digital Nyusul {$account->name}: +Rp " . number_format($diff, 0, ',', '.');
+                        $auditReason = "Penyelarasan saldo digital {$account->name}: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai pendapatan digital nyusul.";
+                    }
 
                     $tx = $this->ledgerService->recordTransaction(
                         workDay: $workDay,
                         type: 'income',
-                        description: "Surplus Digital Nyusul {$account->name}: +Rp " . number_format($diff, 0, ',', '.'),
+                        description: $txDesc,
                         transactionTime: now(),
                         entries: [
                             ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $diff],
@@ -82,7 +95,7 @@ class DigitalReconciliationService
                         'action' => 'digital_reconciliation_surplus',
                         'old_values' => ['balance' => $account->current_balance],
                         'new_values' => ['balance' => $actualBalance, 'surplus' => $diff],
-                        'reason' => "Penyelarasan saldo digital {$account->name}: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai pendapatan digital nyusul.",
+                        'reason' => $auditReason,
                     ]);
                 } else {
                     // Shortage terdeteksi (Biaya admin bank, potongan auto-debit, atau selisih kurang)

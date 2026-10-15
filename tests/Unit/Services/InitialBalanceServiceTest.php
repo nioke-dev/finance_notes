@@ -109,4 +109,38 @@ class InitialBalanceServiceTest extends TestCase
         $this->assertEquals(['initial_balance' => 75000], $audit->new_values);
         $this->assertEquals('Penyesuaian saldo riil di aplikasi', $audit->reason);
     }
+
+    /**
+     * Memverifikasi bahwa akun beban (expense) dan pendapatan (income) tidak bisa diatur saldo awalnya.
+     */
+    public function test_cannot_set_initial_balance_for_expense_or_income_account(): void
+    {
+        $expenseAccount = Account::create([
+            'name' => 'Beban Bensin Kendaraan',
+            'type' => AccountType::EXPENSE,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Hanya akun aset / wadah simpanan kas (Bank, E-Wallet, Kas) yang dapat memiliki saldo awal.");
+        $this->service->setInitialBalance($expenseAccount, 50000);
+    }
+
+    /**
+     * Memverifikasi bahwa akun beban (expense) tidak bisa dikoreksi saldo awalnya.
+     */
+    public function test_cannot_correct_initial_balance_for_expense_account(): void
+    {
+        $expenseAccount = Account::create([
+            'name' => 'Beban Parkir',
+            'type' => AccountType::EXPENSE,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Hanya akun aset / wadah simpanan kas (Bank, E-Wallet, Kas) yang dapat memiliki saldo awal.");
+        $this->service->correctInitialBalance($expenseAccount, 10000, 'Koreksi yang tidak valid');
+    }
 }

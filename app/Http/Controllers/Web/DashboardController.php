@@ -25,7 +25,9 @@ class DashboardController extends Controller
         FinancialGoalService $goalService
     ): View
     {
-        $accounts = Account::active()->get();
+        $accounts = Account::active()
+            ->whereIn('type', [AccountType::CASH, AccountType::BANK, AccountType::EWALLET])
+            ->get();
 
         $totalDigital = $accounts->filter(fn (Account $a) => in_array($a->type, [AccountType::BANK, AccountType::EWALLET]))
             ->sum('current_balance');
@@ -84,6 +86,15 @@ class DashboardController extends Controller
                     }
                 } elseif ($type === 'shopeepay_bonus_disbursement') {
                     $dayBonusIncome += (int) ($meta['amount'] ?? 0);
+                } elseif ($type === 'digital_reconciliation_surplus') {
+                    $accId = (int) ($meta['account_id'] ?? 0);
+                    $acc = $accounts->firstWhere('id', $accId);
+                    $diffAmount = (int) ($meta['diff'] ?? $tx->amount);
+                    if ($acc && $acc->name === 'ShopeePay') {
+                        $dayRegularIncome += $diffAmount;
+                    } else {
+                        $dayTipIncome += $diffAmount;
+                    }
                 }
 
                 // Kebutuhan Sehari-hari & Pribadi
