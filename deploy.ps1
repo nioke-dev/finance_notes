@@ -1,3 +1,7 @@
+param(
+    [switch]$ResetDb
+)
+
 # PowerShell Script One-Click Deployment ke Server
 $configFile = Join-Path $PSScriptRoot "deploy.config.json"
 
@@ -13,15 +17,22 @@ Write-Host ""
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host " MEMULAI ONE-CLICK DEPLOYMENT KE SERVER" -ForegroundColor Cyan
 Write-Host " Target: $($config.domain) ($($config.host))" -ForegroundColor Cyan
+if ($ResetDb) {
+    Write-Host " MODE: RESET DATABASE & SEEDER FRESH" -ForegroundColor Magenta
+}
 Write-Host "==================================================" -ForegroundColor Cyan
 
 $deployed = $false
 
 # METODE 1: Webhook HTTPS
 if ($config.deploy_url) {
+    $targetUrl = $config.deploy_url
+    if ($ResetDb) {
+        $targetUrl += "&reset_db=yes"
+    }
     Write-Host " Mengirim sinyal deploy via Webhook HTTPS..." -ForegroundColor Yellow
     try {
-        $resp = Invoke-RestMethod -Uri $config.deploy_url -Method Get -TimeoutSec 45
+        $resp = Invoke-RestMethod -Uri $targetUrl -Method Get -TimeoutSec 60
         if ($resp.success -eq $true) {
             Write-Host ""
             Write-Host " DEPLOYMENT VIA WEBHOOK BERHASIL!" -ForegroundColor Green
@@ -46,7 +57,8 @@ if (-not $deployed) {
         $remotePath = $config.remote_path
         Write-Host ""
         Write-Host " Mencoba via SSH ($($config.user)@$($config.host):$port)..." -ForegroundColor Yellow
-        $cmd = "cd `"$remotePath`" && git pull origin main && php artisan migrate --force && php artisan optimize:clear"
+        $migrateCmd = if ($ResetDb) { "php artisan migrate:fresh --seed --force" } else { "php artisan migrate --force" }
+        $cmd = "cd `"$remotePath`" && git pull origin main && $migrateCmd && php artisan optimize:clear"
         ssh -o ConnectTimeout=8 -p $port "$($config.user)@$($config.host)" "$cmd"
         if ($LASTEXITCODE -eq 0) {
             Write-Host ""

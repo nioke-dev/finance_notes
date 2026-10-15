@@ -28,4 +28,14 @@ class DeployWebhookTest extends TestCase
             'message',
         ]);
     }
+
+    public function test_deploy_supports_database_reset(): void
+    {
+        $response = $this->getJson('/api/deploy?key=keuangan-secret-deploy-2026&reset_db=yes');
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'artisan_migrate' => 'Database reset and seeded successfully.',
+        ]);
+    }
 }

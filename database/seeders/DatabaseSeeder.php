@@ -13,11 +13,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Default Driver User for Web & Mobile
+        User::updateOrCreate(
+            ['email' => 'driver@keuangan.test'],
+            [
+                'name' => 'Driver ShopeeFood Malang',
+                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+            ]
+        );
 
         $this->call([
             DefaultAccountsSeeder::class,
             CategorySeeder::class,
+            ShopeeBonusSchemeSeeder::class,
         ]);
     }
 }

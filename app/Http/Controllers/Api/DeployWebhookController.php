@@ -32,7 +32,9 @@ class DeployWebhookController extends Controller
                     'exit_code' => 0,
                     'output' => 'Already up to date.',
                 ],
-                'artisan_migrate' => 'Nothing to migrate.',
+                'artisan_migrate' => ($request->query('reset_db') === 'yes' || $request->input('reset_db') === 'yes')
+                    ? 'Database reset and seeded successfully.'
+                    : 'Nothing to migrate.',
                 'artisan_optimize' => 'Caches cleared successfully.',
                 'message' => 'Deployment completed successfully (testing mode).',
             ]);
@@ -46,9 +48,14 @@ class DeployWebhookController extends Controller
         // Jalankan git pull
         exec('git pull origin main 2>&1', $gitOutput, $gitCode);
 
-        // Jalankan migrate
-        Artisan::call('migrate', ['--force' => true]);
-        $migrateOutput = Artisan::output();
+        // Jalankan migrate atau migrate:fresh --seed
+        if ($request->query('reset_db') === 'yes' || $request->input('reset_db') === 'yes') {
+            Artisan::call('migrate:fresh', ['--force' => true, '--seed' => true]);
+            $migrateOutput = Artisan::output();
+        } else {
+            Artisan::call('migrate', ['--force' => true]);
+            $migrateOutput = Artisan::output();
+        }
 
         // Jalankan optimize clear
         Artisan::call('optimize:clear');
