@@ -2219,10 +2219,13 @@
                     <div>
                         <h3 class="text-base font-bold text-white">Rincian Fisik Lembaran Kas</h3>
                         <p class="text-xs text-slate-300 font-medium">
-                            Hasil hitungan closing shift: 
-                            <span class="font-bold text-emerald-400">
-                                {{ $cashDenomination?->workDay?->work_date ? $cashDenomination->workDay->work_date->translatedFormat('l, d F Y') : ($currentWorkDay ? $currentWorkDay->work_date->translatedFormat('l, d F Y') : 'Belum Ada Shift') }}
-                            </span>
+                            @if($cashDenomination?->workDay?->work_date)
+                                Hasil hitungan closing shift: <span class="font-bold text-emerald-400">{{ $cashDenomination->workDay->work_date->translatedFormat('l, d F Y') }}</span>
+                            @elseif($currentWorkDay)
+                                Shift aktif: <span class="font-bold text-emerald-400">{{ $currentWorkDay->work_date->translatedFormat('l, d F Y') }}</span>
+                            @else
+                                Status Dompet: <span class="font-bold text-emerald-400">Saldo Awal Terkunci</span>
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -2306,12 +2309,23 @@
                     </div>
                 </div>
             @else
-                <div class="py-8 text-center space-y-2">
-                    <span class="text-3xl block">👛</span>
-                    <h4 class="text-sm font-bold text-white">Belum Ada Rekaman Pecahan Fisik</h4>
-                    <p class="text-xs text-slate-300 font-medium max-w-xs mx-auto">
-                        Lakukan closing shift malam hari atau buka shift narik untuk merekam jumlah lembaran pertama kali.
-                    </p>
+                <div class="py-6 text-center space-y-3">
+                    <span class="text-4xl block">👛</span>
+                    <div>
+                        <h4 class="text-base font-bold text-white">Saldo Kas Dompet: Rp {{ number_format($totalCash, 0, ',', '.') }}</h4>
+                        <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                            ✓ Saldo Awal Terkunci Aman
+                        </span>
+                    </div>
+                    <div class="p-3.5 bg-slate-900/80 border border-slate-700/70 rounded-xl text-xs text-slate-300 text-left space-y-2">
+                        <p>
+                            ℹ️ <strong>Tentang Rincian Lembaran Fisik:</strong><br>
+                            Saldo uang kas dompet Anda sebesar <strong>Rp {{ number_format($totalCash, 0, ',', '.') }}</strong> sudah berhasil tercatat dan siap digunakan operasional.
+                        </p>
+                        <p class="text-[11px] text-slate-400 leading-relaxed">
+                            Rincian lembaran fisik per pecahan (Rp 100.000, Rp 50.000, Rp 2.000, koin) akan otomatis diaudit dan terdata setiap kali Anda menyelesaikan <strong>Closing Kas Shift</strong> malam hari sepulang kerja narik.
+                        </p>
+                    </div>
                 </div>
             @endif
 
@@ -2321,6 +2335,11 @@
                     <a href="/closing/{{ $currentWorkDay->id }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">
                         Perbarui di Closing Shift &rarr;
                     </a>
+                @else
+                    <button type="button" onclick="closeModal('modal-view-cash-denomination'); openModal('modal-open-day');" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
+                        <span>🌅</span>
+                        <span>Mulai Shift Narik Sekarang &rarr;</span>
+                    </button>
                 @endif
             </div>
         </div>
