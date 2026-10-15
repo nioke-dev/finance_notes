@@ -27,6 +27,7 @@ class DashboardController extends Controller
     {
         $accounts = Account::active()
             ->whereIn('type', [AccountType::CASH, AccountType::BANK, AccountType::EWALLET])
+            ->with(['activeDeductions'])
             ->get();
 
         $totalDigital = $accounts->filter(fn (Account $a) => in_array($a->type, [AccountType::BANK, AccountType::EWALLET]))

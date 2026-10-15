@@ -101,7 +101,7 @@ class QuickParkingServiceTest extends TestCase
             'status' => 'active',
         ]);
 
-        $flazzAccount = Account::where('name', 'Flazz / e-money')->first();
+        $flazzAccount = Account::where('name', 'Flazz')->orWhere('name', 'Flazz / e-money')->first();
         $flazzAccount->update(['current_balance' => 100000]);
 
         $parkingExpenseAccount = Account::where('name', 'Beban Parkir')->first();

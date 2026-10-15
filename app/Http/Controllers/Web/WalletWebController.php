@@ -26,6 +26,7 @@ class WalletWebController extends Controller
         $activeAccounts = Account::whereIn('type', $assetTypes)
             ->where('is_active', true)
             ->withCount('ledgerEntries')
+            ->with(['activeDeductions'])
             ->orderBy('name')
             ->get()
             ->sortBy(fn($a) => match($a->type->value ?? $a->type) {

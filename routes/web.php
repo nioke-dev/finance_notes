@@ -73,6 +73,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/subscriptions/{id}/pay', [\App\Http\Controllers\Web\OperationalWebController::class, 'paySubscription'])->name('operational.subscriptions.pay');
     Route::post('/operational/subscriptions/{id}/toggle', [\App\Http\Controllers\Web\OperationalWebController::class, 'toggleSubscription'])->name('operational.subscriptions.toggle');
     Route::post('/operational/voice-memo', [\App\Http\Controllers\Api\VoiceMemoController::class, 'upload'])->name('operational.voice-memo');
+    Route::post('/operational/account-deduct-balance', [\App\Http\Controllers\Web\OperationalWebController::class, 'deductAccountBalance'])->name('operational.account-deduct-balance');
+    Route::post('/operational/account-deduction', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeAccountDeduction'])->name('operational.account-deduction.store');
+    Route::post('/operational/account-deduction/{id}/execute', [\App\Http\Controllers\Web\OperationalWebController::class, 'executeAccountDeduction'])->name('operational.account-deduction.execute');
+    Route::delete('/operational/account-deduction/{id}', [\App\Http\Controllers\Web\OperationalWebController::class, 'destroyAccountDeduction'])->name('operational.account-deduction.destroy');
+    Route::post('/operational/reset-trial-data', [\App\Http\Controllers\Web\OperationalWebController::class, 'resetTrialData'])->name('operational.reset-trial-data');
 
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');
     Route::get('/analytics/fuel', [FuelAnalyticsController::class, 'index'])->name('analytics.fuel');

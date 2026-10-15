@@ -24,6 +24,13 @@
             <div class="flex items-center space-x-3">
                 <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span class="font-extrabold text-base tracking-wide text-white">DRIVER FINANCE</span>
+                @if(config('app.trial_mode', true))
+                    <button type="button" onclick="openModal('modal-reset-trial-data')" class="px-2.5 py-1 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/50 text-xs font-bold transition flex items-center space-x-1 shadow" title="Reset semua data ke kondisi awal seeder untuk uji coba ulang">
+                        <span>🔄</span>
+                        <span class="hidden sm:inline">Reset Data Uji Coba</span>
+                        <span class="sm:hidden">Reset</span>
+                    </button>
+                @endif
             </div>
             <div class="hidden md:flex items-center space-x-5 text-sm font-medium text-slate-300">
                 <a href="/dashboard" class="hover:text-emerald-400 transition {{ request()->is('dashboard') ? 'text-emerald-400 font-bold' : '' }}">Dashboard</a>
@@ -140,6 +147,40 @@
         </script>
     @endif
 
+    {{-- Modal Pengurangan Saldo Wadah & Jadwal Potongan Rutin Bulanan --}}
+    <x-modals.account-deductions />
+
+    @if(config('app.trial_mode', true))
+    {{-- Modal Reset Seluruh Data (Khusus Mode Uji Coba) --}}
+    <div id="modal-reset-trial-data" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border-2 border-rose-500/60 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8">
+            <div class="flex items-center space-x-3 mb-3">
+                <span class="text-3xl">⚠️</span>
+                <div>
+                    <h3 class="text-base font-black text-rose-400">Reset Semua Data (Mode Uji Coba)</h3>
+                    <span class="text-[11px] text-slate-300">Kembalikan sistem ke kondisi awal (fresh seeder)</span>
+                </div>
+            </div>
+            <div class="p-3.5 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-200 leading-relaxed mb-4">
+                <strong>Perhatian:</strong> Fitur ini disediakan khusus selama masa uji coba. Seluruh data transaksi, hari kerja, catatan utang, dan saldo akun akan <strong>dihapus bersih</strong> kembali ke kondisi bawaan awal seeder (saldo Rp 0). Anda dapat menguji coba skenario dari awal kapan pun secara mandiri tanpa menunggu asisten AI.
+            </div>
+            <p class="text-xs text-slate-300 mb-5">
+                Apakah Anda yakin ingin me-reset seluruh database sekarang?
+            </p>
+            <form method="POST" action="/operational/reset-trial-data" class="flex justify-end space-x-2.5" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').innerHTML='Sedang Reset...';">
+                @csrf
+                <button type="button" onclick="closeModal('modal-reset-trial-data')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl shadow-lg shadow-rose-950/80 flex items-center space-x-1.5 transition">
+                    <span>🔥</span>
+                    <span>Ya, Reset Semuanya Sekarang</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    @endif
+
     {{-- Floating Back to Top Button --}}
     <button id="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hidden fixed bottom-16 right-3 md:bottom-8 md:right-8 z-30 p-2.5 rounded-full bg-slate-800/90 text-emerald-400 border border-slate-700 shadow-xl backdrop-blur transition hover:bg-slate-700 active:scale-90" title="Kembali ke Atas">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,6 +189,16 @@
     </button>
 
     <script>
+        // Modal global helpers
+        window.openModal = function(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        };
+        window.closeModal = function(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        };
+
         // ================= SISTEM PRESERVASI POSISI SCROLL (ANTI-CAPEK SCROLL ULANG) =================
         function saveScrollPosition() {
             sessionStorage.setItem('scroll_pos_' + window.location.pathname, window.scrollY);

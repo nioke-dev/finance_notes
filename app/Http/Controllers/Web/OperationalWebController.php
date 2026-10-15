@@ -1344,4 +1344,208 @@ class OperationalWebController extends Controller
 
         return redirect()->back()->with('success', "Selamat! Target belanja '{$goal->name}' berhasil dibeli seharga Rp " . number_format($spent, 0, ',', '.') . " menggunakan {$account->name}.");
     }
+
+    /**
+     * Kurangi Saldo Wadah (Biaya Admin Debit, Bunga, Biaya Pemeliharaan, dll)
+     */
+    public function deductAccountBalance(Request $request, LedgerService $ledgerService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'account_id' => 'required|exists:accounts,id',
+            'amount' => 'required|integer|min:1',
+            'description' => 'required|string|max:255',
+            'transaction_time' => 'nullable|date',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'save_as_recurring' => 'nullable|boolean',
+            'deduction_day' => 'nullable|integer|between:1,31',
+        ]);
+
+        $account = Account::findOrFail($validated['account_id']);
+        if (!$account->type->isAsset()) {
+            return redirect()->back()->with('error', "Hanya wadah simpanan kas/bank/e-wallet yang dapat dikurangi saldonya.");
+        }
+
+        $workDay = !empty($validated['work_day_id'])
+            ? WorkDay::findOrFail($validated['work_day_id'])
+            : (WorkDay::whereDate('work_date', now()->toDateString())->first()
+                ?? WorkDay::create([
+                    'work_date' => now()->toDateString(),
+                    'day_type' => WorkDay::TYPE_DAY_OFF,
+                    'status' => 'active',
+                ]));
+
+        $expenseAccount = Account::firstOrCreate(
+            ['name' => 'Beban Biaya Admin & Pemeliharaan Wadah'],
+            ['type' => AccountType::EXPENSE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+        );
+
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $amount = (int) $validated['amount'];
+        $desc = trim($validated['description']);
+
+        $tx = $ledgerService->recordTransaction(
+            workDay: $workDay,
+            type: 'expense',
+            description: "[Biaya Wadah] {$account->name}: {$desc}",
+            transactionTime: $txTime,
+            entries: [
+                ['account_id' => $expenseAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $amount],
+                ['account_id' => $account->id, 'entry_type' => EntryType::CREDIT, 'amount' => $amount],
+            ],
+            isEstimatedTime: false,
+            metadata: [
+                'type' => 'account_admin_deduction',
+                'account_id' => $account->id,
+                'deduction_reason' => $desc,
+                'amount' => $amount,
+            ]
+        );
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => Account::class,
+            'auditable_id' => $account->id,
+            'action' => 'account_deduction',
+            'old_values' => ['balance' => $account->current_balance + $amount],
+            'new_values' => ['balance' => $account->fresh()->current_balance],
+            'reason' => "Pengurangan saldo wadah {$account->name} sebesar Rp " . number_format($amount, 0, ',', '.') . " ({$desc}).",
+        ]);
+
+        if (!empty($validated['save_as_recurring'])) {
+            \App\Models\AccountDeduction::create([
+                'account_id' => $account->id,
+                'name' => $desc,
+                'amount' => $amount,
+                'deduction_day' => (int) ($validated['deduction_day'] ?? now()->day),
+                'last_deducted_at' => now(),
+                'is_active' => true,
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Saldo wadah {$account->name} berhasil dipotong Rp " . number_format($amount, 0, ',', '.') . " untuk '{$desc}'.");
+    }
+
+    /**
+     * Tambah / Atur Jadwal Potongan Rutin Bulanan untuk Wadah Tertentu
+     */
+    public function storeAccountDeduction(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'account_id' => 'required|exists:accounts,id',
+            'name' => 'required|string|max:100',
+            'amount' => 'required|integer|min:1',
+            'deduction_day' => 'required|integer|between:1,31',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $account = Account::findOrFail($validated['account_id']);
+        if (!$account->type->isAsset()) {
+            return redirect()->back()->with('error', "Jadwal potongan rutin hanya dapat diatur untuk wadah kas/bank/e-wallet.");
+        }
+
+        \App\Models\AccountDeduction::create([
+            'account_id' => $account->id,
+            'name' => $validated['name'],
+            'amount' => (int) $validated['amount'],
+            'deduction_day' => (int) $validated['deduction_day'],
+            'notes' => $validated['notes'] ?? null,
+            'is_active' => true,
+        ]);
+
+        return redirect()->back()->with('success', "Jadwal potongan bulanan '{$validated['name']}' (Rp " . number_format($validated['amount'], 0, ',', '.') . " / Tgl {$validated['deduction_day']}) berhasil disimpan untuk {$account->name}.");
+    }
+
+    /**
+     * Hapus Jadwal Potongan Rutin Wadah
+     */
+    public function destroyAccountDeduction(int $id): RedirectResponse
+    {
+        $deduction = \App\Models\AccountDeduction::findOrFail($id);
+        $name = $deduction->name;
+        $accName = $deduction->account->name;
+        $deduction->delete();
+
+        return redirect()->back()->with('success', "Aturan potongan rutin '{$name}' pada {$accName} berhasil dihapus.");
+    }
+
+    /**
+     * Eksekusi Cepat Potongan Rutin Bulanan Wadah Saat Tanggal / Waktunya Tiba
+     */
+    public function executeAccountDeduction(int $id, LedgerService $ledgerService): RedirectResponse
+    {
+        $deduction = \App\Models\AccountDeduction::with('account')->findOrFail($id);
+        $account = $deduction->account;
+        $oldBalance = $account->current_balance;
+
+        $workDay = WorkDay::whereDate('work_date', now()->toDateString())->first()
+            ?? WorkDay::create([
+                'work_date' => now()->toDateString(),
+                'day_type' => WorkDay::TYPE_DAY_OFF,
+                'status' => 'active',
+            ]);
+
+        $expenseAccount = Account::firstOrCreate(
+            ['name' => 'Beban Biaya Admin & Pemeliharaan Wadah'],
+            ['type' => AccountType::EXPENSE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+        );
+
+        $ledgerService->recordTransaction(
+            workDay: $workDay,
+            type: 'expense',
+            description: "[Potongan Rutin Wadah] {$account->name}: {$deduction->name}",
+            transactionTime: now(),
+            entries: [
+                ['account_id' => $expenseAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $deduction->amount],
+                ['account_id' => $account->id, 'entry_type' => EntryType::CREDIT, 'amount' => $deduction->amount],
+            ],
+            isEstimatedTime: false,
+            metadata: [
+                'type' => 'account_admin_deduction',
+                'account_id' => $account->id,
+                'deduction_id' => $deduction->id,
+                'deduction_name' => $deduction->name,
+                'amount' => $deduction->amount,
+            ]
+        );
+
+        $deduction->update(['last_deducted_at' => now()]);
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => Account::class,
+            'auditable_id' => $account->id,
+            'action' => 'account_deduction_executed',
+            'old_values' => ['balance' => $oldBalance],
+            'new_values' => ['balance' => $account->fresh()->current_balance],
+            'reason' => "Eksekusi potongan rutin bulanan {$deduction->name} pada wadah {$account->name} sebesar Rp " . number_format($deduction->amount, 0, ',', '.'),
+        ]);
+
+        return redirect()->back()->with('success', "Potongan rutin '{$deduction->name}' (Rp " . number_format($deduction->amount, 0, ',', '.') . ") berhasil dipotong dari {$account->name}.");
+    }
+
+    /**
+     * Reset Seluruh Data ke Kondisi Awal (Khusus Mode Uji Coba)
+     */
+    public function resetTrialData(Request $request): RedirectResponse
+    {
+        if (!config('app.trial_mode', true)) {
+            abort(403, 'Fitur reset data hanya tersedia selama masa uji coba.');
+        }
+
+        while (\Illuminate\Support\Facades\DB::transactionLevel() > 0) {
+            \Illuminate\Support\Facades\DB::rollBack();
+        }
+
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', [
+            '--seed' => true,
+            '--force' => true,
+        ]);
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+
+        $user = \App\Models\User::where('email', 'driver@keuangan.test')->first()
+            ?? \App\Models\User::first();
+        if ($user) {
+            auth()->login($user);
+        }
+
+        return redirect()->route('dashboard')->with('success', '✅ Seluruh data berhasil di-reset ke kondisi awal (fresh seeder)! Anda dapat memulai uji coba dari nol.');
+    }
 }

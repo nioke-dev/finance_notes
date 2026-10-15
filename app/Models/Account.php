@@ -55,4 +55,14 @@ class Account extends Model
     {
         return $this->hasMany(LedgerEntry::class);
     }
+
+    public function deductions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AccountDeduction::class);
+    }
+
+    public function activeDeductions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AccountDeduction::class)->where('is_active', true);
+    }
 }

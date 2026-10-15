@@ -1189,6 +1189,14 @@
                         <span>💼</span>
                         <span>Kelola Wadah & Arsip</span>
                     </a>
+                    <button type="button" onclick="openDeductAccountModal()" class="px-3.5 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <span>🔻</span>
+                        <span>Kurangi Saldo Wadah</span>
+                    </button>
+                    <button type="button" onclick="openManageDeductionsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition flex items-center space-x-1.5 shadow">
+                        <span>⚙️</span>
+                        <span>Potongan Bulanan</span>
+                    </button>
                     <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-300 border border-purple-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
                         <span>📲</span>
                         <span>Sinkron Saldo & QRIS</span>
@@ -1201,9 +1209,23 @@
                         <span>💰</span>
                         <span>Atur Saldo Awal</span>
                     </button>
+                    <button type="button" onclick="openDeductAccountModal()" class="px-3.5 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Kurangi saldo wadah untuk admin bank, debit, bunga, dll">
+                        <span>🔻</span>
+                        <span>Kurangi Saldo</span>
+                    </button>
+                    <button type="button" onclick="openManageDeductionsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition flex items-center space-x-1.5" title="Kelola jadwal pemotongan bulanan per rekening">
+                        <span>⚙️</span>
+                        <span>Jadwal Potongan</span>
+                    </button>
                     <button type="button" onclick="openModal('modal-correct-account')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition">
                         📝 Koreksi Audit
                     </button>
+                    @if(config('app.trial_mode', true))
+                        <button type="button" onclick="openModal('modal-reset-trial-data')" class="px-3.5 py-2 rounded-xl bg-rose-600/40 hover:bg-rose-600/60 text-rose-200 border border-rose-500/60 text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Reset semua data ke kondisi fresh seeder">
+                            <span>🔄</span>
+                            <span>Reset Data Uji Coba</span>
+                        </button>
+                    @endif
                 </div>
             </div>
 
@@ -1214,44 +1236,87 @@
                         $isLocked = $acc->initial_balance > 0;
                     @endphp
                     <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 rounded-2xl p-5 flex flex-col justify-between shadow-lg transition space-y-3">
-                        <div class="flex items-start justify-between gap-3 w-full">
-                            <div class="flex-1 min-w-0">
-                                <span class="text-xs font-extrabold uppercase text-slate-200 tracking-wider block leading-snug">
-                                    {{ $acc->name }}
-                                </span>
-                                <span class="text-xl font-black text-white mt-2 block tracking-tight">
-                                    Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
-                                </span>
-                                @if($isAsset)
-                                    <span class="text-xs text-slate-300 font-medium block mt-0.5">
-                                        Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
+                        <div class="space-y-3">
+                            <div class="flex items-start justify-between gap-3 w-full">
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-xs font-extrabold uppercase text-slate-200 tracking-wider block leading-snug">
+                                        {{ $acc->name }}
                                     </span>
-                                @else
-                                    <span class="text-xs text-slate-400 font-medium block mt-0.5">
-                                        Akumulasi Berjalan
+                                    <span class="text-xl font-black text-white mt-2 block tracking-tight">
+                                        Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
                                     </span>
-                                @endif
-                            </div>
-
-                            <div class="flex flex-col items-end gap-1.5 shrink-0">
-                                <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 uppercase border border-slate-700 tracking-wide">
-                                    {{ $acc->type->value ?? $acc->type }}
-                                </span>
-                                @if($isAsset)
-                                    @if($isLocked)
-                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold whitespace-nowrap" title="Saldo Awal Terkunci">
-                                            🔒 Locked
+                                    @if($isAsset)
+                                        <span class="text-xs text-slate-300 font-medium block mt-0.5">
+                                            Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
                                         </span>
                                     @else
-                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap" title="Belum Diinisialisasi">
-                                            ⚠️ Unset
+                                        <span class="text-xs text-slate-400 font-medium block mt-0.5">
+                                            Akumulasi Berjalan
                                         </span>
                                     @endif
-                                @endif
+                                </div>
+
+                                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                    <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 uppercase border border-slate-700 tracking-wide">
+                                        {{ $acc->type->value ?? $acc->type }}
+                                    </span>
+                                    @if($isAsset)
+                                        @if($isLocked)
+                                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold whitespace-nowrap" title="Saldo Awal Terkunci">
+                                                🔒 Locked
+                                            </span>
+                                        @else
+                                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap" title="Belum Diinisialisasi">
+                                                ⚠️ Unset
+                                            </span>
+                                        @endif
+                                    @endif
+                                </div>
                             </div>
+
+                            {{-- Daftar Jadwal Potongan Rutin Wadah (Jika Ada) --}}
+                            @if($isAsset && $acc->activeDeductions && $acc->activeDeductions->isNotEmpty())
+                                <div class="space-y-1.5 pt-1">
+                                    @foreach($acc->activeDeductions as $ded)
+                                        <div class="flex items-center justify-between text-[11px] bg-slate-800/90 rounded-lg px-2.5 py-1.5 border border-slate-700/80">
+                                            <div class="truncate mr-2">
+                                                <span class="text-rose-300 font-semibold">{{ $ded->name }}</span>: 
+                                                <span class="text-white font-bold">Rp {{ number_format($ded->amount, 0, ',', '.') }}</span>
+                                                <span class="text-slate-400 text-[10px] block">Tiap tgl {{ $ded->deduction_day }}</span>
+                                            </div>
+                                            <div>
+                                                @if(!$ded->isDeductedThisMonth())
+                                                    <form method="POST" action="/operational/account-deduction/{{ $ded->id }}/execute" onsubmit="return confirm('Eksekusi pemotongan {{ $ded->name }} sebesar Rp {{ number_format($ded->amount, 0, ',', '.') }} dari {{ $acc->name }} sekarang?')">
+                                                        @csrf
+                                                        <button type="submit" class="text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-bold transition whitespace-nowrap flex items-center gap-1" title="Potong saldo bulan ini sekarang">
+                                                            ⚡ Potong
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-[9px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                                        ✓ Lunas Bln Ini
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
-                        <div class="pt-3 border-t border-slate-800 w-full flex items-center justify-between text-xs">
+                        <div class="pt-3 border-t border-slate-800 w-full flex flex-col gap-2 text-xs">
+                            @if($isAsset)
+                                <div class="flex items-center gap-1.5 w-full">
+                                    <button type="button" onclick="openDeductAccountModal({{ $acc->id }}, '{{ addslashes($acc->name) }}', {{ $acc->current_balance }})" class="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-rose-950/40 text-slate-200 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition" title="Kurangi saldo wadah ini untuk biaya admin, bunga, atau potongan lain">
+                                        <span>🔻</span>
+                                        <span>Kurangi Saldo</span>
+                                    </button>
+                                    <button type="button" onclick="openManageDeductionsModal({{ $acc->id }})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-[11px] font-bold transition" title="Atur jadwal potongan bulanan wadah ini">
+                                        ⚙️
+                                    </button>
+                                </div>
+                            @endif
+
                             @if($acc->type === \App\Enums\AccountType::CASH)
                                 <button type="button" onclick="openModal('modal-view-cash-denomination')" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-extrabold flex items-center justify-between transition group shadow">
                                     <span class="flex items-center space-x-1.5">
@@ -1261,27 +1326,29 @@
                                     <span class="group-hover:translate-x-0.5 transition">&rarr;</span>
                                 </button>
                             @else
-                                <span class="text-slate-300 font-medium">Status: <span class="text-emerald-400 font-bold">Aktif</span></span>
-                                @if($acc->current_balance == 0)
-                                    @if(!$acc->ledgerEntries()->exists())
-                                        <form method="POST" action="/operational/account/{{ $acc->id }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN wadah {{ $acc->name }}? Wadah ini belum memiliki riwayat transaksi apa pun.')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="px-2 py-1 bg-rose-950/40 hover:bg-rose-950/70 text-rose-300 border border-rose-500/40 rounded-lg text-xs font-semibold transition" title="Hapus permanen karena belum ada catatan transaksi">
-                                                🗑️ Hapus Wadah
-                                            </button>
-                                        </form>
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-slate-300 font-medium">Status: <span class="text-emerald-400 font-bold">Aktif</span></span>
+                                    @if($acc->current_balance == 0)
+                                        @if(!$acc->ledgerEntries()->exists())
+                                            <form method="POST" action="/operational/account/{{ $acc->id }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN wadah {{ $acc->name }}? Wadah ini belum memiliki riwayat transaksi apa pun.')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="px-2 py-1 bg-rose-950/40 hover:bg-rose-950/70 text-rose-300 border border-rose-500/40 rounded-lg text-xs font-semibold transition" title="Hapus permanen karena belum ada catatan transaksi">
+                                                    🗑️ Hapus Wadah
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="/operational/account/{{ $acc->id }}/toggle-active" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan/menutup rekening {{ $acc->name }}?')">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 bg-slate-800 hover:bg-amber-600/30 text-slate-300 hover:text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition" title="Arsipkan / Tutup Rekening">
+                                                    📦 Tutup Rekening
+                                                </button>
+                                            </form>
+                                        @endif
                                     @else
-                                        <form method="POST" action="/operational/account/{{ $acc->id }}/toggle-active" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan/menutup rekening {{ $acc->name }}?')">
-                                            @csrf
-                                            <button type="submit" class="px-2.5 py-1 bg-slate-800 hover:bg-amber-600/30 text-slate-300 hover:text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition" title="Arsipkan / Tutup Rekening">
-                                                📦 Tutup Rekening
-                                            </button>
-                                        </form>
+                                        <span class="text-xs text-slate-300 font-medium" title="Rekening hanya bisa ditutup jika saldo Rp0">🔒 Saldo Aktif</span>
                                     @endif
-                                @else
-                                    <span class="text-xs text-slate-300 font-medium" title="Rekening hanya bisa ditutup jika saldo Rp0">🔒 Saldo Aktif</span>
-                                @endif
+                                </div>
                             @endif
                         </div>
                     </div>

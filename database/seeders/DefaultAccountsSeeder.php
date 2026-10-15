@@ -21,7 +21,8 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'GoPay', 'type' => AccountType::EWALLET],
             ['name' => 'GoPay Merchant', 'type' => AccountType::EWALLET],
             ['name' => 'Cash', 'type' => AccountType::CASH],
-            ['name' => 'Flazz / e-money', 'type' => AccountType::EWALLET],
+            ['name' => 'Flazz', 'type' => AccountType::EWALLET],
+            ['name' => 'i.Saku', 'type' => AccountType::EWALLET],
             ['name' => 'Talangan Pesanan COD', 'type' => AccountType::RECEIVABLE],
 
             // Income
@@ -37,6 +38,7 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'Beban Makanan & Minuman Driver', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Serba-serbi & Insidental Lapangan', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Biaya Admin Transfer', 'type' => AccountType::EXPENSE],
+            ['name' => 'Beban Biaya Admin & Pemeliharaan Wadah', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Sedekah & Bantuan Pribadi', 'type' => AccountType::EXPENSE],
             ['name' => 'Beban Selisih Kas (Hilang/Kurang)', 'type' => AccountType::EXPENSE],
             ['name' => 'Pendapatan Selisih Kas (Surplus Tak Terlacak)', 'type' => AccountType::INCOME],
