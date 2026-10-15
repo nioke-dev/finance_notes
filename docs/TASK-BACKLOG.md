@@ -150,5 +150,6 @@
 - [x] `TASK-109`: CI/CD GitHub Actions APK Build & Packaging (Flutter 3.22, AGP, R8 Optimization & GitHub Release Binary v1.1.0) `[DONE]`
 - [x] `TASK-110`: Direct APK Release Distribution Endpoint (`/download/driver-finance-latest.apk`) & PWA Standalone Support `[DONE]`
 - [x] `TASK-111`: Manajemen Wadah Finansial Dinamis (Master Portofolio: CRUD Rekening Simpanan, CRUD Wadah PayLater, Pengaturan Limit Plafon Kredit, Proteksi Audit Hapus vs Tutup/Arsip, & Integrasi Pengeluaran PayLater di Dashboard) `[DONE]`
+- [x] `TASK-112`: Pemisahan Wadah Flazz & i.Saku, Manajemen Pengurangan/Admin Wadah (Instant & Jadwal Potongan Rutin Bulanan 1-Klik), serta Tombol Mandiri Reset Data Uji Coba `[DONE]`
 
 
