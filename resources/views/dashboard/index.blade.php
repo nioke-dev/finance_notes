@@ -605,8 +605,8 @@
                         <button type="button" onclick="openModal('modal-parking')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
                             <span class="text-2xl block mb-1">🅿️</span>
                             <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Motor</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Mandiri / Resto</span>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Kendaraan</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Motor / Mobil</span>
                             </div>
                         </button>
 
@@ -1326,6 +1326,13 @@
                     <label class="block text-xs font-bold text-slate-300 mb-1">Tanggal Shift</label>
                     <input type="date" name="work_date" value="{{ now()->toDateString() }}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-semibold">
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Aktivitas Hari Ini</label>
+                    <select name="day_type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="on_bid" selected>🛵 Hari Kerja / On-Bid (Narik ShopeeFood)</option>
+                        <option value="day_off">🏖️ Hari Libur / Off-Bid (Istirahat / Bawa Mobil / Pribadi)</option>
+                    </select>
+                </div>
 
                 {{-- Status Kas Otomatis Melanjutkan --}}
                 <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3.5 space-y-1">
@@ -1395,32 +1402,114 @@
         </div>
     </div>
 
-    {{-- 3. Modal Parkir Motor --}}
+    {{-- 3. Modal Parkir Kendaraan (Motor / Mobil, On-Bid / Off-Bid) --}}
     <div id="modal-parking" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-base font-bold text-white mb-1">🅿️ Catat Parkir Motor Driver</h3>
-            <p class="text-xs text-slate-300 font-medium mb-4">Catat pengeluaran parkir atau resto yang menggratiskan parkir driver.</p>
+            <div class="flex justify-between items-start mb-3 pb-2 border-b border-slate-700/80">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-2xl">🅿️</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Catat Parkir Kendaraan</h3>
+                        <p class="text-xs text-slate-300 font-medium">Motor on-bid atau mobil saat off-bid / pribadi</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-parking')" class="text-slate-300 hover:text-white font-bold text-xl leading-none">&times;</button>
+            </div>
+
             <form method="POST" action="/operational/parking" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Restoran / Lokasi</label>
-                    <input type="text" name="restaurant_name" placeholder="Misal: Mie Gacoan / McD / Kober" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+
+                {{-- Status Shift Badge --}}
+                <div class="flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700">
+                    <span class="text-slate-300 font-medium">Status Operasional:</span>
+                    @if($currentWorkDay)
+                        <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                            ✓ On-Bid ({{ $currentWorkDay->work_date->translatedFormat('d M Y') }})
+                        </span>
+                    @else
+                        <span class="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-bold">
+                            🚗 Off-Bid / Parkir Pribadi
+                        </span>
+                    @endif
                 </div>
+
+                {{-- Pilihan Jenis Kendaraan (Motor vs Mobil) --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">Jenis Kendaraan</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center justify-center space-x-2 p-2.5 rounded-xl border border-slate-700 bg-slate-900 cursor-pointer hover:border-emerald-500 transition has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10">
+                            <input type="radio" name="vehicle_type" value="motor" checked onchange="onVehicleTypeChange('motor')" class="text-emerald-500 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-white">🛵 Sepeda Motor</span>
+                        </label>
+                        <label class="flex items-center justify-center space-x-2 p-2.5 rounded-xl border border-slate-700 bg-slate-900 cursor-pointer hover:border-emerald-500 transition has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10">
+                            <input type="radio" name="vehicle_type" value="mobil" onchange="onVehicleTypeChange('mobil')" class="text-emerald-500 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-white">🚗 Mobil Pribadi</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Restoran / Lokasi Parkir</label>
+                    <input type="text" name="restaurant_name" placeholder="Misal: Mie Gacoan, McD, Indomaret, Mall" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+
+                {{-- Gratis / Ditanggung Resto --}}
                 <div class="p-3 bg-slate-900/80 border border-slate-700 rounded-xl">
                     <label class="flex items-center space-x-2 cursor-pointer">
                         <input type="checkbox" name="is_covered_by_resto" value="1" id="chk-covered" onchange="toggleParkingAmount(this)" class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500">
                         <span class="text-xs font-bold text-emerald-400">Gratis / Ditanggung Restoran</span>
                     </label>
-                    <p class="text-[10px] text-slate-300 font-medium mt-1 pl-6">Centang jika resto menyediakan parkir bebas biaya khusus driver (uang kas tidak akan dipotong).</p>
+                    <p class="text-[10px] text-slate-300 font-medium mt-1 pl-6">Centang jika resto menyediakan parkir bebas biaya khusus driver (uang kas tidak akan terpotong).</p>
                 </div>
-                <div id="div-parking-amount">
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Parkir Mandiri (Rp)</label>
-                    <input type="number" name="amount" id="input-parking-amount" value="2000" min="0" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+
+                {{-- Nominal Parkir Dinamis & Preset --}}
+                <div id="div-parking-amount" class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-xs font-bold text-slate-300">Nominal Parkir (Rp)</label>
+                        <span class="text-[10px] text-slate-400">Pilih cepat atau ketik bebas</span>
+                    </div>
+
+                    {{-- Quick Preset Chips --}}
+                    <div class="flex flex-wrap gap-1.5" id="parking-preset-chips">
+                        <button type="button" onclick="setParkingAmount(1000)" class="parking-preset-btn px-2.5 py-1 bg-slate-900 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-200 transition">
+                            Rp 1.000
+                        </button>
+                        <button type="button" onclick="setParkingAmount(2000)" class="parking-preset-btn px-2.5 py-1 bg-slate-900 hover:bg-slate-700 border border-emerald-500 text-emerald-300 rounded-lg text-xs font-bold transition">
+                            Rp 2.000
+                        </button>
+                        <button type="button" onclick="setParkingAmount(3000)" class="parking-preset-btn px-2.5 py-1 bg-slate-900 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-200 transition">
+                            Rp 3.000
+                        </button>
+                        <button type="button" onclick="setParkingAmount(5000)" class="parking-preset-btn px-2.5 py-1 bg-slate-900 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-200 transition">
+                            Rp 5.000
+                        </button>
+                        <button type="button" onclick="setParkingAmount(10000)" class="parking-preset-btn px-2.5 py-1 bg-slate-900 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-200 transition">
+                            Rp 10.000
+                        </button>
+                    </div>
+
+                    <input type="number" name="amount" id="input-parking-amount" value="2000" min="0" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
-                <div class="flex justify-end space-x-2 pt-2">
+
+                {{-- Sumber Dana / Wadah --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan Wadah</label>
+                    <select name="source_account_id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}" {{ $acc->name === 'Cash' ? 'selected' : '' }}>
+                                {{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700/80">
                     <button type="button" onclick="closeModal('modal-parking')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Parkir</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
+                        <span>🅿️</span>
+                        <span>Simpan Parkir</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -3345,6 +3434,32 @@
             checkInitAccountType();
         }
 
+        function setParkingAmount(amount) {
+            const input = document.getElementById('input-parking-amount');
+            if (input) {
+                input.value = amount;
+            }
+            document.querySelectorAll('.parking-preset-btn').forEach(btn => {
+                if (btn.innerText.includes(amount.toLocaleString('id-ID'))) {
+                    btn.classList.add('border-emerald-500', 'text-emerald-300');
+                    btn.classList.remove('border-slate-700', 'text-slate-200');
+                } else {
+                    btn.classList.remove('border-emerald-500', 'text-emerald-300');
+                    btn.classList.add('border-slate-700', 'text-slate-200');
+                }
+            });
+        }
+
+        function onVehicleTypeChange(type) {
+            const chk = document.getElementById('chk-covered');
+            if (chk && chk.checked) return;
+            if (type === 'mobil') {
+                setParkingAmount(5000);
+            } else {
+                setParkingAmount(2000);
+            }
+        }
+
         function toggleParkingAmount(chk) {
             const div = document.getElementById('div-parking-amount');
             const input = document.getElementById('input-parking-amount');
@@ -3353,7 +3468,8 @@
                 input.value = 0;
             } else {
                 div.classList.remove('opacity-40', 'pointer-events-none');
-                input.value = 2000;
+                const isMobil = document.querySelector('input[name="vehicle_type"]:checked')?.value === 'mobil';
+                setParkingAmount(isMobil ? 5000 : 2000);
             }
         }
 

@@ -93,4 +93,59 @@ class QuickParkingServiceTest extends TestCase
         $this->assertEquals('Parkir Motor Lapangan (Quick 1-Tap)', $transaction->description);
         $this->assertNull($transaction->metadata['restaurant_name']);
     }
+
+    public function test_record_parking_car_with_custom_account_and_amount(): void
+    {
+        $workDay = WorkDay::create([
+            'work_date' => '2026-10-14',
+            'status' => 'active',
+        ]);
+
+        $flazzAccount = Account::where('name', 'Flazz / e-money')->first();
+        $flazzAccount->update(['current_balance' => 100000]);
+
+        $parkingExpenseAccount = Account::where('name', 'Beban Parkir')->first();
+        $parkingExpenseAccount->update(['current_balance' => 0]);
+
+        $transaction = $this->service->recordParking(
+            workDay: $workDay,
+            amount: 5000,
+            restaurantName: 'Mall Olympic Garden',
+            sourceAccountId: $flazzAccount->id,
+            vehicleType: 'mobil'
+        );
+
+        $this->assertEquals(5000, $transaction->amount);
+        $this->assertEquals('Parkir Mobil: Mall Olympic Garden', $transaction->description);
+        $this->assertEquals('mobil', $transaction->metadata['vehicle_type']);
+
+        $flazzAccount->refresh();
+        $this->assertEquals(95000, $flazzAccount->current_balance);
+
+        $parkingExpenseAccount->refresh();
+        $this->assertEquals(5000, $parkingExpenseAccount->current_balance);
+    }
+
+    public function test_record_parking_during_day_off(): void
+    {
+        $workDay = WorkDay::create([
+            'work_date' => '2026-10-15',
+            'day_type' => WorkDay::TYPE_DAY_OFF,
+            'status' => 'active',
+        ]);
+
+        $cashAccount = Account::where('name', 'Cash')->first();
+        $cashAccount->update(['current_balance' => 50000]);
+
+        $transaction = $this->service->recordParking(
+            workDay: $workDay,
+            amount: 2000,
+            restaurantName: 'Alun-alun Kota',
+            vehicleType: 'motor'
+        );
+
+        $this->assertEquals('Parkir Motor: Alun-alun Kota (Off-Bid)', $transaction->description);
+        $cashAccount->refresh();
+        $this->assertEquals(48000, $cashAccount->current_balance);
+    }
 }

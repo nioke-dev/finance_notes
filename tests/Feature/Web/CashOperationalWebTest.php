@@ -140,4 +140,31 @@ class CashOperationalWebTest extends TestCase
         $viewResponse->assertSee('Perhatian Lembaran Uang Rusak / Sobek');
         $viewResponse->assertSee('Sobek sedikit di tepi, uang kembalian martabak');
     }
+
+    public function test_user_can_record_parking_dynamically_and_when_offbid(): void
+    {
+        // 1. Record motorbike parking with Rp 1.000
+        $response = $this->post('/operational/parking', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 1000,
+            'restaurant_name' => 'Indomaret Point',
+            'vehicle_type' => 'motor',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertEquals(199000, $this->cashAccount->fresh()->current_balance);
+
+        // 2. Record car parking when off-bid (no work_day_id provided)
+        $response2 = $this->post('/operational/parking', [
+            'amount' => 5000,
+            'restaurant_name' => 'Mall Olympic Garden',
+            'vehicle_type' => 'mobil',
+            'source_account_id' => $this->bankAccount->id,
+        ]);
+
+        $response2->assertRedirect();
+        $response2->assertSessionHas('success');
+        $this->assertEquals(495000, $this->bankAccount->fresh()->current_balance);
+    }
 }

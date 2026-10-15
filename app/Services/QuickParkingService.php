@@ -26,17 +26,38 @@ class QuickParkingService
         ?float $latitude = null,
         ?float $longitude = null,
         ?Carbon $transactionTime = null,
-        bool $isCoveredByResto = false
+        bool $isCoveredByResto = false,
+        ?int $sourceAccountId = null,
+        string $vehicleType = 'motor'
     ): Transaction {
-        $cashAccount = Account::where('name', 'Cash')->firstOrFail();
+        $sourceAccount = $sourceAccountId
+            ? Account::findOrFail($sourceAccountId)
+            : Account::where('name', 'Cash')->firstOrFail();
+
         $parkingExpenseAccount = Account::where('name', 'Beban Parkir')->firstOrFail();
 
         // Jika ditanggung resto, pengeluaran kas driver = Rp0
         $effectiveCashDeduction = $isCoveredByResto ? 0 : $amount;
 
-        $description = $restaurantName
-            ? ($isCoveredByResto ? "Parkir Motor (Gratis/Ditanggung Resto): {$restaurantName}" : "Parkir Motor: {$restaurantName}")
-            : ($isCoveredByResto ? "Parkir Motor (Gratis/Ditanggung Resto)" : "Parkir Motor Lapangan (Quick 1-Tap)");
+        $vehicleLabel = match (strtolower($vehicleType)) {
+            'mobil' => 'Mobil',
+            'motor' => 'Motor',
+            default => ucfirst($vehicleType),
+        };
+
+        $contextSuffix = $workDay->isDayOff() ? ' (Off-Bid)' : '';
+
+        if ($isCoveredByResto) {
+            $description = $restaurantName
+                ? "Parkir {$vehicleLabel} (Gratis/Ditanggung Resto): {$restaurantName}{$contextSuffix}"
+                : "Parkir {$vehicleLabel} (Gratis/Ditanggung Resto){$contextSuffix}";
+        } else {
+            $description = $restaurantName
+                ? "Parkir {$vehicleLabel}: {$restaurantName}{$contextSuffix}"
+                : ($amount === self::DEFAULT_PARKING_FEE 
+                    ? "Parkir {$vehicleLabel} Lapangan (Quick 1-Tap){$contextSuffix}"
+                    : "Parkir {$vehicleLabel} (Rp" . number_format($amount, 0, ',', '.') . "){$contextSuffix}");
+        }
 
         $metadata = [
             'type' => 'quick_parking',
@@ -45,12 +66,14 @@ class QuickParkingService
             'longitude' => $longitude,
             'is_covered_by_resto' => $isCoveredByResto,
             'original_fee' => $amount,
+            'vehicle_type' => $vehicleType,
+            'source_account_id' => $sourceAccount->id,
         ];
 
         $entries = [];
         if ($effectiveCashDeduction > 0) {
             $entries[] = [
-                'account_id' => $cashAccount->id,
+                'account_id' => $sourceAccount->id,
                 'entry_type' => EntryType::CREDIT,
                 'amount' => $effectiveCashDeduction,
             ];
@@ -62,7 +85,7 @@ class QuickParkingService
         } else {
             // Entri balancing nol atau penanda catatan operasional
             $entries[] = [
-                'account_id' => $cashAccount->id,
+                'account_id' => $sourceAccount->id,
                 'entry_type' => EntryType::CREDIT,
                 'amount' => 0,
             ];

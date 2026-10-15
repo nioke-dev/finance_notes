@@ -387,32 +387,47 @@ class OperationalWebController extends Controller
     }
 
     /**
-     * Catat Parkir Motor (Mandiri vs Ditanggung Resto)
+     * Catat Parkir Kendaraan (Motor / Mobil, On-Bid / Off-Bid, Mandiri vs Resto)
      */
     public function storeParking(
         Request $request,
         QuickParkingService $parkingService
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
             'amount' => 'required|integer|min:0',
             'restaurant_name' => 'nullable|string|max:255',
             'is_covered_by_resto' => 'nullable|boolean',
+            'source_account_id' => 'nullable|exists:accounts,id',
+            'vehicle_type' => 'nullable|string|in:motor,mobil,lainnya',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $workDay = !empty($validated['work_day_id'])
+            ? WorkDay::findOrFail($validated['work_day_id'])
+            : (WorkDay::whereDate('work_date', now()->toDateString())->first() 
+                ?? WorkDay::create([
+                    'work_date' => now()->toDateString(),
+                    'day_type' => WorkDay::TYPE_DAY_OFF,
+                    'status' => 'active',
+                ]));
+
         $isCovered = $request->boolean('is_covered_by_resto');
+        $vehicleType = $validated['vehicle_type'] ?? 'motor';
+        $sourceAccountId = !empty($validated['source_account_id']) ? (int) $validated['source_account_id'] : null;
 
         $parkingService->recordParking(
             workDay: $workDay,
             amount: (int) $validated['amount'],
             restaurantName: $validated['restaurant_name'] ?? null,
-            isCoveredByResto: $isCovered
+            isCoveredByResto: $isCovered,
+            sourceAccountId: $sourceAccountId,
+            vehicleType: $vehicleType
         );
 
+        $vehicleLabel = $vehicleType === 'mobil' ? 'Mobil' : 'Motor';
         $msg = $isCovered 
-            ? 'Parkir gratis (ditanggung resto) berhasil dicatat tanpa memotong uang kas.' 
-            : 'Parkir mandiri berhasil dicatat.';
+            ? "Parkir {$vehicleLabel} gratis (ditanggung resto) berhasil dicatat tanpa memotong saldo." 
+            : "Parkir {$vehicleLabel} berhasil dicatat (Rp" . number_format($validated['amount'], 0, ',', '.') . ").";
 
         return redirect()->back()->with('success', $msg);
     }
