@@ -83,3 +83,19 @@ Route::middleware('auth')->group(function () {
 Route::get('/download/driver-finance-latest.apk', [\App\Http\Controllers\Api\AppUpdateController::class, 'downloadApk'])->name('app.download');
 Route::get('/ci/log', [\App\Http\Controllers\Api\AppUpdateController::class, 'viewCiLog'])->name('ci.log');
 
+// PWA Progressive Web App Endpoints
+Route::get('/manifest.json', function () {
+    return response(file_get_contents(public_path('manifest.json')), 200, [
+        'Content-Type' => 'application/manifest+json; charset=utf-8',
+        'Cache-Control' => 'no-cache, public, max-age=3600',
+    ]);
+})->name('pwa.manifest');
+
+Route::get('/sw.js', function () {
+    return response(file_get_contents(public_path('sw.js')), 200, [
+        'Content-Type' => 'application/javascript; charset=utf-8',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        'Service-Worker-Allowed' => '/',
+    ]);
+})->name('pwa.sw');
+

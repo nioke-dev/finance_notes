@@ -9,6 +9,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
     @if (app()->environment('testing') && !file_exists(public_path('build/manifest.json')))
         <script src="https://cdn.tailwindcss.com"></script>
     @else
@@ -87,5 +90,35 @@
     <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-400 hidden md:block">
         Keuangan Pribadi & ShopeeFood Driver Malang &bull; Presisi Finansial Rp1
     </footer>
+
+    {{-- PWA Install Banner (Otomatis muncul jika browser mendukung install Web App) --}}
+    <div id="pwa-install-banner" class="hidden fixed bottom-20 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 bg-slate-900/95 border border-emerald-500/50 rounded-2xl p-3 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3 max-w-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <img src="/icons/icon-192x192.png" alt="Driver Finance" class="w-10 h-10 rounded-xl border border-emerald-500/40 shrink-0 shadow">
+            <div>
+                <p class="text-xs font-bold text-white">Instal Aplikasi Driver</p>
+                <p class="text-[11px] text-slate-300">Jalankan fullscreen tanpa browser bar</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-1.5 shrink-0">
+            <button type="button" onclick="window.installDriverPWA()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-950 transition active:scale-95">
+                Instal
+            </button>
+            <button type="button" onclick="document.getElementById('pwa-install-banner').classList.add('hidden')" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition" title="Tutup">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('pwa-install-ready', () => {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner && !window.matchMedia('(display-mode: standalone)').matches) {
+                banner.classList.remove('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

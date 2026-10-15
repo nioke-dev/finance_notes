@@ -1,17 +1,61 @@
 {
-  "name": "Driver Finance Malang",
+  "id": "/?source=pwa",
+  "name": "Driver Finance - Keuangan ShopeeFood Malang",
   "short_name": "Driver Finance",
-  "description": "Aplikasi Finansial & Operasional Driver ShopeeFood Malang",
-  "start_url": "/dashboard",
+  "description": "Aplikasi Finansial & Operasional Harian Driver ShopeeFood Malang Presisi Rp1",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0F172A",
   "theme_color": "#0F172A",
-  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard Driver",
+      "short_name": "Dashboard",
+      "description": "Buka Dashboard Ringkasan Finansial Driver",
+      "url": "/dashboard?source=pwa_shortcut",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Closing & Rekonsiliasi",
+      "short_name": "Closing",
+      "description": "Hitung Fisik Uang & Closing Harian",
+      "url": "/dashboard#tab-onbeat",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Utang & Cicilan",
+      "short_name": "Utang",
+      "description": "Kelola Utang, PayLater & Langganan",
+      "url": "/debts?source=pwa_shortcut",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": [
+    "finance",
+    "productivity",
+    "business"
   ]
 }

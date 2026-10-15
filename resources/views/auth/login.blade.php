@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Driver - Keuangan Pribadi & ShopeeFood</title>
+    <meta name="theme-color" content="#0F172A">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
     @if (app()->environment('testing') && !file_exists(public_path('build/manifest.json')))
         <script src="https://cdn.tailwindcss.com"></script>
     @else
@@ -59,6 +67,23 @@
                 Masuk ke Dashboard
             </button>
         </form>
+        <div id="pwa-login-install" class="hidden mt-6 pt-5 border-t border-slate-700/60 text-center">
+            <button type="button" onclick="window.installDriverPWA()" class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-700/60 hover:bg-slate-700 border border-emerald-500/30 text-xs font-semibold text-emerald-400 transition active:scale-95 shadow">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                <span>Instal Aplikasi Driver di HP</span>
+            </button>
+        </div>
     </div>
+
+    <script>
+        window.addEventListener('pwa-install-ready', () => {
+            const btn = document.getElementById('pwa-login-install');
+            if (btn && !window.matchMedia('(display-mode: standalone)').matches) {
+                btn.classList.remove('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
