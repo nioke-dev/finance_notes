@@ -1189,8 +1189,9 @@
                         <span>➕</span>
                         <span>Tambah Rekening Baru</span>
                     </button>
-                    <button type="button" onclick="openModal('modal-init-account')" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/50 text-xs font-bold transition">
-                        🔒 Kunci Saldo Awal
+                    <button type="button" onclick="openModal('modal-init-account')" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <span>💰</span>
+                        <span>Atur Saldo Awal</span>
                     </button>
                     <button type="button" onclick="openModal('modal-correct-account')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition">
                         📝 Koreksi Audit
