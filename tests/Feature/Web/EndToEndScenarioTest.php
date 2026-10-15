@@ -337,4 +337,60 @@ class EndToEndScenarioTest extends TestCase
         $this->assertNotNull($customDebt);
         $this->assertEquals(450000, $customDebt->total_obligation);
     }
+
+    /**
+     * Skenario 6: Parkir Dinamis (Motor Rp1.000/Rp2.000, Mobil Rp5.000/Custom, On-Bid & Off-Bid)
+     */
+    public function test_scenario_6_dynamic_parking_motor_and_car_onbid_and_offbid(): void
+    {
+        $cash = Account::where('name', 'Cash')->firstOrFail();
+        $cash->update(['current_balance' => 100000, 'initial_balance' => 100000]);
+
+        $bca = Account::where('name', 'BCA')->firstOrFail();
+        $bca->update(['current_balance' => 500000, 'initial_balance' => 500000]);
+
+        // 1. Parkir motor on-bid Rp 1.000 di Indomaret
+        $resp1 = $this->post('/operational/parking', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 1000,
+            'restaurant_name' => 'Indomaret Point Dinoyo',
+            'vehicle_type' => 'motor',
+        ]);
+        $resp1->assertRedirect();
+        $resp1->assertSessionHas('success');
+        $this->assertEquals(99000, $cash->fresh()->current_balance);
+
+        // 2. Parkir motor on-bid Rp 2.000 di Resto
+        $resp2 = $this->post('/operational/parking', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 2000,
+            'restaurant_name' => 'Mie Gacoan',
+            'vehicle_type' => 'motor',
+        ]);
+        $resp2->assertRedirect();
+        $resp2->assertSessionHas('success');
+        $this->assertEquals(97000, $cash->fresh()->current_balance);
+
+        // 3. Parkir mobil saat off-bid (tanpa work_day_id) Rp 5.000 bayar pakai BCA
+        $resp3 = $this->post('/operational/parking', [
+            'amount' => 5000,
+            'restaurant_name' => 'Mall Olympic Garden',
+            'vehicle_type' => 'mobil',
+            'source_account_id' => $bca->id,
+        ]);
+        $resp3->assertRedirect();
+        $resp3->assertSessionHas('success');
+        $this->assertEquals(495000, $bca->fresh()->current_balance);
+
+        // 4. Parkir mobil custom nominal Rp 7.500
+        $resp4 = $this->post('/operational/parking', [
+            'amount' => 7500,
+            'restaurant_name' => 'Stasiun Kotabaru Malang',
+            'vehicle_type' => 'mobil',
+            'source_account_id' => $cash->id,
+        ]);
+        $resp4->assertRedirect();
+        $resp4->assertSessionHas('success');
+        $this->assertEquals(89500, $cash->fresh()->current_balance);
+    }
 }

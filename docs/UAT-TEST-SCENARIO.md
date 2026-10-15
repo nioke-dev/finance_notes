@@ -90,28 +90,49 @@ Gunakan akun pengujian yang telah disiapkan seeder:
    - Klik kembali **`💰 Atur Saldo Awal`**.
    - Pilih Akun: `ShopeePay (EWALLET • Saat ini: Rp 0)`.
    - Nominal Saldo Modal Awal: Ketik `100000`.
-   - Klik **"Kunci Saldo Awal"**.
-6. **Ekspektasi Saldo**:
+    - Klik **"Kunci Saldo Awal"**.
+6. **Uji Tombol "Lihat Rincian Lembaran Kas"**:
+   - Di kartu **Cash (Kas Tunai)**, klik tombol: **`👛 Lihat Rincian Lembaran Kas →`**.
+   - Modal Rincian Fisik Lembaran Kas terbuka:
+     - Header: Menampilkan **Status Dompet: Saldo Awal Terkunci**.
+     - Ringkasan: Menampilkan konfirmasi **Saldo Kas Dompet: Rp 150.000 (✓ Saldo Awal Terkunci Aman)**.
+     - Keterangan informatif: Menyatakan bahwa saldo sudah aman dan siap dipakai, serta rekaman audit lembaran fisik per pecahan harian akan diaudit otomatis setiap malam saat Closing Shift.
+     - Terdapat tombol aksi langsung: **`[🌅 Mulai Shift Narik Sekarang →]`**.
+   - Klik **"Tutup"**.
+7. **Ekspektasi Saldo**:
    - Saldo DANA: Rp 50.000
    - Saldo Cash: Rp 150.000
    - Saldo BCA: Rp 500.000
    - Saldo ShopeePay: Rp 100.000
    - **Total Aset Liquid**: Rp 800.000.
 
-#### 2D. Mendaftarkan Tagihan PayLater yang Sedang Berjalan (GoPay Later & Platform Lainnya)
-*Sebelum mulai narik, daftarkan cicilan/PayLater yang sudah Anda miliki dari sebelum memakai aplikasi ini.*
+#### 2D. Manajemen Wadah Portofolio & Mendaftarkan Tagihan PayLater Berjalan
+*Aplikasi menyediakan menu dedicated **"Wadah"** di bottom navigation bar untuk mengelola seluruh akun simpanan dan plafon PayLater secara dinamis.*
 
-1. Buka menu navbar: **"Utang & PayLater"** (`/debts`).
-2. Di pojok kanan atas, klik tombol ungu: **`➕ Catat Tagihan Berjalan`**.
-3. Modal *"Catat Tagihan Utang Berjalan"* terbuka:
-   - **Daftarkan Tagihan 1: GoPay Later (GoPay Cicil)**:
-     - *Pilih Platform Utang*: Pilih `🟢 GoPay Later (GoPay Cicil)`
-     - *Nama / Keterangan Tagihan*: Ketik `Tagihan GoPay Later Jas Hujan`
-     - *Total Tagihan (Rp)*: Ketik `120000`
-     - *Tenor*: Ketik `2` Bulan (Rp 60.000/bulan)
-     - *Tanggal Jatuh Tempo*: Klik tombol shortcut `31 Okt` atau pilih tanggal jatuh tempo Anda
-     - Klik tombol: **"Simpan Tagihan Hutang"**.
-4. Klik kembali tombol ungu: **`➕ Catat Tagihan Berjalan`**:
+1. **Uji Menu Wadah (`/wallets`)**:
+   - Ketuk menu **"Wadah"** di bottom navigation bar (atau navigasi atas).
+   - Periksa 4 metrik portofolio:
+     - Total Saldo Aset Simpanan (Rp 800.000)
+     - Total Plafon PayLater
+     - Total Kewajiban Utang (Rp 0)
+     - Kekayaan Bersih (Net Worth: Rp 800.000)
+   - Periksa kartu Wadah PayLater (SPayLater, GoPay Later, TikTok PayLater, Kredivo, Akulaku, Indodana).
+   - Di kartu **SPayLater**, klik tombol **`✏️ Atur Limit`**:
+     - Masukkan limit baru: `3000000` (Rp 3.000.000).
+     - Klik **"Simpan Limit"**.
+     - **Ekspektasi**: Plafon SPayLater menjadi Rp 3.000.000 dan progress bar kredit langsung menyesuaikan.
+2. **Mendaftarkan Tagihan Berjalan dari Menu Utang (`/debts`)**:
+   - Buka menu: **"Utang & PayLater"** (`/debts`).
+   - Di pojok kanan atas, klik tombol ungu: **`➕ Catat Tagihan Berjalan`**.
+   - Modal *"Catat Tagihan Utang Berjalan"* terbuka:
+     - **Daftarkan Tagihan 1: GoPay Later (GoPay Cicil)**:
+       - *Pilih Platform Utang*: Pilih `🟢 GoPay Later (GoPay Cicil)`
+       - *Nama / Keterangan Tagihan*: Ketik `Tagihan GoPay Later Jas Hujan`
+       - *Total Tagihan (Rp)*: Ketik `120000`
+       - *Tenor*: Ketik `2` Bulan (Rp 60.000/bulan)
+       - *Tanggal Jatuh Tempo*: Klik tombol shortcut `31 Okt` atau pilih tanggal jatuh tempo Anda
+       - Klik tombol: **"Simpan Tagihan Hutang"**.
+3. Klik kembali tombol ungu: **`➕ Catat Tagihan Berjalan`**:
    - **Daftarkan Tagihan 2: Platform Baru / Lainnya (Ketik Manual, contoh: Indodana / Blibli PayLater)**:
      - *Pilih Platform Utang*: Pilih `➕ Platform / Pinjaman Lainnya (Ketik Manual)`
      - Seketika muncul kolom baru berwarna ungu: *Nama Platform Baru / Lainnya*
@@ -121,7 +142,7 @@ Gunakan akun pengujian yang telah disiapkan seeder:
      - *Tenor*: Ketik `3` Bulan (Rp 60.000/bulan)
      - *Tanggal Jatuh Tempo*: Klik tombol shortcut `20 Okt` atau `31 Okt`
      - Klik tombol: **"Simpan Tagihan Hutang"**.
-5. **Ekspektasi Portofolio Liabilitas**:
+4. **Ekspektasi Portofolio Liabilitas**:
    - Pada tabel *Daftar Utang & PayLater Aktif*, muncul:
      - Kartu `Tagihan GoPay Later Jas Hujan` dengan badge platform **GoPay Later**.
      - Kartu `Cicilan Ban Motor Indodana` dengan badge platform **Indodana PayLater**.
@@ -134,26 +155,24 @@ Gunakan akun pengujian yang telah disiapkan seeder:
 ---
 
 ### SKENARIO 3: Pagi Hari - Buka Hari Kerja (Open Work Day)
-**Tujuan**: Mengaktifkan sesi on-bid kerja lapangan dan mencatat odometer awal motor.
+**Tujuan**: Mengaktifkan sesi on-bid kerja lapangan atau mencatat hari libur/off-bid.
 
 1. Di bagian paling atas Dashboard, perhatikan kartu panduan:
    > *"🌅 **Hari Kerja Belum Dibuka [Siap On-Bid]** — Buka hari kerja untuk mulai mencatat target harian, kilometer odometer awal motor, dan transaksi driver on-bid."*
 2. Klik tombol hijau pada kartu tersebut: **`🌅 Buka Hari Kerja Sekarang`**.
 3. Modal *"Buka Shift Hari Kerja Baru"* terbuka:
-   - **Jenis Hari**: `Hari Narik Aktif (On-Beat)`
-   - **Target Order Hari Ini**: Ketik `18`
-   - **Target Pendapatan**: Ketik `180000`
-   - **Odometer Awal Motor (KM)**: Ketik `12450`
-   - Klik **"Simpan & Buka Shift"**.
+   - **Tanggal Shift**: Tanggal hari ini
+   - **Aktivitas Hari Ini**: Pilih `🛵 Hari Kerja / On-Bid (Narik ShopeeFood)` *(bisa juga memilih 🏖️ Hari Libur / Off-Bid jika sedang off/bawa mobil)*
+   - Saldo Kas Berjalan otomatis melanjutkan kas kemarin (Rp 150.000) tanpa perlu hitung lembaran fisik di pagi hari.
+   - Klik **"Buka Shift Sekarang"**.
 4. **Ekspektasi Hasil**:
-   - Kartu panduan atas otomatis menghilang.
-   - Status shift pada tab on-bid berganti menjadi: **Aktif (On-Beat)**.
-   - Tombol operasional narik di bawahnya aktif digunakan.
+   - Kartu panduan atas otomatis berganti dengan status shift aktif.
+   - 8 tombol operasional narik di bawahnya aktif digunakan.
 
 ---
 
 ### SKENARIO 4: Aksi Cepat Operasional Lapangan (8 Tombol Driver Narik)
-**Tujuan**: Mencatat pengeluaran bensin, parkir, dan order COD secara cepat di jalan.
+**Tujuan**: Mencatat pengeluaran bensin, parkir dinamis, dan order COD secara cepat di jalan.
 
 > *Pastikan Anda berada di tab: **"🛵 Operasional ShopeeFood Driver (On-Bid)"**.*
 
@@ -166,22 +185,33 @@ Gunakan akun pengujian yang telah disiapkan seeder:
 
 #### 4B. Isi Bensin Motor di SPBU
 - Klik tombol ke-3: **`⛽ Beli Bensin`**.
-- Jenis Pembelian: `SPBU Resmi (Pertamina / Shell / BP)`
-- Jenis Bahan Bakar: `Pertalite (RON 90)`
-- Total Pembayaran (Rp): `35000`
-- Jumlah Liter: `3.5`
-- Odometer Saat Isi (KM): `12480`
-- Sumber Dana: `Cash (Uang Tunai)`
-- Klik **"Simpan Transaksi BBM"**.
+- Tempat Pembelian: `SPBU Resmi (Pertalite Rp10.000/L)`
+- Total Pembelian BBM (Rp): `35000`
+- Sumber Dana: `Cash`
+- Klik **"Simpan Beli Bensin"**.
 - **Ekspektasi**: Saldo Cash berkurang menjadi **Rp 215.000**.
 
-#### 4C. Bayar Parkir Motor Resto
-- Klik tombol ke-4: **`🅿️ Parkir Motor`**.
-- Nominal Parkir: `2000`
-- Catatan: `Parkir Resto Mie Gacoan`
-- Sumber Dana: `Cash (Uang Tunai)`
-- Klik **"Simpan Biaya Parkir"**.
-- **Ekspektasi**: Saldo Cash berkurang menjadi **Rp 213.000**.
+#### 4C. Bayar Parkir Kendaraan (Motor / Mobil, Preset Cepat & Dinamis)
+- Klik tombol ke-4: **`🅿️ Parkir Kendaraan`** (Motor / Mobil).
+- Modal *Catat Parkir Kendaraan* terbuka:
+  - **Uji Preset Rp 1.000 & Rp 2.000**:
+    - Jenis Kendaraan: `🛵 Sepeda Motor`
+    - Coba klik tombol preset **`Rp 1.000`** ➔ nominal di kolom angka otomatis terisi `1000`.
+    - Coba klik tombol preset **`Rp 2.000`** ➔ nominal di kolom angka otomatis terisi `2000`.
+    - Pilihan preset lain tersedia: `Rp 3.000`, `Rp 5.000`, `Rp 10.000`.
+  - **Uji Parkir Mobil Pribadi (Bawa Mobil / Off-Bid)**:
+    - Beralih ke radio: **`🚗 Mobil Pribadi`** ➔ nominal otomatis berpindah ke preset mobil (Rp 5.000).
+    - Anda juga bisa mengetikkan nominal berapa saja secara bebas (misal `7500` atau `4000`).
+  - **Uji Wadah Pembayaran**:
+    - Anda bisa memilih bayar menggunakan `Cash (Kas Tunai)`, `Flazz / e-money` (untuk parkir mall/stasiun), atau rekening lainnya.
+  - Untuk pengujian saat ini, pilih:
+    - Kendaraan: `🛵 Sepeda Motor`
+    - Preset: `Rp 2.000`
+    - Nama Restoran / Lokasi: `Mie Gacoan Malang`
+    - Sumber Dana: `Cash`
+    - Klik **"Simpan Parkir"**.
+- **Ekspektasi**: Saldo Cash berkurang Rp 2.000 menjadi **Rp 213.000**. Pengeluaran tercatat rapi di buku kas.
+- *(Catatan: Parkir ini juga dapat dicatat kapan saja saat sedang off-bid / libur tanpa harus membuka shift on-bid terlebih dahulu).*
 
 #### 4D. Pesanan COD ShopeeFood (Alur Kas & Kalkulator Kembalian)
 - Klik tombol ke-2: **`💵 Order COD Baru`**:
