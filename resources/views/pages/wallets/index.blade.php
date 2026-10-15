@@ -30,16 +30,20 @@
                 <h2 class="text-2xl font-extrabold text-white mt-1">
                     💼 Manajemen Wadah Finansial
                 </h2>
-                <p class="text-xs text-slate-300 font-medium mt-0.5">Kelola seluruh rekening bank, e-wallet, dompet kas fisik, serta platform PayLater & pinjaman Anda. Hapus wadah kosong yang belum dipakai, atau tutup/arsipkan wadah yang sudah memiliki riwayat transaksi.</p>
+                <p class="text-xs text-slate-300 font-medium mt-0.5">Kelola seluruh rekening bank, e-wallet, dompet kas fisik, serta wadah PayLater & limit pinjaman Anda. Hapus wadah kosong yang belum pernah dipakai, atau tutup/arsipkan wadah yang sudah memiliki riwayat transaksi.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="openModal('modal-add-account')" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1 shadow">
                     <span>➕</span>
-                    <span>Buka Rekening Baru</span>
+                    <span>Wadah Simpanan</span>
+                </button>
+                <button type="button" onclick="openModal('modal-add-paylater')" class="px-3.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1 shadow">
+                    <span>🛍️</span>
+                    <span>Wadah PayLater</span>
                 </button>
                 <button type="button" onclick="openModal('modal-existing-debt')" class="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1 shadow">
                     <span>📝</span>
-                    <span>Catat Tagihan PayLater</span>
+                    <span>Catat Tagihan</span>
                 </button>
                 <a href="/dashboard" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition">
                     &larr; Dashboard
@@ -47,8 +51,8 @@
             </div>
         </div>
 
-        {{-- Ringkasan Metrik (3 Kolom) --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {{-- Ringkasan Metrik (4 Kolom) --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-slate-900/80 border border-emerald-500/30 rounded-2xl p-4 shadow">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-bold text-slate-300 uppercase">Total Saldo Aset Simpanan</span>
@@ -56,7 +60,18 @@
                 </div>
                 <div class="mt-2 flex items-baseline justify-between">
                     <span class="text-2xl font-black text-emerald-400">Rp {{ number_format($totalAssetBalance, 0, ',', '.') }}</span>
-                    <span class="text-xs text-slate-300 font-bold">{{ $activeAccounts->count() }} Wadah Aktif</span>
+                    <span class="text-xs text-slate-300 font-bold">{{ $activeAccounts->count() }} Wadah</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-cyan-500/30 rounded-2xl p-4 shadow">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300 uppercase">Total Plafon PayLater</span>
+                    <span class="text-lg">🛍️</span>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span class="text-2xl font-black text-cyan-400">Rp {{ number_format($totalCreditLimit, 0, ',', '.') }}</span>
+                    <span class="text-xs text-slate-300 font-bold">Sisa: Rp {{ number_format($totalAvailableCredit, 0, ',', '.') }}</span>
                 </div>
             </div>
 
@@ -67,7 +82,7 @@
                 </div>
                 <div class="mt-2 flex items-baseline justify-between">
                     <span class="text-2xl font-black text-purple-400">Rp {{ number_format($totalDebtBalance, 0, ',', '.') }}</span>
-                    <span class="text-xs text-slate-300 font-bold">{{ $debts->where('status', 'active')->count() }} Tagihan Aktif</span>
+                    <span class="text-xs text-slate-300 font-bold">{{ $debts->where('status', 'active')->count() }} Tagihan</span>
                 </div>
             </div>
 
@@ -140,7 +155,7 @@
                                 </span>
                             @else
                                 <span class="text-[10px] font-medium text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                                    📊 {{ $acc->ledger_entries_count }} Riwayat Transaksi
+                                    📊 {{ $acc->ledger_entries_count }} Transaksi
                                 </span>
                             @endif
 
@@ -199,13 +214,140 @@
             @endif
         </div>
 
-        {{-- ================= BAGIAN 2: WADAH LIABILITAS & KREDIT (PAYLATER & PINJAMAN) ================= --}}
+        {{-- ================= BAGIAN 2: WADAH KREDIT & PAYLATER (LIMIT PLAFON) ================= --}}
+        <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 shadow space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="text-base font-extrabold text-white flex items-center space-x-2">
+                        <span>🛍️</span>
+                        <span>Wadah Kredit & PayLater (Plafon Limit & Saldo Terpakai)</span>
+                    </h3>
+                    <p class="text-xs text-slate-300">Wadah kredit bertempo (SPayLater, GoPay Later, TikTok PayLater, dll). Gunakan langsung saat belanja tanpa memotong kas/bank.</p>
+                </div>
+                <button type="button" onclick="openModal('modal-add-paylater')" class="px-3 py-1.5 bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/40 text-xs font-bold rounded-xl transition flex items-center space-x-1">
+                    <span>➕</span>
+                    <span>Tambah Wadah PayLater</span>
+                </button>
+            </div>
+
+            {{-- Grid Wadah PayLater --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach($paylaterProviders as $provider)
+                    @php
+                        $usedPercent = $provider->credit_limit > 0 ? min(100, round(($provider->used_credit / $provider->credit_limit) * 100)) : 0;
+                        $progressColor = $usedPercent > 80 ? 'bg-rose-500' : ($usedPercent > 50 ? 'bg-amber-500' : 'bg-emerald-500');
+                    @endphp
+                    <div class="bg-slate-800/80 border {{ $provider->is_active ? 'border-slate-700/80 hover:border-slate-600' : 'border-slate-800 opacity-60' }} rounded-xl p-4 flex flex-col justify-between shadow transition space-y-3">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="text-2xl">{{ $provider->icon ?: '🛍️' }}</span>
+                                <div>
+                                    <h4 class="text-sm font-extrabold text-white {{ $provider->is_active ? '' : 'line-through' }}">{{ $provider->name }}</h4>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Wadah Kredit
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1.5">
+                                @if($provider->is_active)
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                        Aktif
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-700 text-slate-300 border border-slate-600">
+                                        Ditutup
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Plafon & Terpakai --}}
+                        <div class="space-y-1.5 pt-2 border-t border-slate-700/60">
+                            <div class="flex justify-between items-baseline text-xs">
+                                <span class="text-slate-400">Plafon Limit:</span>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="font-extrabold text-white">Rp {{ number_format($provider->credit_limit, 0, ',', '.') }}</span>
+                                    <button type="button" onclick="openEditLimitModal('{{ $provider->id }}', '{{ addslashes($provider->name) }}', '{{ $provider->credit_limit }}')" class="text-cyan-400 hover:text-cyan-300 text-[10px] font-bold hover:underline" title="Ubah Plafon Kredit">
+                                        ✏️ Atur
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-baseline text-xs">
+                                <span class="text-slate-400">Tagihan Terpakai:</span>
+                                <span class="font-extrabold {{ $provider->used_credit > 0 ? 'text-purple-400' : 'text-slate-400' }}">Rp {{ number_format($provider->used_credit, 0, ',', '.') }}</span>
+                            </div>
+
+                            <div class="flex justify-between items-baseline text-xs">
+                                <span class="text-slate-400">Sisa Limit Tersedia:</span>
+                                <span class="font-extrabold text-emerald-400">Rp {{ number_format($provider->available_credit, 0, ',', '.') }}</span>
+                            </div>
+
+                            {{-- Progress Bar --}}
+                            @if($provider->credit_limit > 0)
+                                <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden mt-1">
+                                    <div class="{{ $progressColor }} h-1.5 rounded-full transition-all duration-300" style="width: {{ $usedPercent }}%"></div>
+                                </div>
+                                <div class="text-[9px] text-right text-slate-400 font-semibold">
+                                    {{ $usedPercent }}% Limit Terpakai
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Metadata & Actions --}}
+                        <div class="pt-2 border-t border-slate-700/60 flex items-center justify-between text-xs">
+                            @if($provider->can_be_deleted)
+                                <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+                                    ✨ 0 Riwayat Tagihan
+                                </span>
+                            @else
+                                <span class="text-[10px] font-medium text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                                    📊 {{ $provider->debts->count() }} Tagihan
+                                </span>
+                            @endif
+
+                            <div class="flex items-center space-x-2">
+                                @if($provider->can_be_deleted)
+                                    <form method="POST" action="/operational/paylater-providers/{{ $provider->id }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN wadah PayLater {{ $provider->name }}? Wadah ini belum pernah ada catatan tagihan sama sekali.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-2 py-1 text-[11px] font-bold text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-950/70 border border-rose-500/40 rounded-lg transition" title="Hapus permanen karena belum ada riwayat">
+                                            🗑️ Hapus Wadah
+                                        </button>
+                                    </form>
+                                @elseif($provider->is_active && $provider->used_credit == 0)
+                                    <form method="POST" action="/operational/paylater-providers/{{ $provider->id }}/toggle-active" onsubmit="return confirm('Tutup / arsipkan wadah PayLater {{ $provider->name }}? Riwayat tagihan masa lalu tetap aman.')">
+                                        @csrf
+                                        <button type="submit" class="px-2 py-1 text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-950/40 hover:bg-amber-950/70 border border-amber-500/40 rounded-lg transition" title="Tutup / arsipkan wadah PayLater">
+                                            📦 Tutup Wadah
+                                        </button>
+                                    </form>
+                                @elseif(!$provider->is_active)
+                                    <form method="POST" action="/operational/paylater-providers/{{ $provider->id }}/toggle-active" onsubmit="return confirm('Aktifkan kembali wadah PayLater {{ $provider->name }}?')">
+                                        @csrf
+                                        <button type="submit" class="px-2 py-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 rounded-lg transition" title="Aktifkan kembali wadah PayLater">
+                                            ♻️ Buka Kembali
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="text-[10px] text-purple-300 font-semibold bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/30" title="Wadah ini sedang memiliki cicilan/tagihan aktif berjalan">
+                                        Tagihan Berjalan
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- ================= BAGIAN 3: WADAH LIABILITAS & DAFTAR TAGIHAN ================= --}}
         <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 shadow space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
                 <div>
                     <h3 class="text-base font-extrabold text-white flex items-center space-x-2">
                         <span>💳</span>
-                        <span>Wadah Tagihan & Kredit (PayLater, Pinjaman Tunai, & Piutang)</span>
+                        <span>Daftar Tagihan & Cicilan Berjalan (PayLater & Pinjaman)</span>
                     </h3>
                     <p class="text-xs text-slate-300">Daftar seluruh kewajiban bertempo atau cicilan berjalan. Tagihan yang belum pernah dibayar cicilannya dapat dibatalkan/dihapus.</p>
                 </div>
@@ -321,7 +463,54 @@
         </div>
     </div>
 
-    {{-- MODAL 2: Catat Tagihan Utang Berjalan (Existing Debt) --}}
+    {{-- MODAL 2: Tambah Wadah PayLater Baru --}}
+    <div id="modal-add-paylater" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-base font-bold text-white mb-1">🛍️ Tambah Wadah PayLater Baru</h3>
+            <p class="text-xs text-slate-300 font-medium mb-4">Daftarkan platform PayLater atau kartu kredit baru yang Anda miliki (contoh: SPayLater, GoPay Later, TikTok PayLater, Kredivo, Akulaku, Indodana, Traveloka PayLater).</p>
+            <form method="POST" action="{{ route('operational.paylater-providers.store') }}" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Platform PayLater <span class="text-rose-400">*</span></label>
+                    <input type="text" name="name" placeholder="Misal: SPayLater / GoPay Later / Blibli PayLater" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Limit Plafon Kredit (Rp)</label>
+                    <input type="number" name="credit_limit" min="0" step="10000" placeholder="Contoh: 3000000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Total limit saldo kredit yang diberikan platform kepada Anda.</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Ikon / Emoji</label>
+                    <input type="text" name="icon" value="🛍️" maxlength="10" class="w-24 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm text-center">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="closeModal('modal-add-paylater')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow">Simpan Wadah PayLater</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- MODAL 3: Atur Limit Plafon PayLater --}}
+    <div id="modal-edit-paylater-limit" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-sm w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-base font-bold text-white mb-1">✏️ Atur Limit Plafon Kredit</h3>
+            <p class="text-xs text-slate-300 font-medium mb-4">Perbarui limit kredit <span id="edit-limit-provider-name" class="font-bold text-cyan-400"></span> sesuai aplikasi resmi.</p>
+            <form id="form-edit-paylater-limit" method="POST" action="" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Limit Plafon Baru (Rp) <span class="text-rose-400">*</span></label>
+                    <input type="number" id="edit-limit-input" name="credit_limit" min="0" step="10000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="closeModal('modal-edit-paylater-limit')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow">Perbarui Limit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- MODAL 4: Catat Tagihan Utang Berjalan (Existing Debt) --}}
     <div id="modal-existing-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-900 border border-purple-500/50 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <div class="flex items-center space-x-2.5 mb-1">
@@ -337,17 +526,18 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform Utang <span class="text-rose-400">*</span></label>
                     <select name="platform" onchange="toggleCustomPlatform(this, 'wallets-existing-custom-platform-wrap')" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
-                        <option value="spaylater" selected>🛍️ Shopee PayLater (SPayLater)</option>
-                        <option value="gopay_later">🟢 GoPay Later (GoPay Cicil)</option>
-                        <option value="tiktok_paylater">🎵 TikTok PayLater</option>
-                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
-                        <option value="akulaku_paylater">🔴 Akulaku PayLater</option>
-                        <option value="indodana_paylater">🟡 Indodana PayLater</option>
-                        <option value="seabank_pinjam">🏦 SeaBank Pinjam</option>
-                        <option value="spinjam">🟠 Shopee Pinjam (SPinjam)</option>
-                        <option value="gopay_pinjam">🟢 GoPay Pinjam</option>
-                        <option value="kredivo_pinjam">💰 Kredivo Pinjam</option>
-                        <option value="bank">🏛️ Pinjaman Bank Umum</option>
+                        <optgroup label="🛍️ Wadah PayLater Terdaftar">
+                            @foreach($paylaterProviders as $provider)
+                                <option value="{{ $provider->slug }}">{{ $provider->icon ?: '🛍️' }} {{ $provider->name }}</option>
+                            @endforeach
+                        </optgroup>
+                        <optgroup label="🏦 Pinjaman Tunai / Bank">
+                            <option value="seabank_pinjam">🏦 SeaBank Pinjam</option>
+                            <option value="spinjam">🟠 Shopee Pinjam (SPinjam)</option>
+                            <option value="gopay_pinjam">🟢 GoPay Pinjam</option>
+                            <option value="kredivo_pinjam">💰 Kredivo Pinjam</option>
+                            <option value="bank">🏛️ Pinjaman Bank Umum</option>
+                        </optgroup>
                         <option value="other">➕ Platform / Pinjaman Lainnya (Ketik Manual)</option>
                     </select>
                 </div>
@@ -395,6 +585,18 @@
         function closeModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.add('hidden');
+        }
+
+        function openEditLimitModal(id, name, currentLimit) {
+            const modal = document.getElementById('modal-edit-paylater-limit');
+            const form = document.getElementById('form-edit-paylater-limit');
+            const nameEl = document.getElementById('edit-limit-provider-name');
+            const input = document.getElementById('edit-limit-input');
+            
+            if (form) form.action = `/operational/paylater-providers/${id}/limit`;
+            if (nameEl) nameEl.textContent = name;
+            if (input) input.value = currentLimit;
+            if (modal) modal.classList.remove('hidden');
         }
 
         function toggleCustomPlatform(selectEl, targetId) {

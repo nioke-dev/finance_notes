@@ -254,8 +254,12 @@ class DashboardController extends Controller
             ? $currentWorkDay->voiceMemos()->latest('recorded_at')->get()
             : collect();
 
+        // Wadah PayLater Aktif untuk Belanja Kebutuhan
+        $paylaterProviders = \App\Models\PaylaterProvider::active()->get();
+
         return view('dashboard.index', compact(
             'accounts',
+            'paylaterProviders',
             'todayVoiceMemos',
             'totalDigital',
             'totalCash',

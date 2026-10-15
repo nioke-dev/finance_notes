@@ -1807,12 +1807,36 @@
                     <input type="text" name="description" placeholder="Contoh: Sarapan pagi jam 7 sebelum narik" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan</label>
-                    <select name="source_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                        @foreach($accounts as $acc)
-                            <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
-                        @endforeach
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan <span class="text-rose-400">*</span></label>
+                    <select name="source_account_id" id="expense-source-select" onchange="toggleExpenseTenor(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <optgroup label="💵 Uang Kas & Saldo Rekening">
+                            @foreach($accounts as $acc)
+                                <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                            @endforeach
+                        </optgroup>
+                        @if(isset($paylaterProviders) && $paylaterProviders->isNotEmpty())
+                            <optgroup label="🛍️ Wadah Kredit & PayLater (Bayar Tempo/Cicil)">
+                                @foreach($paylaterProviders as $provider)
+                                    <option value="paylater_{{ $provider->slug }}">
+                                        {{ $provider->icon ?: '🛍️' }} {{ $provider->name }} (Sisa: Rp {{ number_format($provider->available_credit, 0, ',', '.') }})
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                        @endif
                     </select>
+                </div>
+
+                {{-- Field Tenor (Muncul Otomatis Jika Memilih Wadah PayLater) --}}
+                <div id="expense-tenor-wrapper" class="hidden p-3 bg-slate-900/90 border border-purple-500/40 rounded-xl space-y-1.5">
+                    <label class="block text-xs font-bold text-purple-300">Pilihan Tenor Cicilan PayLater</label>
+                    <select name="tenor_months" class="w-full bg-slate-800 border border-purple-500/50 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <option value="1">1 Bulan (Bayar Bulan Depan)</option>
+                        <option value="2">2 Bulan</option>
+                        <option value="3">3 Bulan</option>
+                        <option value="6">6 Bulan</option>
+                        <option value="12">12 Bulan</option>
+                    </select>
+                    <p class="text-[10px] text-slate-300">Saldo kas fisik/bank tidak akan terpotong sekarang. Tagihan akan masuk ke jadwal cicilan hutang.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pengeluaran (Rp)</label>
@@ -1869,12 +1893,18 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform PayLater</label>
                     <select name="platform" onchange="toggleCustomPlatform(this, 'spaylater-custom-platform-wrap')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold">
-                        <option value="spaylater">🛍️ Shopee PayLater (SPayLater)</option>
-                        <option value="gopay_later">🟢 GoPay Later (GoPay Cicil / Findaya)</option>
-                        <option value="tiktok_paylater">🎵 TikTok PayLater</option>
-                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
-                        <option value="akulaku_paylater">🔴 Akulaku PayLater</option>
-                        <option value="indodana_paylater">🟡 Indodana PayLater</option>
+                        @if(isset($paylaterProviders) && $paylaterProviders->isNotEmpty())
+                            @foreach($paylaterProviders as $provider)
+                                <option value="{{ $provider->slug }}">{{ $provider->icon ?: '🛍️' }} {{ $provider->name }} (Sisa: Rp {{ number_format($provider->available_credit, 0, ',', '.') }})</option>
+                            @endforeach
+                        @else
+                            <option value="spaylater">🛍️ Shopee PayLater (SPayLater)</option>
+                            <option value="gopay_later">🟢 GoPay Later (GoPay Cicil / Findaya)</option>
+                            <option value="tiktok_paylater">🎵 TikTok PayLater</option>
+                            <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
+                            <option value="akulaku_paylater">🔴 Akulaku PayLater</option>
+                            <option value="indodana_paylater">🟡 Indodana PayLater</option>
+                        @endif
                         <option value="other_paylater">➕ Platform PayLater Lainnya (Ketik Manual)</option>
                     </select>
                 </div>
@@ -3650,6 +3680,16 @@
                 amountInput.value = amount;
             }
             openModal('modal-pay-subscription');
+        }
+
+        function toggleExpenseTenor(selectEl) {
+            const tenorWrap = document.getElementById('expense-tenor-wrapper');
+            if (!tenorWrap) return;
+            if (selectEl.value && selectEl.value.startsWith('paylater_')) {
+                tenorWrap.classList.remove('hidden');
+            } else {
+                tenorWrap.classList.add('hidden');
+            }
         }
 
         // Interactive Tour menggunakan Driver.js

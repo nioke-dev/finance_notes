@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             DefaultAccountsSeeder::class,
             CategorySeeder::class,
             ShopeeBonusSchemeSeeder::class,
+            PaylaterProviderSeeder::class,
         ]);
     }
 }

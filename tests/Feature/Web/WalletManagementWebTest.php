@@ -145,4 +145,149 @@ class WalletManagementWebTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertNotNull(Debt::find($debt->id));
     }
+
+    public function test_user_can_create_new_paylater_provider(): void
+    {
+        $response = $this->post('/operational/paylater-providers', [
+            'name' => 'Blibli PayLater',
+            'credit_limit' => 2500000,
+            'icon' => '🛍️',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('paylater_providers', [
+            'name' => 'Blibli PayLater',
+            'slug' => 'blibli_paylater',
+            'credit_limit' => 2500000,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_user_can_update_paylater_provider_credit_limit(): void
+    {
+        $provider = \App\Models\PaylaterProvider::create([
+            'name' => 'Kredivo PayLater',
+            'slug' => 'kredivo_paylater',
+            'credit_limit' => 1000000,
+            'icon' => '⚡',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/operational/paylater-providers/' . $provider->id . '/limit', [
+            'credit_limit' => 4500000,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertEquals(4500000, $provider->fresh()->credit_limit);
+    }
+
+    public function test_user_can_pay_personal_expense_using_paylater_wadah(): void
+    {
+        $provider = \App\Models\PaylaterProvider::create([
+            'name' => 'SPayLater',
+            'slug' => 'spaylater',
+            'credit_limit' => 5000000,
+            'icon' => '🛍️',
+            'is_active' => true,
+        ]);
+
+        $cashBefore = Account::where('name', 'Cash')->firstOrFail()->current_balance;
+
+        $response = $this->post('/operational/personal-expense', [
+            'work_day_id' => $this->workDay->id,
+            'source_account_id' => 'paylater_spaylater',
+            'amount' => 90000,
+            'description' => 'Beli Oli Motor MPX2',
+            'tenor_months' => 3,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Uang kas fisik tidak boleh terpotong
+        $cashAfter = Account::where('name', 'Cash')->firstOrFail()->current_balance;
+        $this->assertEquals($cashBefore, $cashAfter);
+
+        // Hutang dan 3 cicilan terbuat otomatis
+        $debt = Debt::where('platform', 'spaylater')->latest()->first();
+        $this->assertNotNull($debt);
+        $this->assertEquals(90000, $debt->total_obligation);
+        $this->assertEquals(3, $debt->tenor_months);
+        $this->assertEquals(3, $debt->installments()->count());
+        $this->assertEquals(30000, $debt->installments()->first()->amount_due);
+
+        // Limit terpakai terhitung otomatis
+        $this->assertEquals(90000, $provider->fresh()->used_credit);
+        $this->assertEquals(4910000, $provider->fresh()->available_credit);
+    }
+
+    public function test_user_can_delete_unused_paylater_provider(): void
+    {
+        $provider = \App\Models\PaylaterProvider::create([
+            'name' => 'Traveloka PayLater',
+            'slug' => 'traveloka_paylater',
+            'credit_limit' => 1000000,
+            'icon' => '✈️',
+            'is_active' => true,
+        ]);
+
+        $response = $this->delete('/operational/paylater-providers/' . $provider->id);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('paylater_providers', ['id' => $provider->id]);
+    }
+
+    public function test_user_cannot_delete_paylater_provider_with_existing_debts(): void
+    {
+        $provider = \App\Models\PaylaterProvider::create([
+            'name' => 'TikTok PayLater',
+            'slug' => 'tiktok_paylater',
+            'credit_limit' => 2000000,
+            'icon' => '🎵',
+            'is_active' => true,
+        ]);
+
+        Debt::create([
+            'name' => 'Belanja Kaos Distro',
+            'platform' => 'tiktok_paylater',
+            'borrower_name' => 'Self',
+            'principal_amount' => 120000,
+            'fee_amount' => 0,
+            'total_obligation' => 120000,
+            'tenor_months' => 1,
+            'status' => 'active',
+            'started_at' => now(),
+        ]);
+
+        $response = $this->delete('/operational/paylater-providers/' . $provider->id);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('paylater_providers', ['id' => $provider->id]);
+    }
+
+    public function test_user_can_toggle_paylater_provider_active_status(): void
+    {
+        $provider = \App\Models\PaylaterProvider::create([
+            'name' => 'Akulaku PayLater',
+            'slug' => 'akulaku_paylater',
+            'credit_limit' => 1500000,
+            'icon' => '🔴',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/operational/paylater-providers/' . $provider->id . '/toggle-active');
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertFalse($provider->fresh()->is_active);
+
+        // Buka kembali
+        $response = $this->post('/operational/paylater-providers/' . $provider->id . '/toggle-active');
+        $response->assertRedirect();
+        $this->assertTrue($provider->fresh()->is_active);
+    }
 }

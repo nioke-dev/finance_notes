@@ -9,6 +9,8 @@ use App\Models\Debt;
 use App\Models\WorkDay;
 use Illuminate\Http\Request;
 
+use App\Models\PaylaterProvider;
+
 class WalletWebController extends Controller
 {
     /**
@@ -57,6 +59,17 @@ class WalletWebController extends Controller
         $activeDebts = $debts->where('status', 'active');
         $totalDebtBalance = (int) $activeDebts->sum('remaining_amount');
 
+        // Wadah PayLater (Plafon Kredit, Terpakai, Sisa Limit)
+        $paylaterProviders = PaylaterProvider::with(['debts.installments'])->get();
+        $paylaterProviders->each(function ($provider) {
+            $provider->can_be_deleted = $provider->debts->isEmpty();
+        });
+
+        $activePaylaters = $paylaterProviders->where('is_active', true);
+        $totalCreditLimit = (int) $activePaylaters->sum('credit_limit');
+        $totalUsedCredit = (int) $activePaylaters->sum('used_credit');
+        $totalAvailableCredit = (int) $activePaylaters->sum('available_credit');
+
         // 3. Ringkasan Portofolio
         $netWorth = $totalAssetBalance - $totalDebtBalance;
 
@@ -65,6 +78,10 @@ class WalletWebController extends Controller
             'activeAccounts',
             'inactiveAccounts',
             'debts',
+            'paylaterProviders',
+            'totalCreditLimit',
+            'totalUsedCredit',
+            'totalAvailableCredit',
             'totalAssetBalance',
             'totalDebtBalance',
             'netWorth'

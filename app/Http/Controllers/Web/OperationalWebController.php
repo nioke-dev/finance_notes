@@ -202,6 +202,111 @@ class OperationalWebController extends Controller
     }
 
     /**
+     * Tambah Wadah PayLater Baru
+     */
+    public function storePaylaterProvider(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'credit_limit' => 'nullable|integer|min:0',
+            'icon' => 'nullable|string|max:20',
+        ]);
+
+        $slug = \Illuminate\Support\Str::slug($validated['name'], '_');
+
+        if (\App\Models\PaylaterProvider::where('slug', $slug)->exists()) {
+            return redirect()->back()->with('error', "Wadah PayLater {$validated['name']} sudah ada.");
+        }
+
+        $provider = \App\Models\PaylaterProvider::create([
+            'name' => $validated['name'],
+            'slug' => $slug,
+            'credit_limit' => (int) ($validated['credit_limit'] ?? 0),
+            'icon' => $validated['icon'] ?? '🛍️',
+            'is_active' => true,
+        ]);
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => \App\Models\PaylaterProvider::class,
+            'auditable_id' => $provider->id,
+            'action' => 'create_paylater_provider',
+            'old_values' => null,
+            'new_values' => $provider->toArray(),
+            'reason' => "Menambahkan wadah kredit PayLater baru {$provider->name}",
+        ]);
+
+        return redirect()->back()->with('success', "Wadah PayLater {$provider->name} berhasil ditambahkan!");
+    }
+
+    /**
+     * Update Limit Plafon Kredit Wadah PayLater
+     */
+    public function updatePaylaterProviderLimit(Request $request, int $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'credit_limit' => 'required|integer|min:0',
+        ]);
+
+        $provider = \App\Models\PaylaterProvider::findOrFail($id);
+        $oldLimit = $provider->credit_limit;
+        $provider->update(['credit_limit' => (int) $validated['credit_limit']]);
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => \App\Models\PaylaterProvider::class,
+            'auditable_id' => $provider->id,
+            'action' => 'update_paylater_limit',
+            'old_values' => ['credit_limit' => $oldLimit],
+            'new_values' => ['credit_limit' => $provider->credit_limit],
+            'reason' => "Memperbarui limit kredit {$provider->name} menjadi Rp " . number_format($provider->credit_limit, 0, ',', '.'),
+        ]);
+
+        return redirect()->back()->with('success', "Limit kredit {$provider->name} berhasil diperbarui menjadi Rp " . number_format($provider->credit_limit, 0, ',', '.'));
+    }
+
+    /**
+     * Nonaktifkan / Aktifkan Kembali Wadah PayLater
+     */
+    public function togglePaylaterProviderActive(Request $request, int $id): RedirectResponse
+    {
+        $provider = \App\Models\PaylaterProvider::findOrFail($id);
+
+        if ($provider->is_active && $provider->used_credit > 0) {
+            return redirect()->back()->with('error', "Wadah PayLater {$provider->name} tidak dapat dinonaktifkan karena masih memiliki tagihan berjalan sebesar Rp " . number_format($provider->used_credit, 0, ',', '.') . ". Lunasi tagihan terlebih dahulu.");
+        }
+
+        $provider->update(['is_active' => !$provider->is_active]);
+
+        $statusLabel = $provider->is_active ? 'diaktifkan kembali' : 'dinonaktifkan / diarsipkan';
+        return redirect()->back()->with('success', "Wadah PayLater {$provider->name} berhasil {$statusLabel}.");
+    }
+
+    /**
+     * Hapus Wadah PayLater (Hanya jika belum pernah ada transaksi tagihan)
+     */
+    public function destroyPaylaterProvider(Request $request, int $id): RedirectResponse
+    {
+        $provider = \App\Models\PaylaterProvider::findOrFail($id);
+
+        if ($provider->debts()->exists()) {
+            return redirect()->back()->with('error', "Wadah PayLater {$provider->name} DILARANG dihapus karena sudah memiliki riwayat tagihan. Untuk menutupnya, gunakan fitur 'Tutup / Arsipkan Wadah'.");
+        }
+
+        $name = $provider->name;
+        $provider->delete();
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => \App\Models\PaylaterProvider::class,
+            'auditable_id' => $id,
+            'action' => 'destroy_paylater_provider',
+            'old_values' => ['name' => $name],
+            'new_values' => null,
+            'reason' => "Menghapus wadah PayLater kosong {$name} yang belum memiliki transaksi.",
+        ]);
+
+        return redirect()->back()->with('success', "Wadah PayLater {$name} berhasil dihapus permanen.");
+    }
+
+    /**
      * Set / Koreksi Saldo Awal Akun
      */
     public function setAccountInitialBalance(
@@ -471,13 +576,55 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
-            'source_account_id' => 'required|exists:accounts,id',
+            'source_account_id' => 'required|string',
             'amount' => 'required|integer|min:1',
             'description' => 'required|string|max:255',
+            'tenor_months' => 'nullable|integer|min:1|max:24',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
-        $source = Account::findOrFail($validated['source_account_id']);
+
+        // Jika sumber pembayaran adalah Wadah PayLater
+        if (str_starts_with($validated['source_account_id'], 'paylater_')) {
+            $slug = substr($validated['source_account_id'], 9);
+            $provider = \App\Models\PaylaterProvider::where('slug', $slug)->first();
+            $providerName = $provider ? $provider->name : ucfirst(str_replace('_', ' ', $slug));
+
+            $tenor = (int) ($validated['tenor_months'] ?? 1);
+            $amount = (int) $validated['amount'];
+            $dueDate = now()->addMonths($tenor)->endOfMonth();
+
+            \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $slug, $amount, $tenor) {
+                $debt = Debt::create([
+                    'name' => 'Belanja PayLater: ' . $validated['description'],
+                    'platform' => $slug,
+                    'borrower_name' => 'Self',
+                    'principal_amount' => $amount,
+                    'fee_amount' => 0,
+                    'total_obligation' => $amount,
+                    'tenor_months' => $tenor,
+                    'status' => 'active',
+                    'started_at' => now(),
+                ]);
+
+                $monthlyInstallment = (int) ceil($amount / $tenor);
+                for ($i = 1; $i <= $tenor; $i++) {
+                    DebtInstallment::create([
+                        'debt_id' => $debt->id,
+                        'installment_number' => $i,
+                        'due_date' => now()->addMonths($i)->endOfMonth(),
+                        'amount_due' => ($i === $tenor) ? ($amount - ($monthlyInstallment * ($tenor - 1))) : $monthlyInstallment,
+                        'amount_paid' => 0,
+                        'status' => 'unpaid',
+                    ]);
+                }
+            });
+
+            return redirect()->back()->with('success', "Belanja {$validated['description']} berhasil dicatat via {$providerName} (Tenor {$tenor} Bulan, Jatuh Tempo {$dueDate->translatedFormat('d M Y')}) tanpa memotong saldo kas/bank saat ini.");
+        }
+
+        $sourceId = str_replace('acc_', '', $validated['source_account_id']);
+        $source = Account::findOrFail($sourceId);
         $expenseAccount = Account::firstOrCreate(
             ['name' => 'Beban Kebutuhan Sehari-hari'],
             [
