@@ -201,6 +201,56 @@ class DebtWebControllerTest extends TestCase
         $this->assertEquals(750000, $installment->amount_due);
     }
 
+    public function test_user_can_record_gopay_later_and_custom_platform_debt(): void
+    {
+        // 1. Catat utang berjalan GoPay Later
+        $response1 = $this->post('/operational/existing-debt', [
+            'name' => 'Tagihan GoPay Later Oktober',
+            'platform' => 'gopay_later',
+            'total_obligation' => 300000,
+            'due_date' => '2026-10-31',
+            'tenor_months' => 1,
+        ]);
+        $response1->assertRedirect();
+        $gopayDebt = Debt::where('platform', 'gopay_later')->first();
+        $this->assertNotNull($gopayDebt);
+        $this->assertTrue($gopayDebt->isPayLater());
+        $this->assertEquals('GoPay Later', $gopayDebt->getPlatformLabel());
+
+        // 2. Catat utang dengan custom platform manual (misal: Blibli PayLater)
+        $response2 = $this->post('/operational/existing-debt', [
+            'name' => 'Tagihan Blibli PayLater',
+            'platform' => 'other',
+            'custom_platform' => 'Blibli PayLater',
+            'total_obligation' => 450000,
+            'due_date' => '2026-11-05',
+            'tenor_months' => 1,
+        ]);
+        $response2->assertRedirect();
+        $blibliDebt = Debt::where('platform', 'blibli_paylater')->first();
+        $this->assertNotNull($blibliDebt);
+        $this->assertTrue($blibliDebt->isPayLater());
+        $this->assertEquals('Blibli PayLater', $blibliDebt->getPlatformLabel());
+    }
+
+    public function test_user_can_purchase_with_gopay_later_and_custom_paylater(): void
+    {
+        $response = $this->post('/operational/spaylater-purchase', [
+            'work_day_id' => $this->workDay->id,
+            'platform' => 'other',
+            'custom_platform' => 'Indodana PayLater',
+            'item_name' => 'Helm KYT Pengganti',
+            'total_price' => 350000,
+            'tenor_months' => 1,
+        ]);
+
+        $response->assertRedirect();
+        $indodanaDebt = Debt::where('platform', 'indodana_paylater')->first();
+        $this->assertNotNull($indodanaDebt);
+        $this->assertTrue($indodanaDebt->isPayLater());
+        $this->assertEquals('Indodana PayLater', $indodanaDebt->getPlatformLabel());
+    }
+
     public function test_user_can_create_and_pay_monthly_subscription(): void
     {
         $response = $this->post('/operational/subscriptions', [

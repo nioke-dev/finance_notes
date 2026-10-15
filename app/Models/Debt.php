@@ -31,8 +31,24 @@ class Debt extends Model
         'started_at' => 'date',
     ];
 
-    public const PLATFORMS_PAYLATER = ['spaylater', 'tiktok_paylater', 'kredivo_paylater'];
-    public const PLATFORMS_CASH_LOAN = ['spinjam', 'seabank_pinjam', 'gopay_pinjam', 'superbank_pinjam', 'kredivo_pinjam', 'bank', 'other'];
+    public const PLATFORMS_PAYLATER = [
+        'spaylater',
+        'gopay_later',
+        'tiktok_paylater',
+        'kredivo_paylater',
+        'akulaku_paylater',
+        'indodana_paylater',
+        'other_paylater',
+    ];
+    public const PLATFORMS_CASH_LOAN = [
+        'spinjam',
+        'seabank_pinjam',
+        'gopay_pinjam',
+        'superbank_pinjam',
+        'kredivo_pinjam',
+        'bank',
+        'other',
+    ];
 
     public function isPaidOff(): bool
     {
@@ -41,14 +57,13 @@ class Debt extends Model
 
     public function isPayLater(): bool
     {
-        return in_array($this->platform, self::PLATFORMS_PAYLATER)
+        return (in_array($this->platform, self::PLATFORMS_PAYLATER) || str_contains($this->platform, 'later') || str_contains($this->platform, 'cicil'))
             && ($this->borrower_name === null || $this->borrower_name === 'Self');
     }
 
     public function isCashLoan(): bool
     {
-        return in_array($this->platform, self::PLATFORMS_CASH_LOAN)
-            && ($this->borrower_name === null || $this->borrower_name === 'Self');
+        return !$this->isPayLater() && !$this->isFriendLoan();
     }
 
     public function isFriendLoan(): bool
@@ -61,8 +76,11 @@ class Debt extends Model
     {
         return match($this->platform) {
             'spaylater' => 'Shopee PayLater',
+            'gopay_later' => 'GoPay Later',
             'tiktok_paylater' => 'TikTok PayLater',
             'kredivo_paylater' => 'Kredivo PayLater',
+            'akulaku_paylater' => 'Akulaku PayLater',
+            'indodana_paylater' => 'Indodana PayLater',
             'spinjam' => 'Shopee Pinjam (SPinjam)',
             'seabank_pinjam' => 'SeaBank Pinjam',
             'gopay_pinjam' => 'GoPay Pinjam',
@@ -70,7 +88,7 @@ class Debt extends Model
             'kredivo_pinjam' => 'Kredivo Pinjam',
             'bank' => 'Pinjaman Bank',
             'person' => 'Pinjaman Teman',
-            default => ucfirst(str_replace('_', ' ', $this->platform ?? 'Lainnya')),
+            default => str_ireplace(['paylater', 'pinjam'], ['PayLater', 'Pinjam'], ucwords(str_replace('_', ' ', $this->platform ?? 'Lainnya'))),
         };
     }
 

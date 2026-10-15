@@ -599,7 +599,8 @@ class OperationalWebController extends Controller
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
             'name' => 'required|string|max:255',
-            'platform' => 'required|in:spinjam,seabank_pinjam,gopay_pinjam,superbank_pinjam,kredivo_pinjam,bank,person,other,spaylater',
+            'platform' => 'required|string|max:50',
+            'custom_platform' => 'nullable|string|max:50',
             'borrower_name' => 'nullable|string|max:255',
             'principal_amount' => 'required|integer|min:1000',
             'fee_amount' => 'required|integer|min:0',
@@ -612,11 +613,15 @@ class OperationalWebController extends Controller
         $destinationAccount = Account::findOrFail($validated['destination_account_id']);
         $dueDay = (int) ($validated['due_day_of_month'] ?? 5);
 
+        $platform = ($validated['platform'] === 'other' && !empty($validated['custom_platform']))
+            ? \Illuminate\Support\Str::slug($validated['custom_platform'], '_')
+            : $validated['platform'];
+
         $totalObligation = (int) $validated['principal_amount'] + (int) $validated['fee_amount'];
 
         $debt = Debt::create([
             'name' => $validated['name'],
-            'platform' => $validated['platform'],
+            'platform' => $platform,
             'borrower_name' => $validated['borrower_name'] ?? 'Self',
             'principal_amount' => (int) $validated['principal_amount'],
             'fee_amount' => (int) $validated['fee_amount'],
@@ -647,7 +652,8 @@ class OperationalWebController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'platform' => 'required|in:spaylater,tiktok_paylater,seabank_pinjam,spinjam,gopay_pinjam,superbank_pinjam,kredivo_paylater,kredivo_pinjam,bank,person,other',
+            'platform' => 'required|string|max:50',
+            'custom_platform' => 'nullable|string|max:50',
             'total_obligation' => 'required|integer|min:1000',
             'due_date' => 'required|date',
             'tenor_months' => 'nullable|integer|min:1|max:36',
@@ -658,10 +664,14 @@ class OperationalWebController extends Controller
         $totalObligation = (int) $validated['total_obligation'];
         $dueDate = Carbon::parse($validated['due_date']);
 
-        $debt = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $totalObligation, $tenor, $dueDate) {
+        $platform = (in_array($validated['platform'], ['other', 'other_paylater']) && !empty($validated['custom_platform']))
+            ? \Illuminate\Support\Str::slug($validated['custom_platform'], '_')
+            : $validated['platform'];
+
+        $debt = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $platform, $totalObligation, $tenor, $dueDate) {
             $debt = Debt::create([
                 'name' => $validated['name'],
-                'platform' => $validated['platform'],
+                'platform' => $platform,
                 'borrower_name' => 'Self',
                 'principal_amount' => $totalObligation,
                 'fee_amount' => 0,
@@ -784,18 +794,27 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
-            'platform' => 'nullable|string|in:spaylater,tiktok_paylater,kredivo_paylater',
+            'platform' => 'nullable|string|max:50',
+            'custom_platform' => 'nullable|string|max:50',
             'item_name' => 'required|string|max:255',
             'total_price' => 'required|integer|min:1000',
             'tenor_months' => 'required|integer|min:1|max:24',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
-        $platform = $validated['platform'] ?? 'spaylater';
+        $rawPlatform = $validated['platform'] ?? 'spaylater';
+        $platform = (in_array($rawPlatform, ['other', 'other_paylater']) && !empty($validated['custom_platform']))
+            ? \Illuminate\Support\Str::slug($validated['custom_platform'], '_')
+            : $rawPlatform;
+
         $platformLabel = match($platform) {
+            'gopay_later' => 'GoPay Later',
             'tiktok_paylater' => 'TikTok PayLater',
             'kredivo_paylater' => 'Kredivo PayLater',
-            default => 'Shopee SPayLater',
+            'akulaku_paylater' => 'Akulaku PayLater',
+            'indodana_paylater' => 'Indodana PayLater',
+            'spaylater' => 'Shopee SPayLater',
+            default => ucfirst(str_replace('_', ' ', $platform)),
         };
 
         $totalPrice = (int) $validated['total_price'];

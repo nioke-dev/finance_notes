@@ -375,11 +375,19 @@
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform PayLater</label>
-                    <select name="platform" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold">
-                        <option value="spaylater">Shopee PayLater (SPayLater)</option>
-                        <option value="tiktok_paylater">TikTok PayLater</option>
-                        <option value="kredivo_paylater">Kredivo PayLater</option>
+                    <select name="platform" onchange="toggleCustomPlatform(this, 'debts-paylater-custom-platform-wrap')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold">
+                        <option value="spaylater">🛍️ Shopee PayLater (SPayLater)</option>
+                        <option value="gopay_later">🟢 GoPay Later (GoPay Cicil / Findaya)</option>
+                        <option value="tiktok_paylater">🎵 TikTok PayLater</option>
+                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
+                        <option value="akulaku_paylater">🔴 Akulaku PayLater</option>
+                        <option value="indodana_paylater">🟡 Indodana PayLater</option>
+                        <option value="other_paylater">➕ Platform PayLater Lainnya (Ketik Manual)</option>
                     </select>
+                </div>
+                <div id="debts-paylater-custom-platform-wrap" class="hidden">
+                    <label class="block text-xs font-bold text-amber-300 mb-1">Nama Platform PayLater Baru / Lainnya</label>
+                    <input type="text" name="custom_platform" placeholder="Misal: Blibli PayLater / Traveloka PayLater" class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nama Barang / Belanja</label>
@@ -416,15 +424,19 @@
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform Pinjaman</label>
-                    <select name="platform" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold">
+                    <select name="platform" onchange="toggleCustomPlatform(this, 'debts-cash-custom-platform-wrap')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold">
                         <option value="spinjam">Shopee Pinjam (SPinjam)</option>
                         <option value="seabank_pinjam">SeaBank Pinjam</option>
                         <option value="gopay_pinjam">GoPay Pinjam</option>
                         <option value="superbank_pinjam">Superbank Pinjam</option>
                         <option value="kredivo_pinjam">Kredivo Pinjam</option>
                         <option value="bank">Pinjaman Bank Umum</option>
-                        <option value="other">Pinjaman Lainnya</option>
+                        <option value="other">➕ Pinjaman Lainnya (Ketik Manual)</option>
                     </select>
+                </div>
+                <div id="debts-cash-custom-platform-wrap" class="hidden">
+                    <label class="block text-xs font-bold text-amber-300 mb-1">Nama Platform Pinjaman Lainnya</label>
+                    <input type="text" name="custom_platform" placeholder="Misal: KTA Tunaiku / Kredit Plus" class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nama / Keterangan Pinjaman</label>
@@ -541,17 +553,25 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Pilih Platform Utang <span class="text-rose-400">*</span></label>
-                    <select name="platform" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    <select name="platform" onchange="toggleCustomPlatform(this, 'debts-existing-custom-platform-wrap')" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none">
                         <option value="spaylater" selected>🛍️ Shopee PayLater (SPayLater)</option>
+                        <option value="gopay_later">🟢 GoPay Later (GoPay Cicil)</option>
                         <option value="tiktok_paylater">🎵 TikTok PayLater</option>
+                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
+                        <option value="akulaku_paylater">🔴 Akulaku PayLater</option>
+                        <option value="indodana_paylater">🟡 Indodana PayLater</option>
                         <option value="seabank_pinjam">🏦 SeaBank Pinjam</option>
                         <option value="spinjam">🟠 Shopee Pinjam (SPinjam)</option>
                         <option value="gopay_pinjam">🟢 GoPay Pinjam</option>
-                        <option value="kredivo_paylater">⚡ Kredivo PayLater</option>
                         <option value="kredivo_pinjam">💰 Kredivo Pinjam</option>
                         <option value="bank">🏛️ Pinjaman Bank Umum</option>
-                        <option value="other">📦 Utang / Pinjaman Lainnya</option>
+                        <option value="other">➕ Platform / Pinjaman Lainnya (Ketik Manual)</option>
                     </select>
+                </div>
+
+                <div id="debts-existing-custom-platform-wrap" class="hidden">
+                    <label class="block text-xs font-bold text-purple-300 mb-1">Nama Platform Baru / Lainnya <span class="text-rose-400">*</span></label>
+                    <input type="text" name="custom_platform" placeholder="Misal: Blibli PayLater / Indodana / Lainnya" class="w-full bg-slate-800 border border-purple-500/50 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none">
                 </div>
 
                 <div>
@@ -618,6 +638,19 @@
             document.getElementById('settle-amount').value = amount;
             document.getElementById('settle-friend-desc').innerText = 'Penerimaan pembayaran dari ' + friendName;
             openModal('modal-settle-friend');
+        }
+
+        function toggleCustomPlatform(selectEl, targetId) {
+            const wrap = document.getElementById(targetId);
+            if (!wrap) return;
+            const isOther = selectEl.value === 'other' || selectEl.value === 'other_paylater';
+            if (isOther) {
+                wrap.classList.remove('hidden');
+                const input = wrap.querySelector('input');
+                if (input) input.focus();
+            } else {
+                wrap.classList.add('hidden');
+            }
         }
     </script>
 </x-layouts.app>

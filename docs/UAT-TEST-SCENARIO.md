@@ -98,28 +98,33 @@ Gunakan akun pengujian yang telah disiapkan seeder:
    - Saldo ShopeePay: Rp 100.000
    - **Total Aset Liquid**: Rp 800.000.
 
-#### 2D. Mendaftarkan Tagihan PayLater yang Sedang Berjalan (Dari Berbagai Platform)
+#### 2D. Mendaftarkan Tagihan PayLater yang Sedang Berjalan (GoPay Later & Platform Lainnya)
 *Sebelum mulai narik, daftarkan cicilan/PayLater yang sudah Anda miliki dari sebelum memakai aplikasi ini.*
 
 1. Buka menu navbar: **"Utang & PayLater"** (`/debts`).
 2. Di pojok kanan atas, klik tombol ungu: **`➕ Catat Tagihan Berjalan`**.
 3. Modal *"Catat Tagihan Utang Berjalan"* terbuka:
-   - **Daftarkan Tagihan 1: TikTok PayLater**:
-     - *Pilih Platform Utang*: Pilih `🎵 TikTok PayLater`
-     - *Nama / Keterangan Tagihan*: Ketik `Cicilan Sepatu Touring TikTok`
+   - **Daftarkan Tagihan 1: GoPay Later (GoPay Cicil)**:
+     - *Pilih Platform Utang*: Pilih `🟢 GoPay Later (GoPay Cicil)`
+     - *Nama / Keterangan Tagihan*: Ketik `Tagihan GoPay Later Jas Hujan`
      - *Total Tagihan (Rp)*: Ketik `120000`
      - *Tenor*: Ketik `2` Bulan (Rp 60.000/bulan)
-     - *Jatuh Tempo Pembayaran*: Pilih tanggal 20 bulan depan
-     - Klik **"Simpan Tagihan Berjalan"**.
+     - *Tanggal Jatuh Tempo*: Klik tombol shortcut `31 Okt` atau pilih tanggal jatuh tempo Anda
+     - Klik tombol: **"Simpan Tagihan Hutang"**.
 4. Klik kembali tombol ungu: **`➕ Catat Tagihan Berjalan`**:
-   - **Daftarkan Tagihan 2: Kredivo / SPayLater**:
-     - *Pilih Platform Utang*: Pilih `⚡ Kredivo PayLater` (atau SPayLater)
-     - *Nama / Keterangan Tagihan*: Ketik `Kredivo Ban Belakang & Service`
+   - **Daftarkan Tagihan 2: Platform Baru / Lainnya (Ketik Manual, contoh: Indodana / Blibli PayLater)**:
+     - *Pilih Platform Utang*: Pilih `➕ Platform / Pinjaman Lainnya (Ketik Manual)`
+     - Seketika muncul kolom baru berwarna ungu: *Nama Platform Baru / Lainnya*
+     - *Nama Platform Baru / Lainnya*: Ketik `Indodana PayLater` (atau platform PayLater apa pun yang Anda miliki)
+     - *Nama / Keterangan Tagihan*: Ketik `Cicilan Ban Motor Indodana`
      - *Total Tagihan (Rp)*: Ketik `180000`
      - *Tenor*: Ketik `3` Bulan (Rp 60.000/bulan)
-     - *Jatuh Tempo*: Pilih tanggal 10 bulan depan
-     - Klik **"Simpan Tagihan Berjalan"**.
+     - *Tanggal Jatuh Tempo*: Klik tombol shortcut `20 Okt` atau `31 Okt`
+     - Klik tombol: **"Simpan Tagihan Hutang"**.
 5. **Ekspektasi Portofolio Liabilitas**:
+   - Pada tabel *Daftar Utang & PayLater Aktif*, muncul:
+     - Kartu `Tagihan GoPay Later Jas Hujan` dengan badge platform **GoPay Later**.
+     - Kartu `Cicilan Ban Motor Indodana` dengan badge platform **Indodana PayLater**.
    - Total Utang PayLater terakumulasi tepat: **Rp 300.000** (Rp 120.000 + Rp 180.000).
    - Kembali ke **Dashboard** (`/dashboard`):
      - Aset Liquid: Rp 800.000
@@ -252,15 +257,23 @@ Gunakan akun pengujian yang telah disiapkan seeder:
    - Metode: `Cash`
    - Klik **"Simpan Pengeluaran"**. (Saldo Cash menjadi Rp 213.000).
 
-#### 6B. Menambah Belanja Barang Baru via PayLater
+#### 6B. Menambah Belanja Barang Baru via PayLater (SPayLater / GoPay Later / Custom)
 1. Masih di tab *Kebutuhan Sehari-hari*, klik tombol ke-4: **`🛍️ Belanja PayLater`**.
-2. Modal *"Beli Barang via PayLater"* terbuka:
-   - **Pilih Platform**: Pilih `Shopee PayLater (SPayLater)`
-   - **Nama Barang / Belanja**: Ketik `Jas Hujan Motor Axio`
+2. Modal *"🛍️ Belanja Online Pakai PayLater"* terbuka:
+   - **Pilih Platform PayLater**: Tersedia opsi lengkap:
+     - `🛍️ Shopee PayLater (SPayLater)`
+     - `🟢 GoPay Later (GoPay Cicil / Findaya)`
+     - `🎵 TikTok PayLater`
+     - `⚡ Kredivo PayLater`
+     - `🔴 Akulaku PayLater`
+     - `🟡 Indodana PayLater`
+     - `➕ Platform PayLater Lainnya (Ketik Manual)` *(bisa ketik platform baru apa pun)*
+   - Pilih: `🟢 GoPay Later (GoPay Cicil / Findaya)` (atau SPayLater)
+   - **Nama Barang / Belanjaan**: Ketik `Jas Hujan Motor Axio`
    - **Total Harga Barang (Rp)**: Ketik `150000`
-   - **Pilihan Tenor**: Pilih `3 Bulan Cicilan`
-   - Klik **"Simpan Tagihan PayLater"**.
-3. **Ekspektasi**: Tagihan SPayLater bertambah Rp 150.000 tanpa memotong saldo kas/bank driver saat ini.
+   - **Pilihan Cicilan (Tenor)**: Pilih `3 Bulan`
+   - Klik tombol: **"Simpan Belanja PayLater"**.
+3. **Ekspektasi**: Tagihan PayLater otomatis terbentuk sebesar Rp 150.000 dengan jadwal cicilan bulanan tanpa memotong saldo kas/bank driver saat ini.
 
 #### 6C. Menambah Langganan Rutin (Subscription)
 1. Buka menu **"Utang & PayLater"** (`/debts`).
