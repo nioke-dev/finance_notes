@@ -538,6 +538,8 @@
                 </div>
             </form>
         </div>
+    </div>
+
     {{-- MODAL: Catat Tagihan Utang Berjalan (Existing Debt) --}}
     <div id="modal-existing-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-900 border border-purple-500/50 max-w-md w-full rounded-2xl p-6 shadow-2xl">
