@@ -43,4 +43,13 @@ class WebAuthProtectionTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_authenticated_users_can_access_wallets_page(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/wallets');
+
+        $response->assertStatus(200);
+    }
 }

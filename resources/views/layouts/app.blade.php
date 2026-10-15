@@ -29,6 +29,7 @@
                 <a href="/dashboard" class="hover:text-emerald-400 transition {{ request()->is('dashboard') ? 'text-emerald-400 font-bold' : '' }}">Dashboard</a>
                 <a href="/dashboard#tab-onbeat" class="hover:text-emerald-400 transition">Closing & Rekonsiliasi</a>
                 <a href="/debts" class="hover:text-emerald-400 transition {{ request()->is('debts*') ? 'text-emerald-400 font-bold' : '' }}">Utang & PayLater</a>
+                <a href="/wallets" class="hover:text-emerald-400 transition {{ request()->is('wallets*') ? 'text-emerald-400 font-bold' : '' }}">Kelola Wadah</a>
                 <a href="/analytics/driver" class="hover:text-emerald-400 transition {{ request()->is('analytics/driver*') ? 'text-emerald-400 font-bold' : '' }}">Analitik Driver</a>
                 <a href="/analytics/fuel" class="hover:text-emerald-400 transition {{ request()->is('analytics/fuel*') ? 'text-emerald-400 font-bold' : '' }}">Konsumsi BBM</a>
                 <a href="/settings/shopee-bonus" class="hover:text-emerald-400 transition {{ request()->is('settings*') ? 'text-emerald-400 font-bold' : '' }}">Skema Bonus</a>

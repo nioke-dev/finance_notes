@@ -1181,6 +1181,10 @@
                     <p class="text-xs text-slate-300 mt-0.5">Kelola dompet fisik, rekening bank (BCA, SeaBank), atau e-wallet (GoPay, ShopeePay).</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
+                    <a href="/wallets" class="px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <span>💼</span>
+                        <span>Kelola Wadah & Arsip</span>
+                    </a>
                     <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-300 border border-purple-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
                         <span>📲</span>
                         <span>Sinkron Saldo & QRIS</span>
@@ -1255,12 +1259,22 @@
                             @else
                                 <span class="text-slate-300 font-medium">Status: <span class="text-emerald-400 font-bold">Aktif</span></span>
                                 @if($acc->current_balance == 0)
-                                    <form method="POST" action="/operational/account/{{ $acc->id }}/toggle-active" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan/menutup rekening {{ $acc->name }}?')">
-                                        @csrf
-                                        <button type="submit" class="px-2.5 py-1 bg-slate-800 hover:bg-amber-600/30 text-slate-300 hover:text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition" title="Arsipkan / Tutup Rekening">
-                                            📦 Tutup Rekening
-                                        </button>
-                                    </form>
+                                    @if(!$acc->ledgerEntries()->exists())
+                                        <form method="POST" action="/operational/account/{{ $acc->id }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN wadah {{ $acc->name }}? Wadah ini belum memiliki riwayat transaksi apa pun.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-2 py-1 bg-rose-950/40 hover:bg-rose-950/70 text-rose-300 border border-rose-500/40 rounded-lg text-xs font-semibold transition" title="Hapus permanen karena belum ada catatan transaksi">
+                                                🗑️ Hapus Wadah
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="/operational/account/{{ $acc->id }}/toggle-active" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan/menutup rekening {{ $acc->name }}?')">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1 bg-slate-800 hover:bg-amber-600/30 text-slate-300 hover:text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition" title="Arsipkan / Tutup Rekening">
+                                                📦 Tutup Rekening
+                                            </button>
+                                        </form>
+                                    @endif
                                 @else
                                     <span class="text-xs text-slate-300 font-medium" title="Rekening hanya bisa ditutup jika saldo Rp0">🔒 Saldo Aktif</span>
                                 @endif

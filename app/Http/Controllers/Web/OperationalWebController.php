@@ -179,17 +179,26 @@ class OperationalWebController extends Controller
         $account = Account::findOrFail($id);
 
         if ($account->ledgerEntries()->exists()) {
-            return redirect()->back()->with('error', "Rekening {$account->name} DILARANG dihapus karena sudah memiliki riwayat transaksi pembukuan. Untuk menutup rekening, gunakan fitur 'Nonaktifkan / Arsipkan Rekening'.");
+            return redirect()->back()->with('error', "Wadah/Rekening {$account->name} DILARANG dihapus karena sudah memiliki riwayat transaksi pembukuan. Untuk menutup rekening, gunakan fitur 'Tutup / Arsipkan Rekening'.");
         }
 
         if ($account->current_balance != 0) {
-            return redirect()->back()->with('error', "Rekening {$account->name} tidak dapat dihapus karena masih memiliki saldo.");
+            return redirect()->back()->with('error', "Wadah/Rekening {$account->name} tidak dapat dihapus karena masih memiliki saldo Rp " . number_format($account->current_balance, 0, ',', '.') . ". Pindahkan saldo terlebih dahulu.");
         }
 
         $name = $account->name;
         $account->delete();
 
-        return redirect()->back()->with('success', "Rekening {$name} yang belum memiliki transaksi berhasil dihapus.");
+        \App\Models\AuditLog::create([
+            'auditable_type' => Account::class,
+            'auditable_id' => $id,
+            'action' => 'destroy_account',
+            'old_values' => ['name' => $name],
+            'new_values' => null,
+            'reason' => "Menghapus wadah/rekening kosong {$name} yang belum memiliki transaksi.",
+        ]);
+
+        return redirect()->back()->with('success', "Wadah/Rekening {$name} yang belum memiliki riwayat transaksi berhasil dihapus permanen.");
     }
 
     /**
@@ -724,6 +733,48 @@ class OperationalWebController extends Controller
         });
 
         return redirect()->back()->with('success', "Tagihan {$debt->getPlatformLabel()} ({$debt->name}) sebesar Rp " . number_format($totalObligation, 0, ',', '.') . " berhasil dicatat dengan jatuh tempo {$dueDate->translatedFormat('d M Y')}!");
+    }
+
+    /**
+     * Hapus Tagihan PayLater / Pinjaman (Hanya jika belum ada pembayaran cicilan sama sekali)
+     */
+    public function destroyDebt(Request $request, int $id): RedirectResponse
+    {
+        $debt = Debt::with('installments')->findOrFail($id);
+
+        // Cek apakah sudah pernah ada cicilan yang dibayar
+        $paidAmount = (int) $debt->installments()->sum('amount_paid');
+        if ($paidAmount > 0) {
+            return redirect()->back()->with('error', "Tagihan {$debt->name} DILARANG dihapus karena sudah memiliki riwayat pembayaran cicilan sebesar Rp " . number_format($paidAmount, 0, ',', '.') . ". Selesaikan pembayaran cicilan hingga lunas.");
+        }
+
+        // Cek apakah pinjaman tunai ini pernah mencairkan dana riil ke kas/bank
+        $hasDisbursementTx = \App\Models\Transaction::whereJsonContains('metadata->debt_id', $debt->id)
+            ->orWhere('metadata->debt_id', (string) $debt->id)
+            ->exists();
+
+        if ($hasDisbursementTx) {
+            return redirect()->back()->with('error', "Pinjaman {$debt->name} tidak dapat dihapus langsung karena dana pokok telah dicairkan ke rekening Anda. Selesaikan pelunasan pinjaman.");
+        }
+
+        $debtName = $debt->name;
+        $platform = $debt->getPlatformLabel();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($debt, $debtName, $platform) {
+            $debt->installments()->delete();
+            $debt->delete();
+
+            \App\Models\AuditLog::create([
+                'auditable_type' => Debt::class,
+                'auditable_id' => $debt->id,
+                'action' => 'delete_unpaid_debt',
+                'old_values' => ['name' => $debtName, 'platform' => $platform],
+                'new_values' => null,
+                'reason' => 'Membatalkan / menghapus tagihan yang salah input dan belum memiliki riwayat pembayaran.',
+            ]);
+        });
+
+        return redirect()->back()->with('success', "Tagihan {$debtName} ({$platform}) yang belum memiliki riwayat pembayaran berhasil dihapus.");
     }
 
     /**

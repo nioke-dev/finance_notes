@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/field-incidental-expense', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFieldIncidentalExpense'])->name('operational.field-incidental-expense');
     Route::post('/operational/debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeDebt'])->name('operational.debt');
     Route::post('/operational/existing-debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeExistingDebt'])->name('operational.existing-debt');
+    Route::delete('/operational/debts/{id}', [\App\Http\Controllers\Web\OperationalWebController::class, 'destroyDebt'])->name('operational.debts.destroy');
     Route::post('/operational/spaylater-purchase', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeSPayLaterPurchase'])->name('operational.spaylater-purchase');
     Route::post('/operational/pay-installment', [\App\Http\Controllers\Web\OperationalWebController::class, 'payInstallment'])->name('operational.pay-installment');
     Route::post('/operational/settle-friend-debt', [\App\Http\Controllers\Web\OperationalWebController::class, 'settleFriendDebt'])->name('operational.settle-friend-debt');
@@ -72,6 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');
     Route::get('/analytics/fuel', [FuelAnalyticsController::class, 'index'])->name('analytics.fuel');
     Route::get('/debts', [DebtWebController::class, 'index'])->name('debts.index');
+    Route::get('/wallets', [\App\Http\Controllers\Web\WalletWebController::class, 'index'])->name('wallets.index');
     Route::get('/export/transactions/csv', [ExportReportController::class, 'exportCsv'])->name('export.transactions.csv');
     Route::get('/export/report/pdf', [ExportReportController::class, 'exportPdf'])->name('export.report.pdf');
     Route::get('/settings/shopee-bonus', [ShopeeBonusSettingController::class, 'index'])->name('settings.shopee-bonus');

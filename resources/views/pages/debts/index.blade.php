@@ -190,18 +190,31 @@
                                     <td class="py-3 text-center">
                                         @php
                                             $firstUnpaid = $debt->installments->firstWhere('status', 'unpaid');
+                                            $canDelete = ($debt->installments->where('amount_paid', '>', 0)->count() === 0);
                                         @endphp
-                                        @if($firstUnpaid)
-                                            <button 
-                                                type="button" 
-                                                onclick="openPayModal('{{ $firstUnpaid->id }}', '{{ addslashes($debt->name) }}', '{{ $firstUnpaid->installment_number }}', '{{ $firstUnpaid->amount_due }}')"
-                                                class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition"
-                                            >
-                                                💳 Bayar Rp {{ number_format($firstUnpaid->amount_due, 0, ',', '.') }}
-                                            </button>
-                                        @else
-                                            <span class="text-[11px] text-emerald-400 font-semibold">Lunas</span>
-                                        @endif
+                                        <div class="flex items-center justify-center space-x-1.5">
+                                            @if($firstUnpaid)
+                                                <button 
+                                                    type="button" 
+                                                    onclick="openPayModal('{{ $firstUnpaid->id }}', '{{ addslashes($debt->name) }}', '{{ $firstUnpaid->installment_number }}', '{{ $firstUnpaid->amount_due }}')"
+                                                    class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition"
+                                                >
+                                                    💳 Bayar Rp {{ number_format($firstUnpaid->amount_due, 0, ',', '.') }}
+                                                </button>
+                                            @else
+                                                <span class="text-[11px] text-emerald-400 font-semibold">Lunas</span>
+                                            @endif
+
+                                            @if($canDelete)
+                                                <form method="POST" action="/operational/debts/{{ $debt->id }}" onsubmit="return confirm('Hapus tagihan {{ $debt->name }}? Tagihan ini belum memiliki pembayaran cicilan.')" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition" title="Hapus tagihan yang salah catat">
+                                                        🗑️
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -273,18 +286,31 @@
                                     <td class="py-3 text-center">
                                         @php
                                             $firstUnpaid = $loan->installments->firstWhere('status', 'unpaid');
+                                            $canDelete = ($loan->installments->where('amount_paid', '>', 0)->count() === 0);
                                         @endphp
-                                        @if($firstUnpaid)
-                                            <button 
-                                                type="button" 
-                                                onclick="openPayModal('{{ $firstUnpaid->id }}', '{{ addslashes($loan->name) }}', '{{ $firstUnpaid->installment_number }}', '{{ $firstUnpaid->amount_due }}')"
-                                                class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition"
-                                            >
-                                                💳 Bayar Rp {{ number_format($firstUnpaid->amount_due, 0, ',', '.') }}
-                                            </button>
-                                        @else
-                                            <span class="text-[11px] text-emerald-400 font-semibold">Lunas</span>
-                                        @endif
+                                        <div class="flex items-center justify-center space-x-1.5">
+                                            @if($firstUnpaid)
+                                                <button 
+                                                    type="button" 
+                                                    onclick="openPayModal('{{ $firstUnpaid->id }}', '{{ addslashes($loan->name) }}', '{{ $firstUnpaid->installment_number }}', '{{ $firstUnpaid->amount_due }}')"
+                                                    class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-bold transition"
+                                                >
+                                                    💳 Bayar Rp {{ number_format($firstUnpaid->amount_due, 0, ',', '.') }}
+                                                </button>
+                                            @else
+                                                <span class="text-[11px] text-emerald-400 font-semibold">Lunas</span>
+                                            @endif
+
+                                            @if($canDelete)
+                                                <form method="POST" action="/operational/debts/{{ $loan->id }}" onsubmit="return confirm('Hapus tagihan pinjaman {{ $loan->name }}? Tagihan ini belum memiliki riwayat pembayaran.')" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition" title="Hapus pinjaman">
+                                                        🗑️
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

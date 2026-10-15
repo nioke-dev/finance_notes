@@ -122,4 +122,18 @@ class AccountLifecycleTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertNotNull(Account::find($bca->id));
     }
+
+    public function test_unused_account_with_zero_ledger_can_be_deleted(): void
+    {
+        // GoPay Merchant bawaan seeder memiliki saldo 0 dan belum ada transaksi
+        $gopayMerchant = Account::where('name', 'GoPay Merchant')->firstOrFail();
+        $this->assertEquals(0, $gopayMerchant->current_balance);
+        $this->assertFalse($gopayMerchant->ledgerEntries()->exists());
+
+        $response = $this->delete('/operational/account/' . $gopayMerchant->id);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertNull(Account::find($gopayMerchant->id));
+    }
 }
