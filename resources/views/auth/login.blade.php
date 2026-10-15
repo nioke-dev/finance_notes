@@ -19,7 +19,7 @@
                 </svg>
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-white">Login Driver</h1>
-            <p class="text-xs text-slate-400 mt-1">Super App Keuangan Pribadi & ShopeeFood Malang</p>
+            <p class="text-xs text-slate-300 font-medium mt-1">Super App Keuangan Pribadi & ShopeeFood Malang</p>
         </div>
 
         @if ($errors->any())
@@ -38,19 +38,19 @@
             <div>
                 <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Email Akun</label>
                 <input type="email" name="email" id="email" value="{{ old('email') }}" required autofocus
-                    class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition text-sm">
+                    class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition text-sm">
             </div>
 
             <div>
                 <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Password</label>
                 <input type="password" name="password" id="password" required
-                    class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition text-sm">
+                    class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition text-sm">
             </div>
 
             <div class="flex items-center justify-between text-sm">
                 <label class="flex items-center space-x-2 cursor-pointer">
                     <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-emerald-500">
-                    <span class="text-slate-400 text-xs">Ingat saya</span>
+                    <span class="text-slate-300 text-xs font-medium">Ingat saya</span>
                 </label>
             </div>
 

@@ -16,7 +16,7 @@
         {{-- Header Tanggal & Status --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow">
             <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Audit & Closing Shift Narik</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Audit & Closing Shift Narik</span>
                 <h2 class="text-2xl font-extrabold text-white mt-1">
                     {{ $workDay->work_date->translatedFormat('l, d F Y') }}
                 </h2>
@@ -36,7 +36,7 @@
                 <div class="border-b border-slate-700/60 pb-3 flex justify-between items-center">
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wider text-white">Denominasi Uang Tunai Fisik</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Ketik jumlah lembar & keping uang di dompet setelah pulang narik</p>
+                        <p class="text-xs text-slate-300 font-medium mt-0.5">Ketik jumlah lembar & keping uang di dompet setelah pulang narik</p>
                     </div>
                     <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow">
                         Simpan Hitungan Fisik
@@ -45,7 +45,7 @@
 
                 {{-- Pecahan Uang Kertas --}}
                 <div class="space-y-3">
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Uang Kertas (Lembar)</span>
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Uang Kertas (Lembar)</span>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         @foreach([100000, 50000, 20000, 10000, 5000, 2000, 1000] as $nominal)
                             @php $field = 'bill_' . $nominal; @endphp
@@ -70,7 +70,7 @@
 
                 {{-- Pecahan Koin --}}
                 <div class="space-y-3">
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Uang Logam / Koin (Keping)</span>
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Uang Logam / Koin (Keping)</span>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         @foreach([1000, 500, 200, 100] as $nominal)
                             @php $field = 'coin_' . $nominal; @endphp
@@ -96,8 +96,8 @@
                 {{-- Total Fisik Terhitung --}}
                 <div class="bg-slate-900/80 border border-slate-700 rounded-xl p-4 flex justify-between items-center">
                     <div>
-                        <span class="text-xs font-bold uppercase text-slate-400 block">Total Akumulasi Fisik Dompet</span>
-                        <span id="closing-total-pieces" class="text-[11px] text-slate-400 block">{{ $denominations->total_pieces ?? 0 }} lembar & koin</span>
+                        <span class="text-xs font-bold uppercase text-slate-300 block">Total Akumulasi Fisik Dompet</span>
+                        <span id="closing-total-pieces" class="text-[11px] text-slate-300 font-medium block">{{ $denominations->total_pieces ?? 0 }} lembar & koin</span>
                     </div>
                     <span id="closing-total-amount" class="text-xl font-extrabold text-emerald-400">
                         Rp {{ number_format($denominations->total_physical_amount ?? 0, 0, ',', '.') }}
@@ -110,7 +110,7 @@
                         <span class="text-base">✂️</span>
                         <div>
                             <span class="text-xs font-bold text-white block">Catatan Uang Rusak / Sobek (Opsional)</span>
-                            <span class="text-[10px] text-slate-400 block">Tandai jika ada uang sobek/rusak di dompet yang perlu segera dibelanjakan ke SPBU/minimarket.</span>
+                            <span class="text-[10px] text-slate-300 font-medium block">Tandai jika ada uang sobek/rusak di dompet yang perlu segera dibelanjakan ke SPBU/minimarket.</span>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -185,7 +185,7 @@
                             <div class="bg-slate-900/60 border border-slate-700/50 rounded-xl p-3.5 flex justify-between items-center">
                                 <div>
                                     <span class="text-xs font-bold text-white block">{{ $accReport['account_name'] }}</span>
-                                    <span class="text-[11px] text-slate-400">
+                                    <span class="text-[11px] text-slate-300 font-medium">
                                         Buku: Rp {{ number_format($accReport['ledger_balance'], 0, ',', '.') }} &bull; 
                                         Fisik/Aktual: Rp {{ number_format($accReport['actual_balance'], 0, ',', '.') }}
                                     </span>
@@ -265,7 +265,7 @@
                             <span class="text-base">🎙️</span>
                             <div>
                                 <h3 class="text-xs font-bold uppercase tracking-wider text-white">Kotak Hitam Helm (Voice Memos)</h3>
-                                <span class="text-[10px] text-slate-400">Dengar rekaman suara Anda di jalan sebelum menyesuaikan selisih</span>
+                                <span class="text-[10px] text-slate-300 font-medium">Dengar rekaman suara Anda di jalan sebelum menyesuaikan selisih</span>
                             </div>
                         </div>
                         <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">
@@ -274,7 +274,7 @@
                     </div>
 
                     @if($workDay->voiceMemos->isEmpty())
-                        <div class="py-4 text-center text-slate-500 text-xs">
+                        <div class="py-4 text-center text-slate-300 font-medium text-xs">
                             Belum ada rekaman suara helm yang diunggah untuk shift ini.
                         </div>
                     @else
@@ -310,7 +310,7 @@
                             <span class="text-base">📋</span>
                             <div>
                                 <h3 class="text-xs font-bold uppercase tracking-wider text-white">Mutasi Kas Shift Ini</h3>
-                                <span class="text-[10px] text-slate-400">Ada salah ketik tadi siang? Koreksi langsung di sini</span>
+                                <span class="text-[10px] text-slate-300 font-medium">Ada salah ketik tadi siang? Koreksi langsung di sini</span>
                             </div>
                         </div>
                         <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">
@@ -319,7 +319,7 @@
                     </div>
 
                     @if(count($cashTransactions) === 0)
-                        <div class="py-4 text-center text-slate-500 text-xs">
+                        <div class="py-4 text-center text-slate-300 font-medium text-xs">
                             Belum ada mutasi kas fisik yang tercatat untuk shift ini.
                         </div>
                     @else
@@ -332,7 +332,7 @@
                                 <div class="p-3 bg-slate-900/70 border border-slate-700/50 rounded-xl flex items-center justify-between text-xs {{ $isReversed ? 'opacity-40' : '' }}">
                                     <div class="flex-1 pr-2">
                                         <span class="font-bold text-white block">{{ $tx->description }}</span>
-                                        <span class="text-[10px] text-slate-400">
+                                        <span class="text-[10px] text-slate-300 font-medium">
                                             {{ $tx->transaction_time ? $tx->transaction_time->format('H:i') : '' }} &bull; 
                                             <span class="uppercase font-semibold text-slate-300">{{ $tx->type }}</span>
                                             @if($isReversed)
@@ -425,14 +425,14 @@
     </script>
 
     {{-- Modal Penyesuaian Selisih Kas Hilang / Tak Terlacak --}}
-    <div id="modal-adjust-discrepancy" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-adjust-discrepancy" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
                     <span class="text-xl">⚖️</span>
                     <h3 class="text-base font-bold text-white">Sesuaikan Selisih Kas Fisik</h3>
                 </div>
-                <button type="button" onclick="closeModal('modal-adjust-discrepancy')" class="text-slate-400 hover:text-white">&times;</button>
+                <button type="button" onclick="closeModal('modal-adjust-discrepancy')" class="text-slate-300 hover:text-white font-bold">&times;</button>
             </div>
 
             @php 
@@ -444,11 +444,11 @@
                 @csrf
                 <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-1.5">
                     <div class="flex justify-between">
-                        <span class="text-slate-400">Saldo Menurut Sistem:</span>
+                        <span class="text-slate-300 font-medium">Saldo Menurut Sistem:</span>
                         <span class="font-bold text-white">Rp {{ number_format($cashAccModal['ledger_balance'] ?? 0, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-400">Uang Fisik di Dompet:</span>
+                        <span class="text-slate-300 font-medium">Uang Fisik di Dompet:</span>
                         <span class="font-bold text-white">Rp {{ number_format($cashAccModal['actual_balance'] ?? 0, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between border-t border-slate-700 pt-1.5 font-bold">
@@ -470,7 +470,7 @@
                         placeholder="Contoh: Uang koin Rp2.000 jatuh di jalan saat bayar parkir atau lupa minta kembalian di warung..."
                         class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
                     ></textarea>
-                    <span class="text-[10px] text-slate-400 block mt-1">
+                    <span class="text-[10px] text-slate-300 font-medium block mt-1">
                         Wajib diisi minimal 5 karakter. Catatan ini disimpan permanen di riwayat audit.
                     </span>
                 </div>
@@ -488,22 +488,22 @@
     </div>
 
     {{-- Modal Koreksi Transaksi Kas di Tempat --}}
-    <div id="modal-correct-closing-tx" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-correct-closing-tx" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
                     <span class="text-xl">✏️</span>
                     <h3 class="text-base font-bold text-white">Koreksi Transaksi Kas</h3>
                 </div>
-                <button type="button" onclick="closeModal('modal-correct-closing-tx')" class="text-slate-400 hover:text-white">&times;</button>
+                <button type="button" onclick="closeModal('modal-correct-closing-tx')" class="text-slate-300 hover:text-white font-bold">&times;</button>
             </div>
 
             <form id="form-correct-tx" method="POST" action="" class="space-y-4">
                 @csrf
                 <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-xs space-y-1">
-                    <span class="text-slate-400 block">Transaksi yang dikoreksi:</span>
+                    <span class="text-slate-300 font-medium block">Transaksi yang dikoreksi:</span>
                     <span id="correct-tx-desc" class="font-bold text-white block"></span>
-                    <span class="text-slate-400 block mt-1">Nominal saat ini: <span id="correct-tx-current" class="text-amber-400 font-bold"></span></span>
+                    <span class="text-slate-300 font-medium block mt-1">Nominal saat ini: <span id="correct-tx-current" class="text-amber-400 font-bold"></span></span>
                 </div>
 
                 <div>
@@ -533,7 +533,7 @@
                         placeholder="Contoh: Salah ketik nominal tadi siang, struk bensin aslinya Rp40.000..." 
                         class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     ></textarea>
-                    <span class="text-[10px] text-slate-400 block mt-1">
+                    <span class="text-[10px] text-slate-300 font-medium block mt-1">
                         Minimal 5 karakter. Transaksi lama akan dibalikkan dan dicatat ke audit log.
                     </span>
                 </div>

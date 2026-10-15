@@ -3,7 +3,7 @@
         {{-- Header & Insight --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow">
             <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Efisiensi Biaya Operasional Motor</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Efisiensi Biaya Operasional Motor</span>
                 <h2 class="text-2xl font-extrabold text-white mt-1">
                     Analitik Pengeluaran Bensin (SPBU vs Madura)
                 </h2>
@@ -28,7 +28,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Total Pengeluaran Bensin --}}
             <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Total Pengeluaran Bensin</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">Total Pengeluaran Bensin</span>
                 <div class="mt-2">
                     <span class="text-2xl font-extrabold text-white">Rp {{ number_format($totalSpent, 0, ',', '.') }}</span>
                 </div>
@@ -36,28 +36,28 @@
 
             {{-- Total SPBU Resmi --}}
             <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">SPBU Pertamina (Rp10k/L)</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">SPBU Pertamina (Rp10k/L)</span>
                 <div class="mt-2">
                     <span class="text-2xl font-extrabold text-emerald-400">Rp {{ number_format($totalSpbuSpent, 0, ',', '.') }}</span>
-                    <span class="text-xs text-slate-400 block mt-0.5">~{{ number_format($totalSpbuLiters, 2) }} Liter</span>
+                    <span class="text-xs text-slate-300 font-medium block mt-0.5">~{{ number_format($totalSpbuLiters, 2) }} Liter</span>
                 </div>
             </div>
 
             {{-- Total Eceran Madura --}}
             <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Eceran Madura (Rp12k)</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">Eceran Madura (Rp12k)</span>
                 <div class="mt-2">
                     <span class="text-2xl font-extrabold text-amber-400">Rp {{ number_format($totalMaduraSpent, 0, ',', '.') }}</span>
-                    <span class="text-xs text-slate-400 block mt-0.5">~{{ $totalMaduraBottles }} Botol</span>
+                    <span class="text-xs text-slate-300 font-medium block mt-0.5">~{{ $totalMaduraBottles }} Botol</span>
                 </div>
             </div>
 
             {{-- Rasio Ketergantungan Eceran --}}
             <div class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Rasio Eceran Madura</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">Rasio Eceran Madura</span>
                 <div class="mt-2">
                     <span class="text-2xl font-extrabold {{ $isMaduraHigh ? 'text-rose-400' : 'text-emerald-400' }}">{{ $maduraRatio }}%</span>
-                    <span class="text-[11px] text-slate-400 block mt-0.5">dari total rupiah bensin</span>
+                    <span class="text-[11px] text-slate-300 font-medium block mt-0.5">dari total rupiah bensin</span>
                 </div>
             </div>
         </div>
@@ -68,14 +68,14 @@
                 Histori Pengisian Bensin
             </h3>
             @if($fuelTransactions->isEmpty())
-                <div class="py-12 text-center text-slate-500 text-sm">
+                <div class="py-12 text-center text-slate-300 font-medium text-sm">
                     Belum ada riwayat pembelian bensin yang tercatat.
                 </div>
             @else
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
-                            <tr class="border-b border-slate-700/60 text-slate-400 uppercase tracking-wider">
+                            <tr class="border-b border-slate-700/60 text-slate-300 font-bold uppercase tracking-wider">
                                 <th class="pb-3 font-semibold">Waktu</th>
                                 <th class="pb-3 font-semibold">Tipe Vendor</th>
                                 <th class="pb-3 font-semibold">Deskripsi</th>

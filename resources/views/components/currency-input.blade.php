@@ -7,7 +7,7 @@
         </label>
     @endif
     <div class="relative rounded-xl shadow-sm">
-        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm font-semibold">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-300 text-sm font-bold">
             Rp
         </div>
         <input 
@@ -16,7 +16,7 @@
             id="{{ $name }}" 
             value="{{ old($name, $value) }}"
             placeholder="{{ $placeholder }}"
-            {{ $attributes->merge(['class' => 'block w-full pl-11 pr-4 py-2.5 bg-slate-800 border ' . ((isset($errors) && $errors->has($name)) ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-700 focus:ring-emerald-500 focus:border-emerald-500') . ' rounded-xl text-white placeholder-slate-500 text-sm font-medium focus:outline-none focus:ring-2 transition']) }}
+            {{ $attributes->merge(['class' => 'block w-full pl-11 pr-4 py-2.5 bg-slate-800 border ' . ((isset($errors) && $errors->has($name)) ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-700 focus:ring-emerald-500 focus:border-emerald-500') . ' rounded-xl text-white placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 transition']) }}
         >
     </div>
     @if(isset($errors))

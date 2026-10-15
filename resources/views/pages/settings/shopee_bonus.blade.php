@@ -3,7 +3,7 @@
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow">
             <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Konfigurasi Insentif & Aturan Bonus Hub Malang</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Konfigurasi Insentif & Aturan Bonus Hub Malang</span>
                 <h2 class="text-2xl font-extrabold text-white mt-1">
                     Skema Bonus Bertingkat ShopeeFood
                 </h2>
@@ -40,7 +40,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
-                            <tr class="border-b border-slate-700/60 text-slate-400 uppercase tracking-wider">
+                            <tr class="border-b border-slate-700/60 text-slate-300 font-bold uppercase tracking-wider">
                                 <th class="pb-3 font-semibold">Tier Level</th>
                                 <th class="pb-3 font-semibold">Min Order</th>
                                 <th class="pb-3 font-semibold">Max Order</th>
@@ -63,12 +63,12 @@
                                     </td>
                                     <td class="py-3">
                                         <div class="flex items-center space-x-2">
-                                            <span class="text-slate-400">Rp</span>
+                                            <span class="text-slate-300 font-semibold">Rp</span>
                                             <input type="number" name="schemes[{{ $index }}][rate_per_order]" value="{{ $scheme->rate_per_order }}" class="w-32 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
                                         </div>
                                     </td>
                                     <td class="py-3 text-center">
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $scheme->is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400' }}">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $scheme->is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300 font-bold' }}">
                                             {{ $scheme->is_active ? 'Aktif' : 'Non-Aktif' }}
                                         </span>
                                     </td>

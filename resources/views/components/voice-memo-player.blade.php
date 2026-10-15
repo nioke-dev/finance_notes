@@ -1,12 +1,12 @@
 @props(['memo'])
 
 <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-3.5 flex flex-col space-y-2.5 shadow-sm hover:border-slate-600 transition">
-    <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
+    <div class="flex items-center justify-between text-xs text-slate-300 font-medium">
         <div class="flex items-center space-x-2">
             <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span>Rekaman: {{ $memo->recorded_at?->format('H:i') ?? '-' }} WIB</span>
             @if($memo->duration_seconds)
-                <span class="text-slate-500">&bull; {{ $memo->duration_seconds }}s</span>
+                <span class="text-slate-400 font-medium">&bull; {{ $memo->duration_seconds }}s</span>
             @endif
         </div>
         @if($memo->latitude && $memo->longitude)

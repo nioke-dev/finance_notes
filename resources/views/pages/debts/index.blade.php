@@ -17,11 +17,11 @@
         {{-- Header & Insight --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow">
             <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Portofolio Liabilitas & Piutang</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Portofolio Liabilitas & Piutang</span>
                 <h2 class="text-2xl font-extrabold text-white mt-1">
                     Pengelolaan PayLater, Pinjaman Tunai & Piutang Teman
                 </h2>
-                <p class="text-xs text-slate-400 mt-0.5">Pantau tagihan belanja bulanan, pinjaman tunai berbunga, dan uang kas yang dipinjam teman di lapangan.</p>
+                <p class="text-xs text-slate-300 font-medium mt-0.5">Pantau tagihan belanja bulanan, pinjaman tunai berbunga, dan uang kas yang dipinjam teman di lapangan.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="openModal('modal-existing-debt')" class="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1 shadow">
@@ -52,7 +52,7 @@
                 </div>
                 <div class="mt-1">
                     <span class="text-xl font-extrabold text-indigo-300">Rp {{ number_format($totalPayLater, 0, ',', '.') }}</span>
-                    <span class="text-[10px] text-slate-400 block mt-0.5">{{ $paylaterDebts->count() }} transaksi belanja tempo</span>
+                    <span class="text-[10px] text-slate-300 font-medium block mt-0.5">{{ $paylaterDebts->count() }} transaksi belanja tempo</span>
                 </div>
             </div>
 
@@ -64,7 +64,7 @@
                 </div>
                 <div class="mt-1">
                     <span class="text-xl font-extrabold text-rose-300">Rp {{ number_format($totalCashLoans, 0, ',', '.') }}</span>
-                    <span class="text-[10px] text-slate-400 block mt-0.5">{{ $cashLoans->count() }} pinjaman dana cair</span>
+                    <span class="text-[10px] text-slate-300 font-medium block mt-0.5">{{ $cashLoans->count() }} pinjaman dana cair</span>
                 </div>
             </div>
 
@@ -76,7 +76,7 @@
                 </div>
                 <div class="mt-1">
                     <span class="text-xl font-extrabold text-emerald-300">Rp {{ number_format($totalReceivable, 0, ',', '.') }}</span>
-                    <span class="text-[10px] text-slate-400 block mt-0.5">{{ $friendDebts->count() }} teman meminjam kas</span>
+                    <span class="text-[10px] text-slate-300 font-medium block mt-0.5">{{ $friendDebts->count() }} teman meminjam kas</span>
                 </div>
             </div>
 
@@ -90,7 +90,7 @@
                     <span class="text-xl font-extrabold text-amber-300">
                         Rp {{ number_format($upcomingInstallments->sum('amount_due'), 0, ',', '.') }}
                     </span>
-                    <span class="text-[10px] text-slate-400 block mt-0.5">{{ $upcomingInstallments->count() }} cicilan segera jatuh tempo</span>
+                    <span class="text-[10px] text-slate-300 font-medium block mt-0.5">{{ $upcomingInstallments->count() }} cicilan segera jatuh tempo</span>
                 </div>
             </div>
         </div>
@@ -103,7 +103,7 @@
                         <span class="text-base">⚠️</span>
                         <h3 class="text-xs font-bold uppercase tracking-wider">Jadwal Jatuh Tempo Terdekat (30 Hari ke Depan)</h3>
                     </div>
-                    <span class="text-[11px] text-slate-400">Prioritaskan pembayaran untuk menghindari denda</span>
+                    <span class="text-[11px] text-slate-300 font-medium">Prioritaskan pembayaran untuk menghindari denda</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     @foreach($upcomingInstallments as $inst)
@@ -114,7 +114,7 @@
                         <div class="p-3 bg-slate-900/60 border {{ $isUrgent ? 'border-rose-500/40 bg-rose-500/5' : 'border-slate-700/50' }} rounded-xl flex items-center justify-between">
                             <div>
                                 <span class="font-bold text-slate-200 text-xs block">{{ $inst->debt->name }}</span>
-                                <span class="text-[11px] text-slate-400">Cicilan #{{ $inst->installment_number }} &bull; {{ $inst->due_date->format('d M Y') }}</span>
+                                <span class="text-[11px] text-slate-300 font-medium">Cicilan #{{ $inst->installment_number }} &bull; {{ $inst->due_date->format('d M Y') }}</span>
                             </div>
                             <div class="text-right">
                                 <span class="font-bold text-xs text-white block">Rp {{ number_format($inst->amount_due, 0, ',', '.') }}</span>
@@ -138,7 +138,7 @@
                             Tagihan PayLater (Beli Sekarang Bayar Nanti)
                         </h3>
                     </div>
-                    <p class="text-xs text-slate-400 mt-0.5">Shopee PayLater, TikTok PayLater, Kredivo PayLater. Tidak menambah saldo rekening, melainkan belanja barang bertempo.</p>
+                    <p class="text-xs text-slate-300 font-medium mt-0.5">Shopee PayLater, TikTok PayLater, Kredivo PayLater. Tidak menambah saldo rekening, melainkan belanja barang bertempo.</p>
                 </div>
                 <button type="button" onclick="openModal('modal-paylater')" class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 text-xs font-bold rounded-xl transition">
                     ➕ Catat Belanja PayLater
@@ -146,14 +146,14 @@
             </div>
 
             @if($paylaterDebts->isEmpty())
-                <div class="py-6 text-center text-slate-500 text-xs bg-slate-900/40 rounded-xl border border-slate-700/30">
+                <div class="py-6 text-center text-slate-300 font-medium text-xs bg-slate-900/40 rounded-xl border border-slate-700/30">
                     Belum ada transaksi belanja PayLater aktif.
                 </div>
             @else
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
-                            <tr class="border-b border-slate-700/60 text-slate-400 uppercase tracking-wider">
+                            <tr class="border-b border-slate-700/60 text-slate-300 font-bold uppercase tracking-wider">
                                 <th class="pb-3 font-semibold">Nama Belanja / Barang</th>
                                 <th class="pb-3 font-semibold">Platform</th>
                                 <th class="pb-3 font-semibold">Tenor</th>
@@ -168,7 +168,7 @@
                                 <tr class="hover:bg-slate-700/30 transition">
                                     <td class="py-3 font-bold text-slate-200">
                                         {{ $debt->name }}
-                                        <span class="text-[10px] text-slate-500 block font-normal">{{ $debt->started_at ? $debt->started_at->format('d M Y') : '' }}</span>
+                                        <span class="text-[10px] text-slate-300 font-medium block">{{ $debt->started_at ? $debt->started_at->format('d M Y') : '' }}</span>
                                     </td>
                                     <td class="py-3">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
@@ -221,7 +221,7 @@
                             Pinjaman Tunai / KTA (Dana Cair Masuk ke Rekening)
                         </h3>
                     </div>
-                    <p class="text-xs text-slate-400 mt-0.5">SPinjam, SeaBank Pinjam, GoPay Pinjam, Superbank Pinjam, Kredivo Pinjam, Bank. Dana bersih masuk rekening penampungan.</p>
+                    <p class="text-xs text-slate-300 font-medium mt-0.5">SPinjam, SeaBank Pinjam, GoPay Pinjam, Superbank Pinjam, Kredivo Pinjam, Bank. Dana bersih masuk rekening penampungan.</p>
                 </div>
                 <button type="button" onclick="openModal('modal-cash-loan')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 text-xs font-bold rounded-xl transition">
                     ➕ Buka Pinjaman Baru
@@ -229,14 +229,14 @@
             </div>
 
             @if($cashLoans->isEmpty())
-                <div class="py-6 text-center text-slate-500 text-xs bg-slate-900/40 rounded-xl border border-slate-700/30">
+                <div class="py-6 text-center text-slate-300 font-medium text-xs bg-slate-900/40 rounded-xl border border-slate-700/30">
                     Belum ada pinjaman tunai aktif.
                 </div>
             @else
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
-                            <tr class="border-b border-slate-700/60 text-slate-400 uppercase tracking-wider">
+                            <tr class="border-b border-slate-700/60 text-slate-300 font-bold uppercase tracking-wider">
                                 <th class="pb-3 font-semibold">Nama Pinjaman</th>
                                 <th class="pb-3 font-semibold">Platform</th>
                                 <th class="pb-3 font-semibold">Tenor</th>
@@ -251,7 +251,7 @@
                                 <tr class="hover:bg-slate-700/30 transition">
                                     <td class="py-3 font-bold text-slate-200">
                                         {{ $loan->name }}
-                                        <span class="text-[10px] text-slate-500 block font-normal">Mulai: {{ $loan->started_at ? $loan->started_at->format('d M Y') : '-' }}</span>
+                                        <span class="text-[10px] text-slate-300 font-medium block">Mulai: {{ $loan->started_at ? $loan->started_at->format('d M Y') : '-' }}</span>
                                     </td>
                                     <td class="py-3">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30">
@@ -304,19 +304,19 @@
                             Piutang ke Teman (Talangan / Pinjaman Kas di Lapangan)
                         </h3>
                     </div>
-                    <p class="text-xs text-slate-400 mt-0.5">Uang kas fisik dompet yang dipinjam teman basecamp. Saat dilunasi, saldo kas/rekening Anda otomatis bertambah.</p>
+                    <p class="text-xs text-slate-300 font-medium mt-0.5">Uang kas fisik dompet yang dipinjam teman basecamp. Saat dilunasi, saldo kas/rekening Anda otomatis bertambah.</p>
                 </div>
             </div>
 
             @if($friendDebts->isEmpty())
-                <div class="py-6 text-center text-slate-500 text-xs bg-slate-900/40 rounded-xl border border-slate-700/30">
+                <div class="py-6 text-center text-slate-300 font-medium text-xs bg-slate-900/40 rounded-xl border border-slate-700/30">
                     Tidak ada data piutang teman aktif saat ini.
                 </div>
             @else
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
-                            <tr class="border-b border-slate-700/60 text-slate-400 uppercase tracking-wider">
+                            <tr class="border-b border-slate-700/60 text-slate-300 font-bold uppercase tracking-wider">
                                 <th class="pb-3 font-semibold">Nama Teman</th>
                                 <th class="pb-3 font-semibold">Keterangan Pinjaman</th>
                                 <th class="pb-3 font-semibold">Tanggal Pinjam</th>
@@ -335,7 +335,7 @@
                                     <td class="py-3 text-slate-300">
                                         {{ $friend->name }}
                                     </td>
-                                    <td class="py-3 text-slate-400">
+                                    <td class="py-3 text-slate-300 font-medium">
                                         {{ $friend->started_at ? $friend->started_at->format('d M Y') : '-' }}
                                     </td>
                                     <td class="py-3 text-right text-slate-300">
@@ -366,10 +366,10 @@
     </div>
 
     {{-- MODAL 1: Belanja Online Menggunakan PayLater (SPayLater / TikTok / Kredivo) --}}
-    <div id="modal-paylater" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+    <div id="modal-paylater" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <h3 class="text-base font-bold text-white mb-1">🛍️ Belanja Online Pakai PayLater</h3>
-            <p class="text-xs text-slate-400 mb-4">Catat belanja barang bertempo/cicilan (SPayLater, TikTok PayLater, Kredivo).</p>
+            <p class="text-xs text-slate-300 font-medium mb-4">Catat belanja barang bertempo/cicilan (SPayLater, TikTok PayLater, Kredivo).</p>
             <form method="POST" action="/operational/spaylater-purchase" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
@@ -407,10 +407,10 @@
     </div>
 
     {{-- MODAL 2: Buka Pinjaman Tunai Baru (Dana Cair Masuk ke Rekening) --}}
-    <div id="modal-cash-loan" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+    <div id="modal-cash-loan" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <h3 class="text-base font-bold text-white mb-1">💰 Pencairan Pinjaman Tunai (KTA)</h3>
-            <p class="text-xs text-slate-400 mb-4">Catat pinjaman dana cair yang langsung masuk ke rekening bank Anda.</p>
+            <p class="text-xs text-slate-300 font-medium mb-4">Catat pinjaman dana cair yang langsung masuk ke rekening bank Anda.</p>
             <form method="POST" action="/operational/debt" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
@@ -463,10 +463,10 @@
     </div>
 
     {{-- MODAL 3: Bayar Cicilan PayLater / Pinjaman --}}
-    <div id="modal-pay-installment-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+    <div id="modal-pay-installment-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <h3 class="text-base font-bold text-white mb-1">💳 Bayar Tagihan / Cicilan</h3>
-            <p id="pay-inst-title" class="text-xs text-slate-400 mb-4">Bayar tagihan menggunakan rekening bank atau saldo e-wallet.</p>
+            <p id="pay-inst-title" class="text-xs text-slate-300 font-medium mb-4">Bayar tagihan menggunakan rekening bank atau saldo e-wallet.</p>
             <form method="POST" action="/operational/pay-installment" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
@@ -496,10 +496,10 @@
     </div>
 
     {{-- MODAL 4: Pelunasan Piutang Teman --}}
-    <div id="modal-settle-friend" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl">
+    <div id="modal-settle-friend" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <h3 class="text-base font-bold text-white mb-1">🤝 Catat Pembayaran dari Teman</h3>
-            <p id="settle-friend-desc" class="text-xs text-slate-400 mb-4">Terima pengembalian uang kas/transfer dari teman.</p>
+            <p id="settle-friend-desc" class="text-xs text-slate-300 font-medium mb-4">Terima pengembalian uang kas/transfer dari teman.</p>
             <form method="POST" action="/operational/settle-friend-debt" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
@@ -527,7 +527,7 @@
             </form>
         </div>
     {{-- MODAL: Catat Tagihan Utang Berjalan (Existing Debt) --}}
-    <div id="modal-existing-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-existing-debt" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-900 border border-purple-500/50 max-w-md w-full rounded-2xl p-6 shadow-2xl">
             <div class="flex items-center space-x-2.5 mb-1">
                 <span class="text-2xl">📝</span>

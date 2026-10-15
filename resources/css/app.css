@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    /* Smooth scroll for anchor navigation */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Enforce high-contrast dark options on all browsers (including Android Chrome & WebViews) */
+    select option {
+        background-color: #0f172a;
+        color: #f8fafc;
+        padding: 6px 10px;
+    }
+
+    /* Remove number input spinners for clean numeric entry */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+}
