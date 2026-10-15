@@ -138,8 +138,12 @@
                     
                     {{-- Aksi Cepat On-Beat: Update Saldo di Jalan (Bukan Closing) --}}
                     <div class="flex items-center space-x-2 w-full sm:w-auto">
-                        <button type="button" onclick="openModal('modal-reconcile-digital')" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center justify-center space-x-1.5" title="Update saldo aktual saat nunggu resto tanpa menutup shift">
-                            <span>⚡</span>
+                        <button type="button" onclick="openModal('modal-reconcile-digital')" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center justify-center space-x-2" title="Update saldo aktual saat nunggu resto tanpa menutup shift">
+                            <span class="w-5 h-5 rounded-full bg-white shadow-md flex items-center justify-center shrink-0 border border-white">
+                                <svg class="w-3.5 h-3.5 text-amber-600 fill-current" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+                                </svg>
+                            </span>
                             <span>Cek & Update Saldo Narik</span>
                         </button>
                     </div>
@@ -846,8 +850,8 @@
                         <p class="text-xs text-slate-300 mt-0.5">Pisahkan kebutuhan primer hidup (Pangan, Mandi, Ganti Oli, Holder HP) dari keinginan santai.</p>
                     </div>
                 </div>
-                <button type="button" onclick="openModal('modal-add-goal')" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0">
-                    <span>➕</span>
+                <button type="button" onclick="openModal('modal-add-goal')" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center space-x-2 shrink-0">
+                    <span class="w-5 h-5 rounded-full bg-white shadow-md flex items-center justify-center text-xs text-slate-950 font-black shrink-0 border border-white">➕</span>
                     <span>Tambah Target Belanja</span>
                 </button>
             </div>
