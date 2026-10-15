@@ -112,4 +112,14 @@ class DashboardPageTest extends TestCase
         $response->assertSee('12s');
         $response->assertSee('maps?q=-7.9826,112.6308', false);
     }
+
+    public function test_dashboard_renders_workday_not_opened_banner_when_no_active_shift(): void
+    {
+        $response = $this->get('/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Hari Kerja Belum Dibuka');
+        $response->assertSee('Buka hari kerja untuk mulai mencatat target harian');
+        $response->assertSee('Buka Hari Kerja Sekarang');
+    }
 }

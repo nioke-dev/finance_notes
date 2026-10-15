@@ -74,6 +74,34 @@
             </div>
         @endif
 
+        {{-- Banner Panduan: Hari Kerja Belum Dibuka --}}
+        @if(!$currentWorkDay)
+            <div id="banner-workday-not-opened" class="bg-gradient-to-r from-emerald-950/70 via-slate-900 to-slate-800/95 border border-emerald-500/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl shrink-0">
+                        🌅
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h4 class="text-sm font-bold text-white">
+                                Hari Kerja Belum Dibuka
+                            </h4>
+                            <span class="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 rounded-md border border-emerald-500/30">
+                                Siap On-Bid
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 font-medium mt-0.5">
+                            Buka hari kerja untuk mulai mencatat target harian, kilometer odometer awal motor, dan transaksi driver on-bid.
+                        </p>
+                    </div>
+                </div>
+                <button type="button" onclick="openModal('modal-open-day')" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-950 transition active:scale-95 flex items-center justify-center space-x-1.5 shrink-0">
+                    <span>🌅</span>
+                    <span>Buka Hari Kerja Sekarang</span>
+                </button>
+            </div>
+        @endif
+
         {{-- FILTER TANGGAL HARIAN & HEADER AKTIVITAS --}}
         <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center space-x-3">
