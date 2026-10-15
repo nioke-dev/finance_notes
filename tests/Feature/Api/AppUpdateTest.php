@@ -44,6 +44,6 @@ class AppUpdateTest extends TestCase
         $response = $this->get('/download/driver-finance-latest.apk');
 
         $response->assertStatus(302);
-        $response->assertRedirect('https://github.com/nioke-dev/finance_notes/releases/download/v1.1.0-release/driver-finance-latest.apk');
+        $response->assertRedirect('https://github.com/nioke-dev/finance_notes/releases/download/v1.2.0-release/driver-finance-latest.apk');
     }
 }

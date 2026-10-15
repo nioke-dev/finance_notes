@@ -113,16 +113,18 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.1.0-release
+          tag_name: v1.2.0-release
           overwrite: true
-          name: "Driver Finance Android APK v1.1.0"
+          name: "Driver Finance Android APK v1.2.0"
           body: |
-            ## Driver Finance Malang - Release v1.1.0
-            - 🎙️ Intercom Voice Memo Helm dengan GPS Geolocation
-            - 🧮 Multi-COD Resto Calculator 3-digit
-            - 🎯 Misi Bebas Hutang 31 Oktober & Cicilan Jatuh Tempo
-            - ☕ Kebutuhan Sehari-Hari & Safe-to-Spend
-            - 📲 Mobile Bottom Navigation OLED-Friendly
+            ## Driver Finance Malang - Release v1.2.0 (Full 1:1 Web-to-Native Hybrid)
+            - 🌐 Tampilan & Seluruh Fitur 1:1 Persis dengan Web (Tanpa Ada yang Hilang)
+            - 📱 Real-Time Data (Saldo Kas, BCA, SeaBank, SPayLater, ShopeePay, GoPay Merchant)
+            - 🧮 Multi-COD Resto Tracking & Fast Calculator Kembalian
+            - 🎯 Target Belanja Survival 5-Level (Needs vs Wants) & Sisihkan Cepat
+            - 🛡️ Safe-to-Spend Real-Time Metric
+            - 🎙️ Voice Memo Intercom Helm & GPS Kotak Hitam
+            - ⚡ Persistent Auto-Login (Buka Aplikasi Langsung Siap Pakai)
           files: releases/driver-finance-latest.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

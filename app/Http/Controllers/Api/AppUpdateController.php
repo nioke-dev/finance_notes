@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class AppUpdateController extends Controller
 {
     public const LATEST_VERSION_CODE = 2;
-    public const LATEST_VERSION_NAME = '1.1.0';
+    public const LATEST_VERSION_NAME = '1.2.0';
     public const MIN_SUPPORTED_VERSION_CODE = 1;
 
     /**
@@ -61,7 +61,7 @@ class AppUpdateController extends Controller
         }
 
         // Fallback langsung ke GitHub Release binary APK
-        return redirect()->away('https://github.com/nioke-dev/finance_notes/releases/download/v1.1.0-release/driver-finance-latest.apk');
+        return redirect()->away('https://github.com/nioke-dev/finance_notes/releases/download/v1.2.0-release/driver-finance-latest.apk');
     }
 
     /**
