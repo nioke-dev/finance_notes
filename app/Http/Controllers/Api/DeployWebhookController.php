@@ -55,6 +55,13 @@ class DeployWebhookController extends Controller
         } else {
             Artisan::call('migrate', ['--force' => true]);
             $migrateOutput = Artisan::output();
+
+            // Opsi menjalankan specific seeder tanpa mereset database
+            $seedClass = $request->query('seed_class') ?? $request->input('seed_class');
+            if ($seedClass) {
+                Artisan::call('db:seed', ['--class' => $seedClass, '--force' => true]);
+                $migrateOutput .= "\n" . Artisan::output();
+            }
         }
 
         // Jalankan optimize clear
