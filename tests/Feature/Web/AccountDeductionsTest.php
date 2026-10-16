@@ -38,18 +38,18 @@ class AccountDeductionsTest extends TestCase
         ]);
     }
 
-    public function test_default_accounts_seeder_separates_flazz_and_isaku(): void
+    public function test_default_accounts_seeder_separates_flazz_and_emoney(): void
     {
         $flazz = Account::where('name', 'Flazz')->first();
-        $isaku = Account::where('name', 'i.Saku')->first();
+        $emoney = Account::where('name', 'e-Money')->first();
         $legacy = Account::where('name', 'Flazz / e-money')->first();
         $deductExpense = Account::where('name', 'Beban Biaya Admin & Pemeliharaan Wadah')->first();
 
         $this->assertNotNull($flazz, 'Akun Flazz harus ada secara terpisah');
         $this->assertEquals(AccountType::EWALLET, $flazz->type);
 
-        $this->assertNotNull($isaku, 'Akun i.Saku harus ada secara terpisah');
-        $this->assertEquals(AccountType::EWALLET, $isaku->type);
+        $this->assertNotNull($emoney, 'Akun e-Money harus ada secara terpisah');
+        $this->assertEquals(AccountType::EWALLET, $emoney->type);
 
         $this->assertNull($legacy, 'Akun legacy "Flazz / e-money" tidak boleh ada');
 
@@ -203,9 +203,9 @@ class AccountDeductionsTest extends TestCase
         $response->assertRedirect(route('dashboard'));
         $response->assertSessionHas('success');
 
-        // Pastikan akun Flazz dan i.Saku tetap tercipta fresh seeder
+        // Pastikan akun Flazz dan e-Money tetap tercipta fresh seeder
         $this->assertDatabaseHas('accounts', ['name' => 'Flazz']);
-        $this->assertDatabaseHas('accounts', ['name' => 'i.Saku']);
+        $this->assertDatabaseHas('accounts', ['name' => 'e-Money']);
     }
 
     public function test_reset_trial_data_endpoint_aborts_403_when_trial_mode_disabled(): void
@@ -215,4 +215,75 @@ class AccountDeductionsTest extends TestCase
         $response = $this->post('/operational/reset-trial-data');
         $response->assertStatus(403);
     }
+
+    public function test_personal_expense_with_shopeepay_and_cashback_records_income(): void
+    {
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $shopeePay->update(['current_balance' => 100000]);
+
+        $cashbackAccount = Account::where('name', 'Pendapatan Cashback & Reward ShopeePay')->firstOrFail();
+        $this->assertEquals(0, $cashbackAccount->current_balance);
+
+        $response = $this->post('/operational/personal-expense', [
+            'work_day_id' => $this->workDay->id,
+            'description' => 'Beli Paket Data Shopee',
+            'amount' => 50000,
+            'source_account_id' => $shopeePay->id,
+            'cashback_amount' => 3000,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // ShopeePay balance: 100.000 - 50.000 + 3.000 = 53.000
+        $this->assertEquals(53000, $shopeePay->fresh()->current_balance);
+        // Cashback account balance: 3.000
+        $this->assertEquals(3000, $cashbackAccount->fresh()->current_balance);
+
+        $this->assertDatabaseHas('transactions', [
+            'type' => 'expense',
+            'description' => 'Beli Paket Data Shopee',
+        ]);
+
+        $this->assertDatabaseHas('transactions', [
+            'type' => 'income',
+            'description' => '[Cashback ShopeePay] Reward atas Beli Paket Data Shopee',
+        ]);
+
+        $this->assertDatabaseHas('ledger_entries', [
+            'amount' => 50000,
+        ]);
+
+        $this->assertDatabaseHas('ledger_entries', [
+            'amount' => 3000,
+        ]);
+    }
+
+    public function test_fuel_expense_with_shopeepay_and_zero_cashback(): void
+    {
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $shopeePay->update(['current_balance' => 100000]);
+
+        $cashbackAccount = Account::where('name', 'Pendapatan Cashback & Reward ShopeePay')->firstOrFail();
+
+        $response = $this->post('/operational/fuel', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 20000,
+            'source_account_id' => $shopeePay->id,
+            'vendor_type' => 'spbu',
+            'cashback_amount' => 0,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(80000, $shopeePay->fresh()->current_balance);
+        $this->assertEquals(0, $cashbackAccount->fresh()->current_balance);
+
+        $this->assertDatabaseMissing('transactions', [
+            'type' => 'income',
+            'amount' => 0,
+        ]);
+    }
 }
+

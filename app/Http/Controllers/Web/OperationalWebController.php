@@ -10,6 +10,7 @@ use App\Models\ActiveCodOrder;
 use App\Models\Debt;
 use App\Models\DebtInstallment;
 use App\Models\FinancialGoal;
+use App\Models\Transaction;
 use App\Models\WorkDay;
 use App\Services\ActiveCodOrderService;
 use App\Services\CodOrderService;
@@ -368,26 +369,42 @@ class OperationalWebController extends Controller
      */
     public function storeFuel(
         Request $request,
-        QuickFuelService $fuelService
+        QuickFuelService $fuelService,
+        LedgerService $ledgerService
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
             'source_account_id' => 'required|exists:accounts,id',
             'vendor_type' => 'required|in:spbu,madura',
             'amount' => 'required|integer|min:1000',
+            'cashback_amount' => 'nullable|integer|min:0',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
         $account = Account::findOrFail($validated['source_account_id']);
 
-        $fuelService->recordFuel(
+        $tx = $fuelService->recordFuel(
             workDay: $workDay,
             sourceAccount: $account,
             vendorType: $validated['vendor_type'],
             amount: (int) $validated['amount']
         );
 
-        return redirect()->back()->with('success', 'Transaksi pembelian bensin berhasil dicatat.');
+        $cashback = (int) ($validated['cashback_amount'] ?? 0);
+        $cashbackTx = $this->recordShopeePayCashback(
+            $ledgerService,
+            $workDay,
+            $account,
+            $cashback,
+            $tx->description
+        );
+
+        $msg = 'Transaksi pembelian bensin berhasil dicatat.';
+        if ($cashbackTx) {
+            $msg .= ' Mendapatkan cashback ShopeePay Rp ' . number_format($cashback, 0, ',', '.') . ' (saldo ShopeePay bertambah kembali).';
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**
@@ -395,7 +412,8 @@ class OperationalWebController extends Controller
      */
     public function storeParking(
         Request $request,
-        QuickParkingService $parkingService
+        QuickParkingService $parkingService,
+        LedgerService $ledgerService
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'nullable|exists:work_days,id',
@@ -404,6 +422,7 @@ class OperationalWebController extends Controller
             'is_covered_by_resto' => 'nullable|boolean',
             'source_account_id' => 'nullable|exists:accounts,id',
             'vehicle_type' => 'nullable|string|in:motor,mobil,lainnya',
+            'cashback_amount' => 'nullable|integer|min:0',
         ]);
 
         $workDay = !empty($validated['work_day_id'])
@@ -419,7 +438,7 @@ class OperationalWebController extends Controller
         $vehicleType = $validated['vehicle_type'] ?? 'motor';
         $sourceAccountId = !empty($validated['source_account_id']) ? (int) $validated['source_account_id'] : null;
 
-        $parkingService->recordParking(
+        $parkingTx = $parkingService->recordParking(
             workDay: $workDay,
             amount: (int) $validated['amount'],
             restaurantName: $validated['restaurant_name'] ?? null,
@@ -428,10 +447,29 @@ class OperationalWebController extends Controller
             vehicleType: $vehicleType
         );
 
+        $cashback = (int) ($validated['cashback_amount'] ?? 0);
+        $cashbackTx = null;
+        if (!$isCovered && $sourceAccountId && $cashback > 0) {
+            $sourceAcc = Account::find($sourceAccountId);
+            if ($sourceAcc) {
+                $cashbackTx = $this->recordShopeePayCashback(
+                    $ledgerService,
+                    $workDay,
+                    $sourceAcc,
+                    $cashback,
+                    $parkingTx->description
+                );
+            }
+        }
+
         $vehicleLabel = $vehicleType === 'mobil' ? 'Mobil' : 'Motor';
         $msg = $isCovered 
             ? "Parkir {$vehicleLabel} gratis (ditanggung resto) berhasil dicatat tanpa memotong saldo." 
             : "Parkir {$vehicleLabel} berhasil dicatat (Rp" . number_format($validated['amount'], 0, ',', '.') . ").";
+
+        if ($cashbackTx) {
+            $msg .= ' Mendapatkan cashback ShopeePay Rp ' . number_format($cashback, 0, ',', '.') . ' (saldo ShopeePay bertambah kembali).';
+        }
 
         return redirect()->back()->with('success', $msg);
     }
@@ -595,10 +633,11 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
-            'source_account_id' => 'required|string',
+            'source_account_id' => 'required',
             'amount' => 'required|integer|min:1',
             'description' => 'required|string|max:255',
             'tenor_months' => 'nullable|integer|min:1|max:24',
+            'cashback_amount' => 'nullable|integer|min:0',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -654,7 +693,7 @@ class OperationalWebController extends Controller
             ]
         );
 
-        $ledgerService->recordTransaction(
+        $tx = $ledgerService->recordTransaction(
             workDay: $workDay,
             type: 'expense',
             description: $validated['description'],
@@ -667,7 +706,22 @@ class OperationalWebController extends Controller
             metadata: ['type' => 'personal_lifestyle_expense']
         );
 
-        return redirect()->back()->with('success', 'Pengeluaran kebutuhan sehari-hari berhasil dicatat.');
+        $cashback = (int) ($validated['cashback_amount'] ?? 0);
+        $cashbackTx = $this->recordShopeePayCashback(
+            $ledgerService,
+            $workDay,
+            $source,
+            $cashback,
+            $validated['description'],
+            $tx->transaction_time
+        );
+
+        $msg = "Pengeluaran {$validated['description']} berhasil dicatat.";
+        if ($cashbackTx) {
+            $msg .= " Mendapatkan cashback ShopeePay Rp " . number_format($cashback, 0, ',', '.') . " (saldo ShopeePay bertambah kembali).";
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**
@@ -682,6 +736,7 @@ class OperationalWebController extends Controller
             'description' => 'required|string|max:255',
             'amount' => 'required|integer|min:500',
             'source_account_id' => 'nullable|exists:accounts,id',
+            'cashback_amount' => 'nullable|integer|min:0',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -703,7 +758,7 @@ class OperationalWebController extends Controller
         $amount = (int) $validated['amount'];
         $desc = "Biaya Serba-serbi: " . trim($validated['description']);
 
-        $ledgerService->recordTransaction(
+        $tx = $ledgerService->recordTransaction(
             workDay: $workDay,
             type: 'expense',
             description: $desc,
@@ -719,7 +774,22 @@ class OperationalWebController extends Controller
             ]
         );
 
-        return redirect()->back()->with('success', "Biaya serba-serbi '{$validated['description']}' (Rp " . number_format($amount, 0, ',', '.') . ") berhasil dicatat memotong {$sourceAccount->name}.");
+        $cashback = (int) ($validated['cashback_amount'] ?? 0);
+        $cashbackTx = $this->recordShopeePayCashback(
+            $ledgerService,
+            $workDay,
+            $sourceAccount,
+            $cashback,
+            $validated['description'],
+            $tx->transaction_time
+        );
+
+        $msg = "Biaya serba-serbi '{$validated['description']}' (Rp " . number_format($amount, 0, ',', '.') . ") berhasil dicatat memotong {$sourceAccount->name}.";
+        if ($cashbackTx) {
+            $msg .= " Mendapatkan cashback ShopeePay Rp " . number_format($cashback, 0, ',', '.') . " (saldo ShopeePay bertambah kembali).";
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**
@@ -965,14 +1035,18 @@ class OperationalWebController extends Controller
     /**
      * Bayar Langganan / Tagihan Rutin
      */
-    public function paySubscription(Request $request, \App\Services\SubscriptionService $subService): RedirectResponse
-    {
+    public function paySubscription(
+        Request $request,
+        \App\Services\SubscriptionService $subService,
+        LedgerService $ledgerService
+    ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'required|exists:work_days,id',
             'subscription_id' => 'required|exists:subscriptions,id',
             'payment_account_id' => 'required|exists:accounts,id',
             'actual_amount' => 'required|integer|min:1',
             'notes' => 'nullable|string|max:255',
+            'cashback_amount' => 'nullable|integer|min:0',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -987,7 +1061,21 @@ class OperationalWebController extends Controller
             notes: $validated['notes'] ?? null
         );
 
-        return redirect()->back()->with('success', "Tagihan rutin '{$subscription->name}' berhasil dibayar menggunakan {$paymentAccount->name}!");
+        $cashback = (int) ($validated['cashback_amount'] ?? 0);
+        $cashbackTx = $this->recordShopeePayCashback(
+            $ledgerService,
+            $workDay,
+            $paymentAccount,
+            $cashback,
+            "Tagihan Langganan {$subscription->name}"
+        );
+
+        $msg = "Tagihan rutin '{$subscription->name}' berhasil dibayar menggunakan {$paymentAccount->name}!";
+        if ($cashbackTx) {
+            $msg .= " Mendapatkan cashback ShopeePay Rp " . number_format($cashback, 0, ',', '.') . " (saldo ShopeePay bertambah kembali).";
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**
@@ -1519,6 +1607,57 @@ class OperationalWebController extends Controller
         ]);
 
         return redirect()->back()->with('success', "Potongan rutin '{$deduction->name}' (Rp " . number_format($deduction->amount, 0, ',', '.') . ") berhasil dipotong dari {$account->name}.");
+    }
+
+    /**
+     * Proses pencatatan reward cashback ShopeePay jika ada.
+     */
+    protected function recordShopeePayCashback(
+        LedgerService $ledgerService,
+        WorkDay $workDay,
+        Account $sourceAccount,
+        int $cashbackAmount,
+        string $referenceDesc,
+        ?Carbon $transactionTime = null
+    ): ?Transaction {
+        if ($cashbackAmount <= 0) {
+            return null;
+        }
+
+        // Pastikan hanya diproses jika akun sumber adalah ShopeePay
+        if (!str_contains(strtolower($sourceAccount->name), 'shopeepay')) {
+            return null;
+        }
+
+        $cashbackIncomeAccount = Account::firstOrCreate(
+            ['name' => 'Pendapatan Cashback & Reward ShopeePay'],
+            [
+                'type' => AccountType::INCOME,
+                'current_balance' => 0,
+                'initial_balance' => 0,
+                'is_active' => true,
+            ]
+        );
+
+        $txTime = $transactionTime ?? now();
+
+        return $ledgerService->recordTransaction(
+            workDay: $workDay,
+            type: 'income',
+            description: "[Cashback ShopeePay] Reward atas {$referenceDesc}",
+            transactionTime: $txTime,
+            entries: [
+                ['account_id' => $sourceAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $cashbackAmount],
+                ['account_id' => $cashbackIncomeAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $cashbackAmount],
+            ],
+            isEstimatedTime: false,
+            metadata: [
+                'type' => 'shopeepay_cashback',
+                'source_account_id' => $sourceAccount->id,
+                'reference' => $referenceDesc,
+                'cashback_amount' => $cashbackAmount,
+            ]
+        );
     }
 
     /**

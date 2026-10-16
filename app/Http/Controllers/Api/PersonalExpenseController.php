@@ -53,6 +53,31 @@ class PersonalExpenseController extends Controller
             metadata: ['type' => 'personal_on_beat_expense']
         );
 
+        $cashback = (int) ($validated['cashback_amount'] ?? 0);
+        $cashbackTx = null;
+        if ($cashback > 0 && str_contains(strtolower($sourceAccount->name), 'shopeepay')) {
+            $cashbackIncomeAccount = Account::firstOrCreate(
+                ['name' => 'Pendapatan Cashback & Reward ShopeePay'],
+                ['type' => \App\Enums\AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+            );
+            $cashbackTx = $ledgerService->recordTransaction(
+                workDay: $workDay,
+                type: 'income',
+                description: "[Cashback ShopeePay] Reward atas {$description}",
+                transactionTime: now(),
+                entries: [
+                    ['account_id' => $sourceAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $cashback],
+                    ['account_id' => $cashbackIncomeAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $cashback],
+                ],
+                isEstimatedTime: false,
+                metadata: [
+                    'type' => 'shopeepay_cashback',
+                    'source_account_id' => $sourceAccount->id,
+                    'cashback_amount' => $cashback,
+                ]
+            );
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Pengeluaran pribadi berhasil dicatat.',
@@ -61,6 +86,7 @@ class PersonalExpenseController extends Controller
                 'amount' => $amount,
                 'account_name' => $sourceAccount->name,
                 'description' => $description,
+                'cashback_amount' => $cashback,
                 'recorded_at' => $transaction->transaction_time->toISOString(),
             ],
         ], 201);

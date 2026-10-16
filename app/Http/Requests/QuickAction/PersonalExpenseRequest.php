@@ -21,6 +21,7 @@ class PersonalExpenseRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:255'],
             'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'source_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'cashback_amount' => ['nullable', 'integer', 'min:0'],
         ];
     }
 

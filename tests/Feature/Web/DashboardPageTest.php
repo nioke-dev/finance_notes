@@ -66,6 +66,8 @@ class DashboardPageTest extends TestCase
 
     public function test_dashboard_renders_unfinalized_banner_when_pending_days_exist(): void
     {
+        $this->travelTo(now()->setHour(14));
+
         $yesterday = now()->subDay()->toDateString();
         WorkDay::create([
             'work_date' => $yesterday,

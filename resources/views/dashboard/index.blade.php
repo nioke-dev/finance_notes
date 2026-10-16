@@ -1453,7 +1453,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Sumber Akun Pembayaran</label>
-                    <select name="source_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <select name="source_account_id" id="fuel-source-select" onchange="checkShopeePayCashback(this, 'fuel-cashback-wrap')" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                         @foreach($accounts as $acc)
                             <option value="{{ $acc->id }}" {{ $acc->name === 'Cash' ? 'selected' : '' }}>
                                 {{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})
@@ -1461,6 +1461,24 @@
                         @endforeach
                     </select>
                 </div>
+
+                {{-- Field Cashback ShopeePay (Muncul Dinamis Saat Memilih ShopeePay) --}}
+                <div id="fuel-cashback-wrap" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-xs font-bold text-amber-300">🎁 Reward Cashback ShopeePay (Rp)</label>
+                        <span class="text-[10px] text-slate-400">Bisa diinput Rp 0 jika tidak ada</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setCashbackAmount('input-fuel-cashback', 0)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-md">Rp 0</button>
+                        <button type="button" onclick="setCashbackAmount('input-fuel-cashback', 1000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 1.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-fuel-cashback', 2000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 2.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-fuel-cashback', 3000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 3.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-fuel-cashback', 5000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 5.000</button>
+                    </div>
+                    <input type="number" name="cashback_amount" id="input-fuel-cashback" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <p class="text-[10px] text-amber-200/70">Cashback ini akan langsung menambah saldo ShopeePay Anda kembali dan dicatat sebagai pendapatan reward.</p>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pembelian (Rp)</label>
                     <input type="number" name="amount" min="1000" step="1000" placeholder="25000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
@@ -1566,13 +1584,28 @@
                 {{-- Sumber Dana / Wadah --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan Wadah</label>
-                    <select name="source_account_id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <select name="source_account_id" id="parking-source-select" onchange="checkShopeePayCashback(this, 'parking-cashback-wrap')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         @foreach($accounts as $acc)
                             <option value="{{ $acc->id }}" {{ $acc->name === 'Cash' ? 'selected' : '' }}>
                                 {{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})
                             </option>
                         @endforeach
                     </select>
+                </div>
+
+                {{-- Field Cashback ShopeePay (Muncul Dinamis Saat Memilih ShopeePay) --}}
+                <div id="parking-cashback-wrap" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-xs font-bold text-amber-300">🎁 Reward Cashback ShopeePay (Rp)</label>
+                        <span class="text-[10px] text-slate-400">Bisa diinput Rp 0 jika tidak ada</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setCashbackAmount('input-parking-cashback', 0)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-md">Rp 0</button>
+                        <button type="button" onclick="setCashbackAmount('input-parking-cashback', 1000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 1.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-parking-cashback', 2000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 2.000</button>
+                    </div>
+                    <input type="number" name="cashback_amount" id="input-parking-cashback" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <p class="text-[10px] text-amber-200/70">Cashback ini akan langsung menambah saldo ShopeePay Anda kembali dan dicatat sebagai pendapatan reward.</p>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700/80">
@@ -1968,7 +2001,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan <span class="text-rose-400">*</span></label>
-                    <select name="source_account_id" id="expense-source-select" onchange="toggleExpenseTenor(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <select name="source_account_id" id="expense-source-select" onchange="toggleExpenseTenor(this); checkShopeePayCashback(this, 'expense-cashback-wrap')" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         <optgroup label="💵 Uang Kas & Saldo Rekening">
                             @foreach($accounts as $acc)
                                 <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
@@ -1984,6 +2017,23 @@
                             </optgroup>
                         @endif
                     </select>
+                </div>
+
+                {{-- Field Cashback ShopeePay (Muncul Dinamis Saat Memilih ShopeePay) --}}
+                <div id="expense-cashback-wrap" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-xs font-bold text-amber-300">🎁 Reward Cashback ShopeePay (Rp)</label>
+                        <span class="text-[10px] text-slate-400">Bisa diinput Rp 0 jika tidak ada</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setCashbackAmount('input-expense-cashback', 0)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-md">Rp 0</button>
+                        <button type="button" onclick="setCashbackAmount('input-expense-cashback', 1000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 1.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-expense-cashback', 2000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 2.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-expense-cashback', 3000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 3.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-expense-cashback', 5000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 5.000</button>
+                    </div>
+                    <input type="number" name="cashback_amount" id="input-expense-cashback" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <p class="text-[10px] text-amber-200/70">Cashback ini akan langsung menambah saldo ShopeePay Anda kembali dan dicatat sebagai pendapatan reward.</p>
                 </div>
 
                 {{-- Field Tenor (Muncul Otomatis Jika Memilih Wadah PayLater) --}}
@@ -2755,7 +2805,7 @@
                         <label class="block text-xs font-bold text-slate-300 mb-1">
                             Sumber Dana (Bayar Pakai Apa?) <span class="text-rose-400">*</span>
                         </label>
-                        <select name="source_account_id" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <select name="source_account_id" id="incidental-source-select" onchange="checkShopeePayCashback(this, 'incidental-cashback-wrap')" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                             @if($cashAccObj)
                                 <option value="{{ $cashAccObj->id }}" selected>💵 Kas Dompet (Fisik Cash) - Saldo: Rp {{ number_format($cashAccObj->current_balance, 0, ',', '.') }}</option>
                             @endif
@@ -2764,6 +2814,23 @@
                             @endforeach
                         </select>
                         <span class="text-[10px] text-slate-300 font-medium block mt-1">Default memotong Kas Dompet, bisa diganti jika bayar via QRIS BCA/SeaBank.</span>
+                    </div>
+
+                    {{-- Field Cashback ShopeePay (Muncul Dinamis Saat Memilih ShopeePay) --}}
+                    <div id="incidental-cashback-wrap" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-bold text-amber-300">🎁 Reward Cashback ShopeePay (Rp)</label>
+                            <span class="text-[10px] text-slate-400">Bisa diinput Rp 0 jika tidak ada</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="setCashbackAmount('input-incidental-cashback', 0)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-md">Rp 0</button>
+                            <button type="button" onclick="setCashbackAmount('input-incidental-cashback', 1000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 1.000</button>
+                            <button type="button" onclick="setCashbackAmount('input-incidental-cashback', 2000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 2.000</button>
+                            <button type="button" onclick="setCashbackAmount('input-incidental-cashback', 3000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 3.000</button>
+                            <button type="button" onclick="setCashbackAmount('input-incidental-cashback', 5000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 5.000</button>
+                        </div>
+                        <input type="number" name="cashback_amount" id="input-incidental-cashback" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <p class="text-[10px] text-amber-200/70">Cashback ini akan langsung menambah saldo ShopeePay Anda kembali dan dicatat sebagai pendapatan reward.</p>
                     </div>
 
                     <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
@@ -3149,13 +3216,30 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan Saldo Rekening <span class="text-rose-400">*</span></label>
-                    <select name="payment_account_id" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <select name="payment_account_id" id="subscription-source-select" onchange="checkShopeePayCashback(this, 'subscription-cashback-wrap')" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         @foreach($accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])) as $acc)
                             <option value="{{ $acc->id }}">
                                 {{ $acc->name }} (Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})
                             </option>
                         @endforeach
                     </select>
+                </div>
+
+                {{-- Field Cashback ShopeePay (Muncul Dinamis Saat Memilih ShopeePay) --}}
+                <div id="subscription-cashback-wrap" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-xs font-bold text-amber-300">🎁 Reward Cashback ShopeePay (Rp)</label>
+                        <span class="text-[10px] text-slate-400">Bisa diinput Rp 0 jika tidak ada</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setCashbackAmount('input-sub-cashback', 0)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-md">Rp 0</button>
+                        <button type="button" onclick="setCashbackAmount('input-sub-cashback', 1000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 1.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-sub-cashback', 2000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 2.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-sub-cashback', 3000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 3.000</button>
+                        <button type="button" onclick="setCashbackAmount('input-sub-cashback', 5000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 rounded-md">Rp 5.000</button>
+                    </div>
+                    <input type="number" name="cashback_amount" id="input-sub-cashback" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <p class="text-[10px] text-amber-200/70">Cashback ini akan langsung menambah saldo ShopeePay Anda kembali dan dicatat sebagai pendapatan reward.</p>
                 </div>
 
                 <div>
@@ -3264,7 +3348,15 @@
     {{-- Script Modal Handling, Tabs, & Interactive Tour --}}
     <script>
         function openModal(id) {
-            document.getElementById(id).classList.remove('hidden');
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hidden');
+                const sourceSelect = el.querySelector('select[name="source_account_id"], select[name="payment_account_id"]');
+                const cashbackWrap = el.querySelector('[id$="-cashback-wrap"]');
+                if (sourceSelect && cashbackWrap) {
+                    checkShopeePayCashback(sourceSelect, cashbackWrap.id);
+                }
+            }
         }
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
@@ -3918,6 +4010,27 @@
                 tenorWrap.classList.remove('hidden');
             } else {
                 tenorWrap.classList.add('hidden');
+            }
+        }
+
+        function checkShopeePayCashback(selectEl, wrapperId) {
+            const wrap = document.getElementById(wrapperId);
+            if (!wrap || !selectEl) return;
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            const text = selectedOption ? (selectedOption.textContent || selectedOption.innerText || '').toLowerCase() : '';
+            if (text.includes('shopeepay')) {
+                wrap.classList.remove('hidden');
+            } else {
+                wrap.classList.add('hidden');
+                const input = wrap.querySelector('input[type="number"]');
+                if (input) input.value = 0;
+            }
+        }
+
+        function setCashbackAmount(inputId, amount) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = amount;
             }
         }
 

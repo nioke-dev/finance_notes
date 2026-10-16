@@ -22,7 +22,7 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'GoPay Merchant', 'type' => AccountType::EWALLET],
             ['name' => 'Cash', 'type' => AccountType::CASH],
             ['name' => 'Flazz', 'type' => AccountType::EWALLET],
-            ['name' => 'i.Saku', 'type' => AccountType::EWALLET],
+            ['name' => 'e-Money', 'type' => AccountType::EWALLET],
             ['name' => 'Talangan Pesanan COD', 'type' => AccountType::RECEIVABLE],
 
             // Income
@@ -31,6 +31,8 @@ class DefaultAccountsSeeder extends Seeder
             ['name' => 'Tip Pelanggan ShopeeFood', 'type' => AccountType::INCOME],
             ['name' => 'Tip Cash / Surplus COD', 'type' => AccountType::INCOME],
             ['name' => 'Pendapatan QRIS / Tip Non-Tunai', 'type' => AccountType::INCOME],
+            ['name' => 'Pendapatan Cashback & Reward ShopeePay', 'type' => AccountType::INCOME],
+            ['name' => 'Pendapatan Selisih Kas (Surplus Tak Terlacak)', 'type' => AccountType::INCOME],
 
             // Expense
             ['name' => 'Beban Bensin Kendaraan', 'type' => AccountType::EXPENSE],

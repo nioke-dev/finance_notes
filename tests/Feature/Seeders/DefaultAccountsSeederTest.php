@@ -28,9 +28,10 @@ class DefaultAccountsSeederTest extends TestCase
             'GoPay Merchant' => AccountType::EWALLET,
             'Cash' => AccountType::CASH,
             'Flazz' => AccountType::EWALLET,
-            'i.Saku' => AccountType::EWALLET,
+            'e-Money' => AccountType::EWALLET,
             'Pendapatan Hub ShopeeFood' => AccountType::INCOME,
             'Bonus Hub ShopeeFood' => AccountType::INCOME,
+            'Pendapatan Cashback & Reward ShopeePay' => AccountType::INCOME,
             'Beban Bensin Kendaraan' => AccountType::EXPENSE,
             'Beban Parkir' => AccountType::EXPENSE,
             'Beban Serba-serbi & Insidental Lapangan' => AccountType::EXPENSE,
@@ -46,7 +47,7 @@ class DefaultAccountsSeederTest extends TestCase
             $this->assertTrue($account->is_active);
         }
 
-        $this->assertEquals(23, Account::count());
+        $this->assertEquals(24, Account::count());
     }
 
     /**
@@ -55,10 +56,10 @@ class DefaultAccountsSeederTest extends TestCase
     public function test_seeder_can_run_multiple_times_without_duplicate_errors(): void
     {
         $this->seed(DefaultAccountsSeeder::class);
-        $this->assertEquals(23, Account::count());
+        $this->assertEquals(24, Account::count());
 
         // Jalankan kedua kali
         $this->seed(DefaultAccountsSeeder::class);
-        $this->assertEquals(23, Account::count());
+        $this->assertEquals(24, Account::count());
     }
 }
