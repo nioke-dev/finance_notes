@@ -19,8 +19,8 @@
     @endif
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
-    <nav class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-2.5">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <nav class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-2.5 w-full">
+        <div class="w-full flex items-center justify-between">
             {{-- Brand / Logo --}}
             <a href="/dashboard" class="flex items-center space-x-2.5 shrink-0 group">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 group-hover:scale-125 transition"></span>
@@ -36,7 +36,7 @@
             @endif
 
             {{-- Desktop Navigation Links & Actions (Hidden on Mobile) --}}
-            <div class="hidden md:flex items-center space-x-1 lg:space-x-1.5 text-xs lg:text-sm font-medium text-slate-300">
+            <div class="hidden md:flex items-center space-x-1.5 lg:space-x-2.5 xl:space-x-3.5 text-xs lg:text-sm font-medium text-slate-300">
                 <a href="/dashboard" class="px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-slate-800 transition {{ request()->is('dashboard') ? 'text-emerald-400 font-bold bg-slate-800/90' : '' }}">
                     Dashboard
                 </a>
