@@ -20,15 +20,23 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
     <nav class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-2.5">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
             {{-- Brand / Logo --}}
             <a href="/dashboard" class="flex items-center space-x-2.5 shrink-0 group">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 group-hover:scale-125 transition"></span>
                 <span class="font-extrabold text-sm md:text-base tracking-wider text-white">DRIVER FINANCE</span>
             </a>
 
-            {{-- Desktop Navigation Links (Pill Style, Compact & Clean) --}}
-            <div class="hidden lg:flex items-center space-x-1 xl:space-x-1.5 text-xs xl:text-sm font-medium text-slate-300">
+            {{-- Mobile Only: Compact Reset Button (Only during trial mode, no other buttons) --}}
+            @if(config('app.trial_mode', true))
+                <button type="button" onclick="openModal('modal-reset-trial-data')" class="md:hidden px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center space-x-1 active:scale-95 shadow" title="Reset data ke kondisi awal seeder">
+                    <span>🔥</span>
+                    <span>Reset</span>
+                </button>
+            @endif
+
+            {{-- Desktop Navigation Links & Actions (Hidden on Mobile) --}}
+            <div class="hidden md:flex items-center space-x-1 lg:space-x-1.5 text-xs lg:text-sm font-medium text-slate-300">
                 <a href="/dashboard" class="px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-slate-800 transition {{ request()->is('dashboard') ? 'text-emerald-400 font-bold bg-slate-800/90' : '' }}">
                     Dashboard
                 </a>
@@ -53,58 +61,21 @@
                 <a href="/audit-logs" class="px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-slate-800 transition {{ request()->is('audit-logs*') ? 'text-emerald-400 font-bold bg-slate-800/90' : '' }}">
                     Audit Log
                 </a>
-            </div>
 
-            {{-- Right Actions: Trial Mode Reset & Logout --}}
-            <div class="flex items-center space-x-2 shrink-0">
+                {{-- Desktop Right Actions: Trial Mode Reset & Logout --}}
                 @if(config('app.trial_mode', true))
-                    <button type="button" onclick="openModal('modal-reset-trial-data')" class="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95" title="Reset semua data ke kondisi awal seeder untuk uji coba ulang">
+                    <button type="button" onclick="openModal('modal-reset-trial-data')" class="ml-2 px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95" title="Reset semua data ke kondisi awal seeder untuk uji coba ulang">
                         <span>🔥</span>
                         <span>Reset Data Uji Coba</span>
                     </button>
                 @endif
-                <form method="POST" action="/logout" class="inline">
+                <form method="POST" action="/logout" class="inline ml-1">
                     @csrf
                     <button type="submit" class="text-xs text-slate-300 hover:text-white font-semibold px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 transition active:scale-95">
                         Logout
                     </button>
                 </form>
-
-                {{-- Hamburger Button for Tablet / Small Desktop --}}
-                <button type="button" onclick="toggleNavMenu()" class="lg:hidden p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 focus:outline-none" aria-label="Toggle Navigation">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
             </div>
-        </div>
-
-        {{-- Mobile & Tablet Dropdown Navigation Menu --}}
-        <div id="mobile-nav-dropdown" class="hidden lg:hidden border-t border-slate-800 mt-3 pt-3 pb-2 space-y-1">
-            <a href="/dashboard" class="block px-3 py-2 rounded-xl text-xs font-semibold {{ request()->is('dashboard') ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                📊 Dashboard
-            </a>
-            <a href="/dashboard#tab-onbeat" class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white">
-                🔒 Closing & Rekonsiliasi
-            </a>
-            <a href="/debts" class="block px-3 py-2 rounded-xl text-xs font-semibold {{ request()->is('debts*') ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                🛍️ Utang & PayLater
-            </a>
-            <a href="/wallets" class="block px-3 py-2 rounded-xl text-xs font-semibold {{ request()->is('wallets*') ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                💳 Kelola Wadah
-            </a>
-            <a href="/analytics/driver" class="block px-3 py-2 rounded-xl text-xs font-semibold {{ request()->is('analytics/driver*') ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                📈 Analitik Driver
-            </a>
-            <a href="/analytics/fuel" class="block px-3 py-2 rounded-xl text-xs font-semibold {{ request()->is('analytics/fuel*') ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                ⛽ Konsumsi BBM
-            </a>
-            <a href="/settings/shopee-bonus" class="block px-3 py-2 rounded-xl text-xs font-semibold {{ request()->is('settings*') ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                🎁 Skema Bonus
-            </a>
-            <a href="/audit-logs" class="block px-3 py-2 rounded-xl text-xs font-semibold {{ request()->is('audit-logs*') ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                📜 Audit Log
-            </a>
         </div>
     </nav>
 
@@ -254,10 +225,6 @@
         window.closeModal = function(id) {
             const el = document.getElementById(id);
             if (el) el.classList.add('hidden');
-        };
-        window.toggleNavMenu = function() {
-            const dropdown = document.getElementById('mobile-nav-dropdown');
-            if (dropdown) dropdown.classList.toggle('hidden');
         };
 
         // ================= SISTEM PRESERVASI POSISI SCROLL (ANTI-CAPEK SCROLL ULANG) =================
