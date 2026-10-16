@@ -170,4 +170,39 @@ class DashboardPageTest extends TestCase
         $this->assertEquals(0, $expense->fresh()->initial_balance);
         $this->assertEquals(0, $expense->fresh()->current_balance);
     }
+
+    public function test_accept_cod_order_and_render_recent_transactions_on_dashboard_without_relation_error(): void
+    {
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
+        Account::create([
+            'name' => 'ShopeePay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 200000,
+            'initial_balance' => 200000,
+            'is_active' => true,
+        ]);
+
+        $todayWorkDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        $postResponse = $this->post('/operational/cod-orders/accept', [
+            'work_day_id' => $todayWorkDay->id,
+            'order_code' => 'SPF-998877',
+            'merchant_name' => 'Ayam Geprek Kak Rose',
+            'bill_amount' => 35000,
+            'rounded_bill_amount' => 35000,
+        ]);
+
+        $postResponse->assertSessionHas('success');
+
+        // Mengakses dashboard setelah ada transaksi riil harus HTTP 200 tanpa RelationNotFoundException
+        $dashboardResponse = $this->get('/dashboard');
+        $dashboardResponse->assertStatus(200);
+        $dashboardResponse->assertSee('20 Transaksi Terakhir');
+        $dashboardResponse->assertSee('Talangan COD #SPF-998877');
+    }
 }

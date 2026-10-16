@@ -121,7 +121,7 @@ class DashboardController extends Controller
             ->get();
 
         // Riwayat transaksi terbaru
-        $recentTransactions = Transaction::with(['workDay', 'entries.account'])
+        $recentTransactions = Transaction::with(['workDay', 'ledgerEntries.account'])
             ->latest('transaction_time')
             ->take(20)
             ->get();

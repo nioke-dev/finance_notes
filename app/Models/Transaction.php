@@ -50,6 +50,14 @@ class Transaction extends Model
         return $this->hasMany(LedgerEntry::class);
     }
 
+    /**
+     * Alias for ledgerEntries relationship
+     */
+    public function entries(): HasMany
+    {
+        return $this->ledgerEntries();
+    }
+
     public function scopeIncome(Builder $query): Builder
     {
         return $query->where('type', 'income');
