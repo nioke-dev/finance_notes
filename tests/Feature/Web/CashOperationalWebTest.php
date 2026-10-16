@@ -167,4 +167,35 @@ class CashOperationalWebTest extends TestCase
         $response2->assertSessionHas('success');
         $this->assertEquals(495000, $this->bankAccount->fresh()->current_balance);
     }
+
+    public function test_user_can_record_parking_with_gps_and_view_on_dashboard(): void
+    {
+        $response = $this->post('/operational/parking', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 2000,
+            'restaurant_name' => 'KFC Suhat',
+            'order_code' => 'SP-9988',
+            'latitude' => -7.9421234,
+            'longitude' => 112.6178912,
+            'vehicle_type' => 'motor',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $tx = \App\Models\Transaction::where('work_day_id', $this->workDay->id)
+            ->where('description', 'like', '%KFC Suhat #SP-9988%')
+            ->firstOrFail();
+
+        $this->assertEquals(-7.9421234, $tx->metadata['latitude']);
+        $this->assertEquals(112.6178912, $tx->metadata['longitude']);
+
+        // Check on dashboard
+        $user = \App\Models\User::factory()->create();
+        $dashResponse = $this->actingAs($user)->get('/dashboard');
+        $dashResponse->assertOk();
+        $dashResponse->assertSee('https://www.google.com/maps?q=-7.9421234,112.6178912', false);
+        $dashResponse->assertSee('Maps');
+    }
 }
+

@@ -184,4 +184,58 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
         $qrisIncome = Account::where('name', 'Pendapatan QRIS / Tip Non-Tunai')->firstOrFail();
         $this->assertEquals(5000, $qrisIncome->current_balance);
     }
+
+    public function test_can_save_driver_snapshot_checkpoint_with_cash_and_compare_on_dashboard(): void
+    {
+        $cashAcc = Account::where('name', 'Cash')->firstOrFail();
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $cashAcc->update(['current_balance' => 50000]);
+        $shopeePay->update(['current_balance' => 80000]);
+
+        $payload = [
+            'work_day_id' => $this->workDay->id,
+            'recorded_at' => now()->format('Y-m-d H:i:s'),
+            'completed_orders' => 10,
+            'hub_income' => 95000,
+            'hub_bonus' => 15000,
+            'customer_tips' => 6000,
+            'notes' => 'Cek poin jam 21.00 di Suhat',
+            'balances' => [
+                [
+                    'account_id' => $cashAcc->id,
+                    'actual_balance' => 55000,
+                ],
+                [
+                    'account_id' => $shopeePay->id,
+                    'actual_balance' => 80000,
+                ],
+            ],
+        ];
+
+        $response = $this->post('/operational/digital-reconciliation', $payload);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Check DriverSnapshot created
+        $this->assertDatabaseHas('driver_snapshots', [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 10,
+            'hub_income' => 95000,
+            'hub_bonus' => 15000,
+            'customer_tips' => 6000,
+            'cash_balance' => 55000,
+            'notes' => 'Cek poin jam 21.00 di Suhat',
+        ]);
+
+        // Cash balance updated
+        $this->assertEquals(55000, $cashAcc->fresh()->current_balance);
+
+        // Dashboard renders checkpoint widget
+        $dashResponse = $this->get('/dashboard');
+        $dashResponse->assertOk();
+        $dashResponse->assertSee('Riwayat Checkpoint Jam Narik & Komparasi Saldo', false);
+        $dashResponse->assertSee('Cek poin jam 21.00 di Suhat');
+        $dashResponse->assertSee('10 Pesanan Selesai');
+    }
 }
+

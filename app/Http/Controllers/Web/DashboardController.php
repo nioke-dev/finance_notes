@@ -196,14 +196,18 @@ class DashboardController extends Controller
 
         $safeToSpendData = $goalService->calculateSafeToSpend((int) ($totalDigital + $totalCash));
 
-        // Akun digital wallet utama untuk sinkronisasi saldo malam hari
-        $digitalReconAccounts = Account::whereIn('name', [
-            'ShopeePay',
-            'GoPay',
-            'GoPay Merchant',
-            'BCA',
-            'SeaBank',
-        ])->get();
+        // Akun wadah utama driver (Cash & Digital) untuk sinkronisasi saldo di jalan
+        $digitalReconAccounts = Account::where(function ($q) {
+            $q->whereIn('name', ['ShopeePay', 'Cash', 'GoPay Merchant', 'GoPay', 'BCA', 'SeaBank'])
+              ->orWhere('type', AccountType::CASH);
+        })->where('is_active', true)
+        ->orderByRaw("CASE 
+            WHEN name = 'ShopeePay' THEN 1 
+            WHEN name = 'Cash' THEN 2 
+            WHEN name = 'GoPay Merchant' THEN 3 
+            WHEN name = 'GoPay' THEN 4 
+            ELSE 5 END")
+        ->get();
 
         // 4 Elemen Saldo Likuid Uang Riil Driver
         $driverCashAcc = $accounts->firstWhere('name', 'Cash') ?? $accounts->where('type', AccountType::CASH)->first();
@@ -269,6 +273,12 @@ class DashboardController extends Controller
         // Wadah PayLater Aktif untuk Belanja Kebutuhan
         $paylaterProviders = \App\Models\PaylaterProvider::active()->get();
 
+        // Riwayat Checkpoint Snapshot Narik Hari Ini
+        $driverSnapshots = $currentWorkDay
+            ? $currentWorkDay->driverSnapshots()->latest('recorded_at')->get()
+            : collect();
+        $latestSnapshot = $currentWorkDay?->latestSnapshot;
+
         return view('dashboard.index', compact(
             'accounts',
             'paylaterProviders',
@@ -310,7 +320,9 @@ class DashboardController extends Controller
             'subscriptions',
             'unpaidSubscriptions',
             'totalMonthlySubscriptions',
-            'unpaidSubscriptionsAmount'
+            'unpaidSubscriptionsAmount',
+            'driverSnapshots',
+            'latestSnapshot'
         ));
     }
 }

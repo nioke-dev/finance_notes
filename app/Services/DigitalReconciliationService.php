@@ -63,6 +63,13 @@ class DigitalReconciliationService
                         );
                         $txDesc = "Surplus QRIS Tip Nyusul {$account->name}: +Rp " . number_format($diff, 0, ',', '.');
                         $auditReason = "Penyelarasan saldo digital {$account->name}: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai tip QRIS non-tunai.";
+                    } elseif ($account->name === 'Cash' || $account->type === AccountType::CASH) {
+                        $surplusAccount = Account::firstOrCreate(
+                            ['name' => 'Pendapatan Tip Tunai Langsung'],
+                            ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                        );
+                        $txDesc = "Surplus Uang Kas Dompet: +Rp " . number_format($diff, 0, ',', '.');
+                        $auditReason = "Penyelarasan uang kas dompet: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai tip tunai langsung dari pelanggan.";
                     } else {
                         $surplusAccount = Account::firstOrCreate(
                             ['name' => 'Pendapatan Selisih Kas (Surplus Tak Terlacak)'],
@@ -102,15 +109,28 @@ class DigitalReconciliationService
                     $shortageAmount = abs($diff);
                     $totalShortage += $shortageAmount;
 
-                    $expenseAccount = Account::firstOrCreate(
-                        ['name' => 'Beban Biaya Admin Transfer'],
-                        ['type' => AccountType::EXPENSE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
-                    );
+                    $expenseAccount = ($account->name === 'Cash' || $account->type === AccountType::CASH)
+                        ? Account::firstOrCreate(
+                            ['name' => 'Beban Selisih Kas Kurang'],
+                            ['type' => AccountType::EXPENSE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                        )
+                        : Account::firstOrCreate(
+                            ['name' => 'Beban Biaya Admin Transfer'],
+                            ['type' => AccountType::EXPENSE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                        );
+
+                    $txDesc = ($account->name === 'Cash' || $account->type === AccountType::CASH)
+                        ? "Penyesuaian Selisih Kas Dompet: -Rp " . number_format($shortageAmount, 0, ',', '.')
+                        : "Penyesuaian Saldo Digital {$account->name}: -Rp " . number_format($shortageAmount, 0, ',', '.');
+
+                    $auditReason = ($account->name === 'Cash' || $account->type === AccountType::CASH)
+                        ? "Penyelarasan uang kas dompet: selisih -Rp " . number_format($shortageAmount, 0, ',', '.') . " disesuaikan sebagai beban selisih kas."
+                        : "Penyelarasan saldo digital {$account->name}: selisih -Rp " . number_format($shortageAmount, 0, ',', '.') . " disesuaikan.";
 
                     $tx = $this->ledgerService->recordTransaction(
                         workDay: $workDay,
                         type: 'expense',
-                        description: "Penyesuaian Saldo Digital {$account->name}: -Rp " . number_format($shortageAmount, 0, ',', '.'),
+                        description: $txDesc,
                         transactionTime: now(),
                         entries: [
                             ['account_id' => $account->id, 'entry_type' => EntryType::CREDIT, 'amount' => $shortageAmount],
@@ -130,7 +150,7 @@ class DigitalReconciliationService
                         'action' => 'digital_reconciliation_shortage',
                         'old_values' => ['balance' => $account->current_balance],
                         'new_values' => ['balance' => $actualBalance, 'shortage' => $shortageAmount],
-                        'reason' => "Penyelarasan saldo digital {$account->name}: selisih -Rp " . number_format($shortageAmount, 0, ',', '.') . " disesuaikan.",
+                        'reason' => $auditReason,
                     ]);
                 }
             }

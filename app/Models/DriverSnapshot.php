@@ -21,6 +21,8 @@ class DriverSnapshot extends Model
         'shopeepay_balance',
         'gopay_balance',
         'gopay_merchant_balance',
+        'cash_balance',
+        'notes',
     ];
 
     protected $casts = [
@@ -32,6 +34,7 @@ class DriverSnapshot extends Model
         'shopeepay_balance' => 'integer',
         'gopay_balance' => 'integer',
         'gopay_merchant_balance' => 'integer',
+        'cash_balance' => 'integer',
     ];
 
     public function workDay(): BelongsTo
@@ -50,6 +53,13 @@ class DriverSnapshot extends Model
     {
         return Attribute::make(
             get: fn () => $this->shopeepay_balance + $this->gopay_balance + $this->gopay_merchant_balance
+        );
+    }
+
+    public function totalWalletHolding(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->shopeepay_balance + $this->gopay_balance + $this->gopay_merchant_balance + $this->cash_balance
         );
     }
 

@@ -424,6 +424,8 @@ class OperationalWebController extends Controller
             'source_account_id' => 'nullable|exists:accounts,id',
             'vehicle_type' => 'nullable|string|in:motor,mobil,lainnya',
             'cashback_amount' => 'nullable|integer|min:0',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $workDay = !empty($validated['work_day_id'])
@@ -450,6 +452,8 @@ class OperationalWebController extends Controller
             workDay: $workDay,
             amount: (int) $validated['amount'],
             restaurantName: $restaurantName ?: null,
+            latitude: !empty($validated['latitude']) ? (float) $validated['latitude'] : null,
+            longitude: !empty($validated['longitude']) ? (float) $validated['longitude'] : null,
             isCoveredByResto: $isCovered,
             sourceAccountId: $sourceAccountId,
             vehicleType: $vehicleType
@@ -1349,12 +1353,18 @@ class OperationalWebController extends Controller
     }
 
     /**
-     * Rekonsiliasi Saldo Digital Malam Hari (Snapshot 4 Saldo Digital & Deteksi QRIS Nyusul)
+     * Rekonsiliasi & Checkpoint Snapshot Saldo di Jalan (ShopeeFood vs Wadah Dompet & Bank)
      */
     public function reconcileDigital(Request $request, DigitalReconciliationService $service): RedirectResponse
     {
         $validated = $request->validate([
             'work_day_id' => 'nullable|exists:work_days,id',
+            'recorded_at' => 'nullable|date',
+            'completed_orders' => 'nullable|integer|min:0',
+            'hub_income' => 'nullable|integer|min:0',
+            'hub_bonus' => 'nullable|integer|min:0',
+            'customer_tips' => 'nullable|integer|min:0',
+            'notes' => 'nullable|string|max:500',
             'balances' => 'required|array',
             'balances.*.account_id' => 'required|exists:accounts,id',
             'balances.*.actual_balance' => 'required|integer|min:0',
@@ -1368,20 +1378,70 @@ class OperationalWebController extends Controller
             return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan. Silakan buka hari kerja terlebih dahulu.');
         }
 
+        // 1. Eksekusi rekonsiliasi saldo akun melalui DigitalReconciliationService
         $result = $service->reconcileDigitalAccounts($workDay, $validated['balances']);
 
-        $message = "Rekonsiliasi saldo digital selesai. ";
+        // 2. Simpan Checkpoint DriverSnapshot
+        $recordedAt = !empty($validated['recorded_at'])
+            ? Carbon::parse($validated['recorded_at'])
+            : now();
+
+        $shopeepayBalance = 0;
+        $gopayBalance = 0;
+        $gopayMerchantBalance = 0;
+        $cashBalance = 0;
+
+        foreach ($validated['balances'] as $b) {
+            $acc = Account::find($b['account_id']);
+            if (!$acc) continue;
+            $val = (int) $b['actual_balance'];
+            if ($acc->name === 'ShopeePay') {
+                $shopeepayBalance = $val;
+            } elseif ($acc->name === 'GoPay') {
+                $gopayBalance = $val;
+            } elseif ($acc->name === 'GoPay Merchant') {
+                $gopayMerchantBalance = $val;
+            } elseif ($acc->name === 'Cash' || $acc->type === AccountType::CASH) {
+                $cashBalance = $val;
+            }
+        }
+
+        $hubIncome = (int) ($validated['hub_income'] ?? 0);
+        $hubBonus = (int) ($validated['hub_bonus'] ?? 0);
+        $customerTips = (int) ($validated['customer_tips'] ?? 0);
+        $completedOrders = (int) ($validated['completed_orders'] ?? 0);
+
+        \App\Models\DriverSnapshot::create([
+            'work_day_id' => $workDay->id,
+            'recorded_at' => $recordedAt,
+            'completed_orders' => $completedOrders,
+            'hub_income' => $hubIncome,
+            'hub_bonus' => $hubBonus,
+            'customer_tips' => $customerTips,
+            'shopeepay_balance' => $shopeepayBalance,
+            'gopay_balance' => $gopayBalance,
+            'gopay_merchant_balance' => $gopayMerchantBalance,
+            'cash_balance' => $cashBalance,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        $totalShopee = $hubIncome + $hubBonus + $customerTips;
+        $totalWallets = $shopeepayBalance + $cashBalance + $gopayBalance + $gopayMerchantBalance;
+        $timeStr = $recordedAt->format('H:i');
+
+        $message = "Checkpoint jam {$timeStr} tersimpan! (ShopeeFood: Rp " . number_format($totalShopee, 0, ',', '.') . " vs Posisi Wadah: Rp " . number_format($totalWallets, 0, ',', '.') . "). ";
+
         if ($result['adjusted_count'] > 0) {
             $parts = [];
             if ($result['total_surplus'] > 0) {
-                $parts[] = "Surplus QRIS/Digital +Rp " . number_format($result['total_surplus'], 0, ',', '.');
+                $parts[] = "Surplus/Tip Terdeteksi +Rp " . number_format($result['total_surplus'], 0, ',', '.');
             }
             if ($result['total_shortage'] > 0) {
-                $parts[] = "Penyesuaian Biaya Admin/Kurang -Rp " . number_format($result['total_shortage'], 0, ',', '.');
+                $parts[] = "Penyesuaian Biaya/Selisih -Rp " . number_format($result['total_shortage'], 0, ',', '.');
             }
-            $message .= implode(', ', $parts) . " berhasil dicatat ke pembukuan.";
+            $message .= implode(', ', $parts) . " telah diselaraskan ke pembukuan.";
         } else {
-            $message .= "Semua saldo digital sudah sinkron dan cocok 100%.";
+            $message .= "Semua saldo wadah cocok 100%.";
         }
 
         return redirect()->back()->with('success', $message);

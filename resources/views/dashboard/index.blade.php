@@ -397,6 +397,83 @@
                     </div>
                 </div>
 
+                {{-- WIDGET CHECKPOINT JAM NARIK & KOMPARASI SALDO HARI INI --}}
+                @if(isset($driverSnapshots) && $driverSnapshots->isNotEmpty())
+                    <div class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl">
+                                    ⏱️
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat Checkpoint Jam Narik & Komparasi Saldo</h3>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                            {{ $driverSnapshots->count() }} Checkpoint Tercatat
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-300 mt-0.5">
+                                        Rekam jejak komparasi pendapatan ShopeeFood Driver vs isi kantong & wadah di jalan.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0">
+                                <span>⚡</span>
+                                <span>Update Jam Sekarang</span>
+                            </button>
+                        </div>
+
+                        <div class="divide-y divide-slate-700/50">
+                            @foreach($driverSnapshots as $snap)
+                                @php
+                                    $shopeeTotal = $snap->hub_income + $snap->hub_bonus + $snap->customer_tips;
+                                    $walletTotal = $snap->shopeepay_balance + $snap->gopay_balance + $snap->gopay_merchant_balance + $snap->cash_balance;
+                                    $diff = $walletTotal - $shopeeTotal;
+                                @endphp
+                                <div class="py-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 text-xs">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                                            <span class="px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black text-xs">
+                                                🕒 Jam {{ $snap->recorded_at->format('H:i') }} WIB
+                                            </span>
+                                            <span class="text-white font-bold">
+                                                {{ $snap->completed_orders }} Pesanan Selesai
+                                            </span>
+                                            @if($snap->notes)
+                                                <span class="text-slate-400 italic text-[11px]">&bull; "{{ $snap->notes }}"</span>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center space-x-3 text-[11px] text-slate-300 flex-wrap gap-y-1">
+                                            <span>🛵 ShopeeFood: <strong class="text-orange-400">Rp {{ number_format($shopeeTotal, 0, ',', '.') }}</strong></span>
+                                            <span>💼 Total Wadah: <strong class="text-emerald-400">Rp {{ number_format($walletTotal, 0, ',', '.') }}</strong></span>
+                                            <span class="text-[10px] text-slate-400">(ShopeePay: {{ number_format($snap->shopeepay_balance, 0, ',', '.') }} &bull; Kas: {{ number_format($snap->cash_balance, 0, ',', '.') }} &bull; QRIS: {{ number_format($snap->gopay_merchant_balance, 0, ',', '.') }})</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        @if($diff > 0)
+                                            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-extrabold text-xs inline-flex items-center space-x-1">
+                                                <span>🎉</span>
+                                                <span>Surplus +Rp {{ number_format($diff, 0, ',', '.') }} (Tip Bersih)</span>
+                                            </span>
+                                        @elseif($diff < 0)
+                                            <span class="px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-extrabold text-xs inline-flex items-center space-x-1">
+                                                <span>⚠️</span>
+                                                <span>Selisih -Rp {{ number_format(abs($diff), 0, ',', '.') }}</span>
+                                            </span>
+                                        @else
+                                            <span class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs inline-flex items-center space-x-1">
+                                                <span>✓</span>
+                                                <span>Cocok Sempurna (Rp 0)</span>
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 {{-- Alert Rekomendasi Beban Lembaran / Koin Berlebih & Warning Kembalian --}}
                 @if(!empty($cashRecommendations))
                     <div class="space-y-2.5">
@@ -606,7 +683,7 @@
                             </div>
                         </button>
 
-                        <button type="button" onclick="openModal('modal-parking')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                        <button type="button" onclick="openParkingModal()" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
                             <span class="text-2xl block mb-1">🅿️</span>
                             <div>
                                 <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Kendaraan</span>
@@ -1364,7 +1441,15 @@
                     @foreach($recentTransactions as $tx)
                         <div class="py-3 flex justify-between items-center text-xs">
                             <div>
-                                <span class="font-bold text-white block">{{ $tx->description }}</span>
+                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                    <span class="font-bold text-white block">{{ $tx->description }}</span>
+                                    @if(!empty($tx->metadata['latitude']) && !empty($tx->metadata['longitude']))
+                                        <a href="https://www.google.com/maps?q={{ $tx->metadata['latitude'] }},{{ $tx->metadata['longitude'] }}" target="_blank" class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/40 text-[10px] font-bold flex items-center space-x-0.5 transition" title="Buka Koordinat GPS di Google Maps">
+                                            <span>📍</span>
+                                            <span>Maps</span>
+                                        </a>
+                                    @endif
+                                </div>
                                 <span class="text-[10px] text-slate-300 font-medium">{{ $tx->transaction_time->format('d M Y H:i') }} &bull; Shift {{ $tx->workDay->work_date->format('d/m/Y') }}</span>
                             </div>
                             <span class="font-bold px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200">
@@ -1502,6 +1587,8 @@
             <form method="POST" action="/operational/parking" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                <input type="hidden" name="latitude" id="parking-lat">
+                <input type="hidden" name="longitude" id="parking-lng">
 
                 {{-- Status Shift Badge --}}
                 <div class="flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700">
@@ -1608,6 +1695,21 @@
                     </div>
                     <input type="number" name="cashback_amount" id="input-parking-cashback" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     <p class="text-[10px] text-amber-200/70">Cashback ini akan langsung menambah saldo ShopeePay Anda kembali dan dicatat sebagai pendapatan reward.</p>
+                </div>
+
+                {{-- Status GPS Otomatis --}}
+                <div id="parking-gps-status-wrap" class="flex items-center justify-between p-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base" id="parking-gps-icon">📍</span>
+                        <div>
+                            <span class="font-bold text-white block text-[11px]" id="parking-gps-title">GPS Lokasi Parkir:</span>
+                            <span class="text-[10px] text-amber-300 font-medium" id="parking-gps-desc">Mendeteksi koordinat GPS tempat Anda parkir...</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="detectParkingGps(true)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold rounded-lg border border-slate-600 transition flex items-center space-x-1 shrink-0">
+                        <span>🔄</span>
+                        <span>Perbarui GPS</span>
+                    </button>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700/80">
@@ -2814,17 +2916,20 @@
 
     {{-- ================= MODAL SINKRONISASI SALDO DIGITAL & UPDATE DI JALAN ================= --}}
     <div id="modal-reconcile-digital" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
-        <div class="bg-slate-900 border border-purple-500/50 max-w-lg w-full rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto space-y-4">
-            <div class="flex items-center space-x-3 mb-1">
-                <span class="text-2xl">📲</span>
-                <div>
-                    <h3 class="text-base font-extrabold text-white">Update Snapshot Saldo di Jalan & Deteksi QRIS</h3>
-                    <p class="text-xs text-slate-300">Cek saldo 4 elemen dompet driver saat nunggu resto tanpa menutup shift.</p>
+        <div class="bg-slate-900 border border-purple-500/50 max-w-2xl w-full rounded-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4 my-8">
+            <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-3">
+                    <span class="text-3xl">📲</span>
+                    <div>
+                        <h3 class="text-base font-extrabold text-white">Update Saldo & Compare ShopeeFood Driver</h3>
+                        <p class="text-xs text-slate-300">Bisa dilakukan kapan saja di menit keberapa jam keberapa pun saat Anda narik.</p>
+                    </div>
                 </div>
+                <button type="button" onclick="closeModal('modal-reconcile-digital')" class="text-slate-400 hover:text-white font-bold text-xl leading-none">&times;</button>
             </div>
 
-            <div class="bg-purple-950/50 border border-purple-500/40 rounded-xl p-3.5 text-xs text-purple-200 leading-relaxed">
-                💡 <strong>Bisa Anda lakukan kapan saja di jalan raya atau sambil nunggu resto!</strong> Cukup intip saldo aktual di layar HP (ShopeePay, GoPay, GoPay Merchant perantara QRIS). Sistem otomatis mendeteksi tip QRIS nyusul, bayar hutang titipan, atau potongan admin tanpa perlu menutup hari.
+            <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-3 text-xs text-purple-200 leading-relaxed">
+                💡 <strong>Konsep Snapshot & Rekonsiliasi di Jalan:</strong> Intip layar aplikasi ShopeeFood Driver Anda (berapa pendapatan & orderan saat ini), lalu cek saldo di wadah uang Anda (ShopeePay, Kas dompet saku, QRIS). Sistem langsung menghitung perbandingan (<em>Compare</em>) secara live apakah Anda surplus tip bersih dari pelanggan!
             </div>
 
             <form method="POST" action="/operational/digital-reconciliation" class="space-y-4">
@@ -2833,64 +2938,226 @@
                     <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
                 @endif
 
-                <div class="space-y-3">
-                    @foreach($digitalReconAccounts as $idx => $dAcc)
-                        <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-3.5 space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs font-extrabold text-white flex items-center space-x-1.5">
-                                    <span>
-                                        @if(str_contains(strtolower($dAcc->name), 'merchant')) 🏪
-                                        @elseif(str_contains(strtolower($dAcc->name), 'gopay')) 🟢
-                                        @elseif(str_contains(strtolower($dAcc->name), 'shopeefood')) 🛵
-                                        @elseif(str_contains(strtolower($dAcc->name), 'shopeepay')) 🟠
-                                        @else 🏦
-                                        @endif
-                                    </span>
-                                    <span>{{ $dAcc->name }}</span>
-                                </span>
-                                <span class="text-xs text-slate-300">
-                                    Di Sistem: <strong class="text-white font-black">Rp {{ number_format($dAcc->current_balance, 0, ',', '.') }}</strong>
-                                </span>
-                            </div>
-
-                            <input type="hidden" name="balances[{{ $idx }}][account_id]" value="{{ $dAcc->id }}">
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-slate-300 font-bold">Rp</span>
-                                <input 
-                                    type="number" 
-                                    inputmode="numeric" 
-                                    pattern="[0-9]*" 
-                                    name="balances[{{ $idx }}][actual_balance]" 
-                                    id="recon-input-{{ $dAcc->id }}"
-                                    value="{{ $dAcc->current_balance }}"
-                                    data-recorded="{{ $dAcc->current_balance }}"
-                                    data-account-name="{{ $dAcc->name }}"
-                                    oninput="calculateDigitalReconDiff()"
-                                    class="recon-digital-input w-full bg-slate-950 border border-slate-600 rounded-xl pl-9 pr-3 py-2.5 text-white text-sm font-black focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                                >
-                            </div>
-                            <div id="recon-diff-msg-{{ $dAcc->id }}" class="text-xs font-bold text-slate-300">
-                                Status: Cocok Sempurna (Rp 0)
-                            </div>
-                        </div>
-                    @endforeach
+                {{-- Waktu Checkpoint --}}
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-200">Waktu / Jam Checkpoint Pengecekan</label>
+                        <span class="text-[10px] text-slate-400">Jam berapa Anda mengecek posisi saldo ini</span>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="recorded_at" 
+                        id="recon-recorded-at" 
+                        value="{{ now()->format('Y-m-d\TH:i') }}" 
+                        class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    >
                 </div>
 
-                {{-- Live Summary Penyelarasan --}}
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2 text-xs">
-                    <div class="flex justify-between items-center">
-                        <span class="text-emerald-300 font-bold">🎉 Terdeteksi Surplus QRIS Nyusul:</span>
-                        <strong id="live-recon-surplus" class="text-emerald-400 font-black text-sm">+Rp 0</strong>
+                {{-- BAGIAN 1: DATA DARI APLIKASI SHOPEEFOOD DRIVER --}}
+                <div class="bg-slate-800/90 border border-orange-500/40 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-700/80 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🛵</span>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-orange-400">1. Data di Layar Aplikasi ShopeeFood Driver</h4>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 font-bold border border-orange-500/30">
+                            Layar App Driver
+                        </span>
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-rose-300 font-bold">⚠️ Selisih Kurang (Biaya Admin):</span>
-                        <strong id="live-recon-shortage" class="text-rose-400 font-black text-sm">-Rp 0</strong>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                Pendapatan Bersih / Tarif (Rp) <span class="text-rose-400">*</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                name="hub_income" 
+                                id="recon-hub-income" 
+                                value="{{ $latestSnapshot?->hub_income ?? $dayRegularIncome ?? 0 }}" 
+                                min="0" 
+                                step="1" 
+                                oninput="calculateDigitalReconDiff()" 
+                                placeholder="Contoh: 85000" 
+                                required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                            >
+                            <span class="text-[10px] text-slate-400">Ongkir/tarif bersih yang tertera di profil driver</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                Bonus / Insentif Poin (Rp)
+                            </label>
+                            <input 
+                                type="number" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                name="hub_bonus" 
+                                id="recon-hub-bonus" 
+                                value="{{ $latestSnapshot?->hub_bonus ?? $dayBonusIncome ?? 0 }}" 
+                                min="0" 
+                                step="1" 
+                                oninput="calculateDigitalReconDiff()" 
+                                placeholder="0" 
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                            >
+                            <span class="text-[10px] text-slate-400">Bonus misi harian (bisa Rp0 jika belum tembus target)</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                Tip Pelanggan di Aplikasi (Rp)
+                            </label>
+                            <input 
+                                type="number" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                name="customer_tips" 
+                                id="recon-customer-tips" 
+                                value="{{ $latestSnapshot?->customer_tips ?? $dayTipIncome ?? 0 }}" 
+                                min="0" 
+                                step="1" 
+                                oninput="calculateDigitalReconDiff()" 
+                                placeholder="0" 
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                            >
+                            <span class="text-[10px] text-slate-400">Tip resmi yang masuk lewat sistem Shopee</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                Jumlah Pesanan Selesai (Trip)
+                            </label>
+                            <input 
+                                type="number" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                name="completed_orders" 
+                                id="recon-completed-orders" 
+                                value="{{ $latestSnapshot?->completed_orders ?? $dayOrdersCount ?? 0 }}" 
+                                min="0" 
+                                step="1" 
+                                placeholder="Contoh: 8" 
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                            >
+                            <span class="text-[10px] text-slate-400">Berapa order yang sudah terselesaikan saat jam ini</span>
+                        </div>
                     </div>
+
+                    <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
+                        <span class="text-slate-300 font-bold">Total Tercatat di Aplikasi Shopee:</span>
+                        <strong id="disp-shopee-total" class="text-orange-400 font-extrabold text-sm">Rp 0</strong>
+                    </div>
+                </div>
+
+                {{-- BAGIAN 2: SALDO AKTUAL DI WADAH ANDA --}}
+                <div class="bg-slate-800/90 border border-emerald-500/40 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-700/80 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">💼</span>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-emerald-400">2. Posisi Uang Terkini di Wadah Anda</h4>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                            Dompet & Rekening Riil
+                        </span>
+                    </div>
+
+                    <div class="space-y-3">
+                        @foreach($digitalReconAccounts as $idx => $dAcc)
+                            <div class="bg-slate-950/90 border border-slate-700 rounded-xl p-3 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-extrabold text-white flex items-center space-x-1.5">
+                                        <span>
+                                            @if($dAcc->name === 'Cash' || $dAcc->type->value === 'cash') 💵
+                                            @elseif(str_contains(strtolower($dAcc->name), 'merchant')) 🏪
+                                            @elseif(str_contains(strtolower($dAcc->name), 'gopay')) 🟢
+                                            @elseif(str_contains(strtolower($dAcc->name), 'shopeepay')) 🟠
+                                            @else 🏦
+                                            @endif
+                                        </span>
+                                        <span>{{ $dAcc->name }}</span>
+                                    </span>
+                                    <span class="text-xs text-slate-300">
+                                        Tercatat di Sistem: <strong class="text-white font-black">Rp {{ number_format($dAcc->current_balance, 0, ',', '.') }}</strong>
+                                    </span>
+                                </div>
+
+                                <input type="hidden" name="balances[{{ $idx }}][account_id]" value="{{ $dAcc->id }}">
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-slate-300 font-bold">Rp</span>
+                                    <input 
+                                        type="number" 
+                                        inputmode="numeric" 
+                                        pattern="[0-9]*" 
+                                        name="balances[{{ $idx }}][actual_balance]" 
+                                        id="recon-input-{{ $dAcc->id }}"
+                                        value="{{ $dAcc->current_balance }}"
+                                        data-recorded="{{ $dAcc->current_balance }}"
+                                        data-account-name="{{ $dAcc->name }}"
+                                        oninput="calculateDigitalReconDiff()"
+                                        class="recon-digital-input w-full bg-slate-900 border border-slate-600 rounded-xl pl-9 pr-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                    >
+                                </div>
+                                <div id="recon-diff-msg-{{ $dAcc->id }}" class="text-[11px] font-semibold text-slate-300">
+                                    Status: Cocok Sempurna (Rp 0)
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
+                        <span class="text-slate-300 font-bold">Total Uang di Wadah Narik:</span>
+                        <strong id="disp-wallets-total" class="text-emerald-400 font-extrabold text-sm">Rp 0</strong>
+                    </div>
+                </div>
+
+                {{-- BAGIAN 3: HASIL COMPARE LIVE (REAL-TIME KOMPARASI) --}}
+                <div id="recon-compare-box" class="bg-gradient-to-br from-slate-950 to-purple-950/40 border border-purple-500/50 rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
+                        <span class="text-lg">⚖️</span>
+                        <h4 class="text-xs font-black uppercase tracking-wider text-purple-300">Hasil Compare: ShopeeFood vs Posisi Wadah</h4>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Tercatat di Shopee:</span>
+                            <strong id="compare-shopee-display" class="text-orange-400 font-black text-xs">Rp 0</strong>
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Terkumpul di Wadah:</span>
+                            <strong id="compare-wallets-display" class="text-emerald-400 font-black text-xs">Rp 0</strong>
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 col-span-2 sm:col-span-1">
+                            <span class="text-slate-400 block text-[10px]">Evaluasi Selisih:</span>
+                            <strong id="compare-eval-display" class="text-emerald-300 font-black text-xs">Cocok (Rp 0)</strong>
+                        </div>
+                    </div>
+
+                    <div id="compare-eval-banner" class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl text-xs text-purple-200 leading-relaxed font-medium">
+                        Ketikkan angka pendapatan ShopeeFood dan saldo wadah di atas untuk melihat perbandingan secara langsung.
+                    </div>
+                </div>
+
+                {{-- Catatan Checkpoint --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Catatan Checkpoint (Opsional)</label>
+                    <input 
+                        type="text" 
+                        name="notes" 
+                        placeholder="Misal: Cek jam 21.00 setelah orderan ke-10 di Suhat" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    >
                 </div>
 
                 <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-800">
                     <button type="button" onclick="closeModal('modal-reconcile-digital')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl">Batal</button>
-                    <button type="submit" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl shadow">✓ Simpan Snapshot Saldo & Terima Surplus</button>
+                    <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl shadow flex items-center space-x-1.5">
+                        <span>💾</span>
+                        <span>Simpan Checkpoint & Sinkronkan Saldo</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -3355,6 +3622,12 @@
                 if (sourceSelect && cashbackWrap) {
                     checkShopeePayCashback(sourceSelect, cashbackWrap.id);
                 }
+                if (id === 'modal-reconcile-digital') {
+                    calculateDigitalReconDiff();
+                }
+                if (id === 'modal-parking') {
+                    detectParkingGps(false);
+                }
             }
         }
         function closeModal(id) {
@@ -3408,6 +3681,76 @@
         window.triggerVoiceRecorder = function() {
             openVoiceRecorderModal();
         };
+
+        function openParkingModal() {
+            openModal('modal-parking');
+            detectParkingGps(false);
+        }
+
+        function detectParkingGps(isManual = false) {
+            const latInput = document.getElementById('parking-lat');
+            const lngInput = document.getElementById('parking-lng');
+            const icon = document.getElementById('parking-gps-icon');
+            const title = document.getElementById('parking-gps-title');
+            const desc = document.getElementById('parking-gps-desc');
+
+            if (!('geolocation' in navigator)) {
+                if (title) title.innerText = 'GPS Tidak Didukung Browser';
+                if (desc) {
+                    desc.innerText = 'Browser perangkat tidak mendukung Geolocation. Tetap bisa disimpan tanpa GPS.';
+                    desc.className = 'text-[10px] text-slate-400 font-medium';
+                }
+                return;
+            }
+
+            if (title) title.innerText = isManual ? 'Memperbarui GPS...' : 'Mencari Koordinat GPS...';
+            if (desc) {
+                desc.innerText = 'Sedang mengunci satelit GPS lokasi parkir Anda...';
+                desc.className = 'text-[10px] text-amber-300 font-medium animate-pulse';
+            }
+            if (icon) icon.innerText = '🛰️';
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(7);
+                    const lng = pos.coords.longitude.toFixed(7);
+                    const acc = Math.round(pos.coords.accuracy);
+
+                    if (latInput) latInput.value = lat;
+                    if (lngInput) lngInput.value = lng;
+
+                    if (title) title.innerText = 'GPS Terkunci: ' + lat + ', ' + lng;
+                    if (desc) {
+                        desc.innerText = 'Akurasi GPS ~' + acc + 'm (Tersimpan otomatis saat Simpan Parkir)';
+                        desc.className = 'text-[10px] text-emerald-400 font-bold';
+                    }
+                    if (icon) icon.innerText = '📍';
+                },
+                (err) => {
+                    console.warn('Parking geolocation error:', err);
+                    let errMsg = 'Sinyal GPS belum didapat atau izin lokasi belum aktif.';
+                    if (err.code === 1) {
+                        errMsg = 'Izin lokasi belum diberikan di browser.';
+                    } else if (err.code === 2) {
+                        errMsg = 'Posisi GPS tidak dapat ditentukan.';
+                    } else if (err.code === 3) {
+                        errMsg = 'Waktu pencarian GPS habis.';
+                    }
+
+                    if (title) title.innerText = 'GPS Opsional (Belum Terkunci)';
+                    if (desc) {
+                        desc.innerText = errMsg + ' Anda tetap dapat menyimpan parkir.';
+                        desc.className = 'text-[10px] text-amber-400 font-medium';
+                    }
+                    if (icon) icon.innerText = '⚠️';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 8000,
+                    maximumAge: 30000
+                }
+            );
+        }
 
         function detectGps() {
             const statusEl = document.getElementById('gps-status-text');
@@ -3963,6 +4306,22 @@
 
         // ================= JAVASCRIPT LOGIKA DIGITAL REKONSILIASI & SURVIVAL GOALS =================
         function calculateDigitalReconDiff() {
+            // 1. Hitung Total ShopeeFood Driver
+            const hubIncome = parseInt(document.getElementById('recon-hub-income')?.value) || 0;
+            const hubBonus = parseInt(document.getElementById('recon-hub-bonus')?.value) || 0;
+            const customerTips = parseInt(document.getElementById('recon-customer-tips')?.value) || 0;
+            const completedOrders = parseInt(document.getElementById('recon-completed-orders')?.value) || 0;
+            const totalShopee = hubIncome + hubBonus + customerTips;
+
+            const dispShopee = document.getElementById('disp-shopee-total');
+            if (dispShopee) dispShopee.innerText = 'Rp ' + totalShopee.toLocaleString('id-ID');
+
+            const compareShopee = document.getElementById('compare-shopee-display');
+            if (compareShopee) compareShopee.innerText = 'Rp ' + totalShopee.toLocaleString('id-ID');
+
+            // 2. Hitung Saldo Wadah & Selisih vs Sistem
+            let totalActualWallets = 0;
+            let totalRecordedWallets = 0;
             let totalSurplus = 0;
             let totalShortage = 0;
 
@@ -3973,9 +4332,12 @@
                 const accId = input.id.replace('recon-input-', '');
                 const msgEl = document.getElementById('recon-diff-msg-' + accId);
 
+                totalActualWallets += actual;
+                totalRecordedWallets += recorded;
+
                 if (msgEl) {
                     if (diff > 0) {
-                        msgEl.innerText = '🎉 Surplus QRIS / Inflow: +Rp ' + diff.toLocaleString('id-ID');
+                        msgEl.innerText = '🎉 Surplus / Inflow Lebih: +Rp ' + diff.toLocaleString('id-ID');
                         msgEl.className = 'text-[11px] font-bold mt-1 text-emerald-400';
                         totalSurplus += diff;
                     } else if (diff < 0) {
@@ -3989,11 +4351,45 @@
                 }
             });
 
-            const surplusEl = document.getElementById('live-recon-surplus');
-            if (surplusEl) surplusEl.innerText = '+Rp ' + totalSurplus.toLocaleString('id-ID');
+            const dispWallets = document.getElementById('disp-wallets-total');
+            if (dispWallets) dispWallets.innerText = 'Rp ' + totalActualWallets.toLocaleString('id-ID');
 
-            const shortageEl = document.getElementById('live-recon-shortage');
-            if (shortageEl) shortageEl.innerText = '-Rp ' + totalShortage.toLocaleString('id-ID');
+            const compareWallets = document.getElementById('compare-wallets-display');
+            if (compareWallets) compareWallets.innerText = 'Rp ' + totalActualWallets.toLocaleString('id-ID');
+
+            // 3. Evaluasi Live Comparison
+            const netWalletAdjustment = totalActualWallets - totalRecordedWallets;
+            const evalDisplay = document.getElementById('compare-eval-display');
+            const evalBanner = document.getElementById('compare-eval-banner');
+
+            if (evalDisplay) {
+                if (netWalletAdjustment > 0) {
+                    evalDisplay.innerText = 'Surplus Bersih +Rp ' + netWalletAdjustment.toLocaleString('id-ID');
+                    evalDisplay.className = 'text-emerald-400 font-black text-xs';
+                } else if (netWalletAdjustment < 0) {
+                    evalDisplay.innerText = 'Selisih Kurang -Rp ' + Math.abs(netWalletAdjustment).toLocaleString('id-ID');
+                    evalDisplay.className = 'text-rose-400 font-black text-xs';
+                } else {
+                    evalDisplay.innerText = 'Cocok Sempurna (Rp 0)';
+                    evalDisplay.className = 'text-emerald-300 font-black text-xs';
+                }
+            }
+
+            if (evalBanner) {
+                if (netWalletAdjustment > 0) {
+                    evalBanner.className = 'p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium';
+                    evalBanner.innerHTML = `<strong>🎉 Terdeteksi Surplus Fisik/Digital: +Rp ${netWalletAdjustment.toLocaleString('id-ID')}</strong><br>` +
+                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Di wadah Anda ada kelebihan uang Rp ${netWalletAdjustment.toLocaleString('id-ID')} dibanding pembukuan (kemungkinan tip tunai langsung dari pelanggan di lapangan atau QRIS lebih). Saat disimpan, sistem akan menyimpan snapshot ini dan menyesuaikan saldo wadah Anda secara akurat.`;
+                } else if (netWalletAdjustment < 0) {
+                    evalBanner.className = 'p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl text-xs text-rose-200 leading-relaxed font-medium';
+                    evalBanner.innerHTML = `<strong>⚠️ Terdeteksi Selisih Kurang: -Rp ${Math.abs(netWalletAdjustment).toLocaleString('id-ID')}</strong><br>` +
+                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Saldo wadah fisik/digital Anda lebih sedikit Rp ${Math.abs(netWalletAdjustment).toLocaleString('id-ID')} dibanding pembukuan sistem (kemungkinan ada pengeluaran operasional kecil di jalan seperti parkir tunai/makan yang belum sempat dicatat). Saat disimpan, saldo akan otomatis disejajarkan dengan posisi riil.`;
+                } else {
+                    evalBanner.className = 'p-3 bg-slate-900 border border-purple-500/30 rounded-xl text-xs text-purple-200 leading-relaxed font-medium';
+                    evalBanner.innerHTML = `<strong>✓ Posisi Wadah & Pembukuan Cocok Sempurna!</strong><br>` +
+                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Total di wadah narik Anda <strong>Rp ${totalActualWallets.toLocaleString('id-ID')}</strong>. Tidak ada selisih uang unaccounted. Checkpoint ini akan disimpan ke histori snapshot perjalanan hari ini.`;
+                }
+            }
         }
 
         function syncGoalCategory(priorityLevel) {
