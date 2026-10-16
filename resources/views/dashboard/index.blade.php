@@ -1220,7 +1220,7 @@
                     <button type="button" onclick="openModal('modal-correct-account')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition">
                         📝 Koreksi Audit
                     </button>
-                    @if(config('app.trial_mode', true))
+                    @if(config('app.trial_mode', false))
                         <button type="button" onclick="openModal('modal-reset-trial-data')" class="px-3.5 py-2 rounded-xl bg-rose-600/40 hover:bg-rose-600/60 text-rose-200 border border-rose-500/60 text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Reset semua data ke kondisi fresh seeder">
                             <span>🔄</span>
                             <span>Reset Data Uji Coba</span>

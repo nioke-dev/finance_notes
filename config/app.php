@@ -41,7 +41,7 @@ return [
 
     'debug' => (bool) env('APP_DEBUG', false),
 
-    'trial_mode' => (bool) env('APP_TRIAL_MODE', true),
+    'trial_mode' => (bool) env('APP_TRIAL_MODE', false),
 
     /*
     |--------------------------------------------------------------------------

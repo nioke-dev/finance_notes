@@ -28,7 +28,7 @@
             </a>
 
             {{-- Mobile Only: Compact Reset Button (Only during trial mode, no other buttons) --}}
-            @if(config('app.trial_mode', true))
+            @if(config('app.trial_mode', false))
                 <button type="button" onclick="openModal('modal-reset-trial-data')" class="md:hidden px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center space-x-1 active:scale-95 shadow" title="Reset data ke kondisi awal seeder">
                     <span>🔥</span>
                     <span>Reset</span>
@@ -63,7 +63,7 @@
                 </a>
 
                 {{-- Desktop Right Actions: Trial Mode Reset & Logout --}}
-                @if(config('app.trial_mode', true))
+                @if(config('app.trial_mode', false))
                     <button type="button" onclick="openModal('modal-reset-trial-data')" class="ml-2 px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95" title="Reset semua data ke kondisi awal seeder untuk uji coba ulang">
                         <span>🔥</span>
                         <span>Reset Data Uji Coba</span>
@@ -178,7 +178,7 @@
     {{-- Modal Pengurangan Saldo Wadah & Jadwal Potongan Rutin Bulanan --}}
     <x-modals.account-deductions />
 
-    @if(config('app.trial_mode', true))
+    @if(config('app.trial_mode', false))
     {{-- Modal Reset Seluruh Data (Khusus Mode Uji Coba) --}}
     <div id="modal-reset-trial-data" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-800 border-2 border-rose-500/60 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8">

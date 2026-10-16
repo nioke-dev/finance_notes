@@ -53,7 +53,7 @@
                     <span>📝</span>
                     <span>Catat Tagihan</span>
                 </button>
-                @if(config('app.trial_mode', true))
+                @if(config('app.trial_mode', false))
                     <button type="button" onclick="openModal('modal-reset-trial-data')" class="px-3.5 py-1.5 bg-rose-600/40 hover:bg-rose-600/60 text-rose-200 border border-rose-500/60 text-xs font-bold rounded-xl transition flex items-center space-x-1 shadow" title="Reset semua data ke kondisi fresh seeder">
                         <span>🔄</span>
                         <span>Reset Data Uji Coba</span>
