@@ -392,5 +392,20 @@ class EndToEndScenarioTest extends TestCase
         $resp4->assertRedirect();
         $resp4->assertSessionHas('success');
         $this->assertEquals(89500, $cash->fresh()->current_balance);
+
+        // 5. Parkir motor dengan kode order ShopeeFood (Opsional)
+        $resp5 = $this->post('/operational/parking', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 2000,
+            'restaurant_name' => 'Ayam Nelongso',
+            'order_code' => '633',
+            'vehicle_type' => 'motor',
+        ]);
+        $resp5->assertRedirect();
+        $resp5->assertSessionHas('success');
+        $this->assertEquals(87500, $cash->fresh()->current_balance);
+        $this->assertDatabaseHas('transactions', [
+            'description' => 'Parkir Motor: Ayam Nelongso #633',
+        ]);
     }
 }

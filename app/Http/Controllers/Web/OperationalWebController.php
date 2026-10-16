@@ -419,6 +419,7 @@ class OperationalWebController extends Controller
             'work_day_id' => 'nullable|exists:work_days,id',
             'amount' => 'required|integer|min:0',
             'restaurant_name' => 'nullable|string|max:255',
+            'order_code' => 'nullable|string|max:50',
             'is_covered_by_resto' => 'nullable|boolean',
             'source_account_id' => 'nullable|exists:accounts,id',
             'vehicle_type' => 'nullable|string|in:motor,mobil,lainnya',
@@ -438,10 +439,17 @@ class OperationalWebController extends Controller
         $vehicleType = $validated['vehicle_type'] ?? 'motor';
         $sourceAccountId = !empty($validated['source_account_id']) ? (int) $validated['source_account_id'] : null;
 
+        $rawResto = trim($validated['restaurant_name'] ?? '');
+        $orderCode = trim($validated['order_code'] ?? '');
+        $restaurantName = $rawResto;
+        if (!empty($orderCode)) {
+            $restaurantName = $rawResto ? "{$rawResto} #{$orderCode}" : "Order #{$orderCode}";
+        }
+
         $parkingTx = $parkingService->recordParking(
             workDay: $workDay,
             amount: (int) $validated['amount'],
-            restaurantName: $validated['restaurant_name'] ?? null,
+            restaurantName: $restaurantName ?: null,
             isCoveredByResto: $isCovered,
             sourceAccountId: $sourceAccountId,
             vehicleType: $vehicleType

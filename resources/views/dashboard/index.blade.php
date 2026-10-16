@@ -1532,9 +1532,17 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nama Restoran / Lokasi Parkir</label>
-                    <input type="text" name="restaurant_name" placeholder="Misal: Mie Gacoan, McD, Indomaret, Mall" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Nama Restoran / Lokasi Parkir</label>
+                        <input type="text" name="restaurant_name" placeholder="Misal: Mie Gacoan, McD, Mall" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">
+                            Kode Order <span class="text-slate-400 font-normal text-[11px]">(Opsional)</span>
+                        </label>
+                        <input type="text" name="order_code" placeholder="Misal: 633" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
                 </div>
 
                 {{-- Gratis / Ditanggung Resto --}}
@@ -1851,39 +1859,7 @@
                     </div>
                 </div>
 
-                {{-- Checkbox Ganti Uang Parkir Resto --}}
-                <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-2">
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            id="chk-reimburse-parking" 
-                            onchange="toggleParkingReimburse(this.checked)"
-                            class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500"
-                        >
-                        <span class="text-xs font-bold text-slate-200">Customer mengganti uang parkir resto?</span>
-                    </label>
-
-                    <div id="div-calc-parking" class="hidden pl-6 pt-1 space-y-1.5">
-                        <label class="block text-[10px] font-semibold text-slate-200">Nominal Parkir yang Diganti (Rp)</label>
-                        <input 
-                            type="number" 
-                            inputmode="numeric" 
-                            pattern="[0-9]*" 
-                            name="parking_reimbursed" 
-                            id="calc-parking-amount" 
-                            value="0" 
-                            min="0" 
-                            step="500"
-                            oninput="recalculateCodAmounts()"
-                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs"
-                        >
-                        <div class="flex space-x-2">
-                            <button type="button" onclick="document.getElementById('calc-parking-amount').value = 1000; recalculateCodAmounts()" class="px-2 py-0.5 bg-slate-800 text-[10px] text-slate-300 rounded">1k</button>
-                            <button type="button" onclick="document.getElementById('calc-parking-amount').value = 2000; recalculateCodAmounts()" class="px-2 py-0.5 bg-slate-800 text-[10px] text-slate-300 rounded">2k</button>
-                            <button type="button" onclick="document.getElementById('calc-parking-amount').value = 3000; recalculateCodAmounts()" class="px-2 py-0.5 bg-slate-800 text-[10px] text-slate-300 rounded">3k</button>
-                        </div>
-                    </div>
-                </div>
+                <input type="hidden" name="parking_reimbursed" id="calc-parking-amount" value="0">
 
                 {{-- Hasil Perhitungan Bersih (Hasil Akhir) --}}
                 <div class="p-3.5 bg-emerald-950/40 border border-emerald-500/40 rounded-xl space-y-1 text-xs">
@@ -1896,7 +1872,7 @@
                         <span id="calc-breakdown-shopee" class="text-slate-300 font-semibold">Rp 0</span>
                     </div>
                     <div class="flex justify-between items-center text-[11px] text-slate-300 font-medium">
-                        <span>Surplus Bersih (Tip + Parkir):</span>
+                        <span>Tip Bersih dari Pelanggan:</span>
                         <span id="calc-breakdown-surplus" class="text-amber-400 font-extrabold">Rp 0</span>
                     </div>
                 </div>
@@ -3947,18 +3923,7 @@
         }
 
         function toggleParkingReimburse(show) {
-            const sec = document.getElementById('div-calc-parking');
-            const input = document.getElementById('calc-parking-amount');
-            if (sec) {
-                if (show) {
-                    sec.classList.remove('hidden');
-                    if (input && (!input.value || input.value == 0)) input.value = 2000;
-                } else {
-                    sec.classList.add('hidden');
-                    if (input) input.value = 0;
-                }
-            }
-            recalculateCodAmounts();
+            // Uang parkir dicatat mandiri melalui tombol Parkir & kode pesanan
         }
 
         function recalculateCodAmounts() {
@@ -3972,9 +3937,7 @@
             }
 
             const bill = currentCompleteCod.billAmount;
-            const parking = parseInt(document.getElementById('calc-parking-amount')?.value) || 0;
-            const totalSurplus = Math.max(0, received - bill);
-            const actualTip = Math.max(0, totalSurplus - parking);
+            const tip = Math.max(0, received - bill);
 
             // Update displays
             const netReceivedInput = document.getElementById('input-final-received-amount');
@@ -3987,7 +3950,7 @@
             if (breakdownShopee) breakdownShopee.innerText = 'Rp ' + bill.toLocaleString('id-ID');
 
             const breakdownSurplus = document.getElementById('calc-breakdown-surplus');
-            if (breakdownSurplus) breakdownSurplus.innerText = 'Rp ' + totalSurplus.toLocaleString('id-ID');
+            if (breakdownSurplus) breakdownSurplus.innerText = 'Rp ' + tip.toLocaleString('id-ID');
         }
 
         function openCancelCodModal(id, code) {
