@@ -3014,19 +3014,19 @@
                     <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
                 @endif
 
-                {{-- Waktu Checkpoint --}}
-                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-200">Waktu / Jam Checkpoint Pengecekan</label>
-                        <span class="text-[10px] text-slate-400">Jam berapa Anda mengecek posisi saldo ini</span>
+                {{-- Waktu Checkpoint (100% Otomatis Jam & Tanggal Sekarang) --}}
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base text-purple-400">⏱️</span>
+                        <div>
+                            <span class="block text-xs font-bold text-slate-200">Waktu Checkpoint (Otomatis)</span>
+                            <span class="text-[10px] text-slate-400">Tercatat realtime saat tombol simpan ditekan</span>
+                        </div>
                     </div>
-                    <input 
-                        type="datetime-local" 
-                        name="recorded_at" 
-                        id="recon-recorded-at" 
-                        value="{{ now()->format('Y-m-d\TH:i') }}" 
-                        class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                    >
+                    <span id="recon-live-clock" class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black text-xs">
+                        {{ now()->translatedFormat('d M Y, H:i') }} WIB
+                    </span>
+                    <input type="hidden" name="recorded_at" id="recon-recorded-at" value="{{ now()->format('Y-m-d H:i:s') }}">
                 </div>
 
                 {{-- BAGIAN 1: DATA DARI APLIKASI SHOPEEFOOD DRIVER --}}
@@ -3699,6 +3699,27 @@
                     checkShopeePayCashback(sourceSelect, cashbackWrap.id);
                 }
                 if (id === 'modal-reconcile-digital') {
+                    const now = new Date();
+                    const liveClock = document.getElementById('recon-live-clock');
+                    const recordedInput = document.getElementById('recon-recorded-at');
+                    if (liveClock) {
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                        const month = months[now.getMonth()];
+                        const year = now.getFullYear();
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        liveClock.innerText = `${day} ${month} ${year}, ${hours}:${minutes} WIB`;
+                    }
+                    if (recordedInput) {
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        const seconds = String(now.getSeconds()).padStart(2, '0');
+                        recordedInput.value = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                    }
                     calculateDigitalReconDiff();
                 }
                 if (id === 'modal-parking') {
