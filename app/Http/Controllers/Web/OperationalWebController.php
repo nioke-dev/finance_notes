@@ -907,7 +907,7 @@ class OperationalWebController extends Controller
             'name' => 'required|string|max:255',
             'platform' => 'required|string|max:50',
             'custom_platform' => 'nullable|string|max:50',
-            'total_obligation' => 'required|integer|min:1000',
+            'total_obligation' => 'required|integer|min:1',
             'due_date' => 'required|date',
             'tenor_months' => 'nullable|integer|min:1|max:36',
             'notes' => 'nullable|string|max:255',

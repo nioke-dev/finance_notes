@@ -201,6 +201,26 @@ class DebtWebControllerTest extends TestCase
         $this->assertEquals(750000, $installment->amount_due);
     }
 
+    public function test_user_can_record_existing_debt_with_exact_unrounded_rupiah_amount(): void
+    {
+        $response = $this->post('/operational/existing-debt', [
+            'name' => 'Tagihan SPayLater Oktober Riil',
+            'platform' => 'spaylater',
+            'total_obligation' => 464934,
+            'due_date' => '2026-10-31',
+            'tenor_months' => 1,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $debt = Debt::where('name', 'Tagihan SPayLater Oktober Riil')->first();
+        $this->assertNotNull($debt);
+        $this->assertEquals(464934, $debt->total_obligation);
+        $this->assertEquals(464934, $debt->principal_amount);
+        $this->assertEquals(464934, $debt->installments->first()->amount_due);
+    }
+
     public function test_user_can_record_gopay_later_and_custom_platform_debt(): void
     {
         // 1. Catat utang berjalan GoPay Later

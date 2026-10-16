@@ -66,7 +66,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pengurangan (Rp) <span class="text-rose-400">*</span></label>
-                    <input type="number" name="amount" id="deduct_amount_input" min="1" step="100" placeholder="Contoh: 17000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <input type="number" name="amount" id="deduct_amount_input" min="1" step="1" placeholder="Contoh: 17000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Waktu Pemotongan</label>

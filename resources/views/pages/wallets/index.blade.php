@@ -543,7 +543,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Limit Plafon Kredit (Rp)</label>
-                    <input type="number" name="credit_limit" min="0" step="10000" placeholder="Contoh: 3000000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="number" name="credit_limit" min="0" step="1" placeholder="Contoh: 3000000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                     <span class="text-[10px] text-slate-400 mt-0.5 block">Total limit saldo kredit yang diberikan platform kepada Anda.</span>
                 </div>
                 <div>
@@ -567,7 +567,7 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Limit Plafon Baru (Rp) <span class="text-rose-400">*</span></label>
-                    <input type="number" id="edit-limit-input" name="credit_limit" min="0" step="10000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="number" id="edit-limit-input" name="credit_limit" min="0" step="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700">
                     <button type="button" onclick="closeModal('modal-edit-paylater-limit')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
@@ -622,7 +622,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Total Tagihan (Rp) <span class="text-rose-400">*</span></label>
-                        <input type="number" inputmode="numeric" name="total_obligation" required min="1000" step="1000" placeholder="500000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <input type="number" inputmode="numeric" name="total_obligation" required min="1" step="1" placeholder="500000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Tenor (Bulan)</label>

@@ -1475,7 +1475,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pembelian (Rp)</label>
-                    <input type="number" name="amount" min="1000" step="1000" placeholder="25000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <input type="number" name="amount" min="1" step="1" placeholder="25000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-fuel')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
@@ -1580,7 +1580,7 @@
                         </button>
                     </div>
 
-                    <input type="number" name="amount" id="input-parking-amount" value="2000" min="0" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <input type="number" name="amount" id="input-parking-amount" value="2000" min="0" step="1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
 
                 {{-- Sumber Dana / Wadah --}}
@@ -2573,8 +2573,8 @@
                             name="amount" 
                             id="input-lend-amount"
                             required 
-                            min="1000" 
-                            step="1000"
+                            min="1" 
+                            step="1"
                             placeholder="50000"
                             class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
@@ -2663,8 +2663,8 @@
                             name="amount" 
                             id="input-withdraw-amount"
                             required 
-                            min="10000" 
-                            step="10000"
+                            min="1" 
+                            step="1"
                             placeholder="100000"
                             class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
@@ -2685,7 +2685,7 @@
                             name="admin_fee" 
                             value="0" 
                             min="0" 
-                            step="500"
+                            step="1"
                             class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
                         <span class="text-[10px] text-slate-300 font-medium block mt-1">Biaya admin kasir minimarket atau ATM bersama (default Rp0).</span>
@@ -2757,8 +2757,8 @@
                             name="amount" 
                             id="input-incidental-amount"
                             required 
-                            min="500" 
-                            step="500"
+                            min="1" 
+                            step="1"
                             placeholder="15000"
                             class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
@@ -2939,7 +2939,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Target Nominal (Rp) <span class="text-rose-400">*</span></label>
-                        <input type="number" inputmode="numeric" name="target_amount" required min="1000" step="1000" placeholder="55000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <input type="number" inputmode="numeric" name="target_amount" required min="1" step="1" placeholder="55000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Target Tanggal</label>
@@ -2975,7 +2975,7 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal yang Disisihkan (Rp) <span class="text-rose-400">*</span></label>
-                    <input type="number" inputmode="numeric" name="amount" id="allocate-goal-amount" required min="1000" step="1000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <input type="number" inputmode="numeric" name="amount" id="allocate-goal-amount" required min="1" step="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     
                     <div class="flex space-x-1.5 mt-2">
                         <button type="button" onclick="document.getElementById('allocate-goal-amount').value = 5000" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded-lg">5k</button>
@@ -3028,7 +3028,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Riil yang Dibayar di Kasir / Nota (Rp) <span class="text-rose-400">*</span></label>
-                    <input type="number" inputmode="numeric" name="actual_spent" id="achieve-actual-spent" required min="500" step="500" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <input type="number" inputmode="numeric" name="actual_spent" id="achieve-actual-spent" required min="1" step="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     <span class="text-[10px] text-slate-300 font-medium block mt-1">Bisa disesuaikan dengan harga riil di struk/nota toko.</span>
                 </div>
 
@@ -3087,7 +3087,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Total Tagihan (Rp) <span class="text-rose-400">*</span></label>
-                        <input type="number" inputmode="numeric" name="total_obligation" required min="1000" step="1000" placeholder="500000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <input type="number" inputmode="numeric" name="total_obligation" required min="1" step="1" placeholder="500000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Tenor (Bulan)</label>
@@ -3152,7 +3152,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Nominal per Bulan (Rp) <span class="text-rose-400">*</span></label>
-                        <input type="number" inputmode="numeric" name="amount" required min="1000" step="1000" placeholder="60000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <input type="number" inputmode="numeric" name="amount" required min="1" step="1" placeholder="60000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Jatuh Tempo (Tiap Tgl) <span class="text-rose-400">*</span></label>
@@ -3214,7 +3214,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pembayaran (Rp) <span class="text-rose-400">*</span></label>
-                    <input type="number" inputmode="numeric" name="actual_amount" id="pay-sub-amount" required min="1000" step="500" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <input type="number" inputmode="numeric" name="actual_amount" id="pay-sub-amount" required min="1" step="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
 
                 <div>

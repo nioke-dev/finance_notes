@@ -122,7 +122,7 @@
                                 pattern="[0-9]*"
                                 name="damaged_notes_amount" 
                                 min="0" 
-                                step="1000"
+                                step="1"
                                 value="{{ old('damaged_notes_amount', $denominations->damaged_notes_amount ?? 0) }}" 
                                 placeholder="0"
                                 class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs"
