@@ -90,6 +90,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/audit-logs', [AuditLogWebController::class, 'index'])->name('audit-logs.index');
 });
 
+// Streaming File Audio Voice Memo Helm (Bypass Symlink / APP_URL issues)
+Route::get('/operational/voice-memo/{voiceMemo}/stream', [\App\Http\Controllers\Api\VoiceMemoController::class, 'stream'])->name('operational.voice-memo.stream');
+
 // Download Langsung APK Rilis Android
 Route::get('/download/driver-finance-latest.apk', [\App\Http\Controllers\Api\AppUpdateController::class, 'downloadApk'])->name('app.download');
 Route::get('/ci/log', [\App\Http\Controllers\Api\AppUpdateController::class, 'viewCiLog'])->name('ci.log');

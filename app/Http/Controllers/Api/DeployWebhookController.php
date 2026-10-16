@@ -68,6 +68,11 @@ class DeployWebhookController extends Controller
         Artisan::call('optimize:clear');
         $optimizeOutput = Artisan::output();
 
+        // Pastikan storage symlink terhubung
+        if (!file_exists(public_path('storage'))) {
+            Artisan::call('storage:link');
+        }
+
         if (!is_dir(base_path('bootstrap/cache'))) {
             @mkdir(base_path('bootstrap/cache'), 0777, true);
         }

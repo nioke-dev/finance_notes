@@ -67,4 +67,49 @@ class VoiceMemoPlayerComponentTest extends TestCase
         $this->assertStringContainsString('https://www.google.com/maps?q=-7.9826,112.6308', $renderedHtml);
         $this->assertStringContainsString('GPS', $renderedHtml);
     }
+
+    public function test_voice_memo_stream_endpoint_returns_file_with_correct_audio_headers(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('voice_memos/sample_memo.webm', 'RIFF....WEBM_DUMMY_AUDIO_DATA');
+
+        $workDay = WorkDay::create([
+            'work_date' => '2026-10-14',
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        $memo = VoiceMemo::create([
+            'work_day_id' => $workDay->id,
+            'file_path' => 'voice_memos/sample_memo.webm',
+            'duration_seconds' => 8,
+            'recorded_at' => Carbon::parse('2026-10-14 09:18:00'),
+        ]);
+
+        $response = $this->get(route('operational.voice-memo.stream', $memo->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'audio/webm');
+        $response->assertHeader('Accept-Ranges', 'bytes');
+    }
+
+    public function test_voice_memo_stream_returns_404_when_file_missing(): void
+    {
+        Storage::fake('public');
+
+        $workDay = WorkDay::create([
+            'work_date' => '2026-10-14',
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        $memo = VoiceMemo::create([
+            'work_day_id' => $workDay->id,
+            'file_path' => 'voice_memos/non_existent.webm',
+            'duration_seconds' => 8,
+            'recorded_at' => Carbon::parse('2026-10-14 09:18:00'),
+        ]);
+
+        $response = $this->get(route('operational.voice-memo.stream', $memo->id));
+
+        $response->assertStatus(404);
+    }
 }
