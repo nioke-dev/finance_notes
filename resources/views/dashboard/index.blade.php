@@ -3297,7 +3297,7 @@
             </div>
 
             {{-- Tombol Utama 1-Tap Record / Stop --}}
-            <div class="flex flex-col items-center justify-center space-y-3">
+            <div id="section-record-action" class="flex flex-col items-center justify-center space-y-3">
                 <button 
                     type="button" 
                     id="btn-record-toggle" 
@@ -3312,7 +3312,36 @@
                         <rect x="6" y="6" width="12" height="12" rx="2" />
                     </svg>
                 </button>
-                <span class="text-[11px] text-slate-300 font-medium">Audio akan otomatis disimpan ke Kotak Hitam hari ini.</span>
+                <span class="text-[11px] text-slate-300 font-medium">Tap mikrofon untuk rekam, tap kotak untuk selesai & mendengarkan.</span>
+            </div>
+
+            {{-- Section Preview & Konfirmasi (Setelah Selesai Merekam) --}}
+            <div id="section-preview-confirmation" class="space-y-4 hidden">
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 space-y-2 text-left">
+                    <span class="text-xs font-bold text-slate-200 block">🎧 Dengarkan Hasil Rekaman:</span>
+                    <audio id="preview-audio-player" controls class="w-full h-8 rounded-lg accent-rose-500 focus:outline-none"></audio>
+                </div>
+
+                <div class="flex items-center space-x-2.5">
+                    <button 
+                        type="button" 
+                        id="btn-retry-voice-memo"
+                        onclick="retryVoiceRecording()" 
+                        class="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1.5"
+                    >
+                        <span>🔄</span>
+                        <span>Ulang Rekam</span>
+                    </button>
+                    <button 
+                        type="button" 
+                        id="btn-save-voice-memo"
+                        onclick="confirmAndSaveVoiceMemo()" 
+                        class="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-950/50 transition flex items-center justify-center space-x-1.5"
+                    >
+                        <span>💾</span>
+                        <span>Simpan Rekaman</span>
+                    </button>
+                </div>
             </div>
 
             <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-300 font-medium">
@@ -3369,15 +3398,19 @@
             }
         }
 
-        // Voice Recorder Logic (Web MediaRecorder & Geolocation)
+        // Voice Recorder Logic (Web MediaRecorder, Geolocation, Review & Confirmation)
         let mediaRecorder = null;
         let audioChunks = [];
         let recordingTimer = null;
         let recordingSeconds = 0;
         let currentWorkDayId = {{ $currentWorkDay ? $currentWorkDay->id : 'null' }};
         let currentGpsCoords = { lat: null, lng: null };
+        let recordedAudioBlob = null;
+        let recordedMimeType = 'audio/webm';
+        let previewObjectUrl = null;
 
         function openVoiceRecorderModal() {
+            resetRecorderUI();
             openModal('modal-voice-recorder');
             detectGps();
         }
@@ -3391,6 +3424,7 @@
                     closeModal('modal-voice-recorder');
                 }
             } else {
+                resetRecorderUI();
                 closeModal('modal-voice-recorder');
             }
         }
@@ -3456,7 +3490,26 @@
                 };
                 mediaRecorder.onstop = () => {
                     stream.getTracks().forEach(t => t.stop());
-                    uploadVoiceMemo(mimeType);
+
+                    // Buat audio blob dan preview URL
+                    recordedMimeType = mimeType || 'audio/webm';
+                    recordedAudioBlob = new Blob(audioChunks, { type: recordedMimeType });
+                    if (previewObjectUrl) {
+                        URL.revokeObjectURL(previewObjectUrl);
+                    }
+                    previewObjectUrl = URL.createObjectURL(recordedAudioBlob);
+
+                    // Pasang ke preview audio player
+                    const player = document.getElementById('preview-audio-player');
+                    if (player) {
+                        player.src = previewObjectUrl;
+                        player.load();
+                    }
+
+                    // Tampilkan section konfirmasi & sembunyikan tombol rekam
+                    document.getElementById('section-record-action').classList.add('hidden');
+                    document.getElementById('section-preview-confirmation').classList.remove('hidden');
+                    document.getElementById('record-status-label').innerText = '🎧 Selesai! Putar rekaman Anda di bawah:';
                 };
 
                 mediaRecorder.start();
@@ -3467,7 +3520,7 @@
                 document.getElementById('btn-record-toggle').classList.replace('from-rose-600', 'from-amber-600');
                 document.getElementById('btn-record-toggle').classList.replace('to-rose-500', 'to-amber-500');
                 document.getElementById('recording-pulse').classList.remove('hidden');
-                document.getElementById('record-status-label').innerText = '🔴 Merekam suara helm... Tap tombol untuk simpan';
+                document.getElementById('record-status-label').innerText = '🔴 Merekam suara helm... Tap kotak untuk berhenti';
 
                 recordingTimer = setInterval(() => {
                     recordingSeconds++;
@@ -3484,9 +3537,24 @@
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 clearInterval(recordingTimer);
                 document.getElementById('recording-pulse').classList.add('hidden');
-                document.getElementById('record-status-label').innerText = '⏳ Mengunggah ke Kotak Hitam...';
+                document.getElementById('record-status-label').innerText = 'Menyiapkan pemutar pratinjau...';
                 mediaRecorder.stop();
             }
+        }
+
+        function retryVoiceRecording() {
+            const player = document.getElementById('preview-audio-player');
+            if (player) {
+                player.pause();
+                player.removeAttribute('src');
+            }
+            if (previewObjectUrl) {
+                URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = null;
+            }
+            recordedAudioBlob = null;
+            audioChunks = [];
+            resetRecorderUI();
         }
 
         function resetRecorderUI() {
@@ -3495,16 +3563,54 @@
             document.getElementById('btn-record-toggle').classList.replace('from-amber-600', 'from-rose-600');
             document.getElementById('btn-record-toggle').classList.replace('to-amber-500', 'to-rose-500');
             document.getElementById('recording-timer').innerText = '00:00';
+            document.getElementById('recording-pulse').classList.add('hidden');
             document.getElementById('record-status-label').innerText = 'Tekan tombol merah di bawah untuk mulai rekam';
+
+            document.getElementById('section-record-action').classList.remove('hidden');
+            document.getElementById('section-preview-confirmation').classList.add('hidden');
+
+            const player = document.getElementById('preview-audio-player');
+            if (player) {
+                player.pause();
+                player.removeAttribute('src');
+            }
+            if (previewObjectUrl) {
+                URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = null;
+            }
+            recordedAudioBlob = null;
+            audioChunks = [];
             recordingSeconds = 0;
+
+            const btnSave = document.getElementById('btn-save-voice-memo');
+            const btnRetry = document.getElementById('btn-retry-voice-memo');
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<span>💾</span><span>Simpan Rekaman</span>';
+            }
+            if (btnRetry) btnRetry.disabled = false;
         }
 
-        async function uploadVoiceMemo(mimeType) {
-            const ext = mimeType.includes('mp4') ? 'mp4' : (mimeType.includes('ogg') ? 'ogg' : 'webm');
-            const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
+        async function confirmAndSaveVoiceMemo() {
+            if (!recordedAudioBlob) {
+                alert('Tidak ada audio rekaman untuk disimpan.');
+                return;
+            }
+
+            const btnSave = document.getElementById('btn-save-voice-memo');
+            const btnRetry = document.getElementById('btn-retry-voice-memo');
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.innerHTML = '<span>⏳</span><span>Menyimpan...</span>';
+            }
+            if (btnRetry) btnRetry.disabled = true;
+
+            document.getElementById('record-status-label').innerText = '⏳ Mengunggah ke Kotak Hitam...';
+
+            const ext = recordedMimeType.includes('mp4') ? 'mp4' : (recordedMimeType.includes('ogg') ? 'ogg' : 'webm');
             const formData = new FormData();
             formData.append('work_day_id', currentWorkDayId);
-            formData.append('audio_file', audioBlob, `memo_${Date.now()}.${ext}`);
+            formData.append('audio_file', recordedAudioBlob, `memo_${Date.now()}.${ext}`);
             formData.append('duration_seconds', recordingSeconds);
             if (currentGpsCoords.lat && currentGpsCoords.lng) {
                 formData.append('latitude', currentGpsCoords.lat);
@@ -3529,11 +3635,21 @@
                     }, 800);
                 } else {
                     alert('Gagal upload: ' + (resData.message || 'Terjadi kesalahan'));
-                    resetRecorderUI();
+                    if (btnSave) {
+                        btnSave.disabled = false;
+                        btnSave.innerHTML = '<span>💾</span><span>Simpan Rekaman</span>';
+                    }
+                    if (btnRetry) btnRetry.disabled = false;
+                    document.getElementById('record-status-label').innerText = 'Gagal menyimpan. Silakan coba lagi.';
                 }
             } catch (err) {
                 alert('Kesalahan jaringan: ' + err.message);
-                resetRecorderUI();
+                if (btnSave) {
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = '<span>💾</span><span>Simpan Rekaman</span>';
+                }
+                if (btnRetry) btnRetry.disabled = false;
+                document.getElementById('record-status-label').innerText = 'Kesalahan jaringan. Silakan coba lagi.';
             }
         }
 
