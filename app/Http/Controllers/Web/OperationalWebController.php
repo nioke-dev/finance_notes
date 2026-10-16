@@ -1729,6 +1729,43 @@ class OperationalWebController extends Controller
     }
 
     /**
+     * Edit Keterangan Transaksi (Koreksi Salah Ketik / Typo)
+     */
+    public function updateTransactionDescription(Request $request, int $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'description' => 'required|string|max:255',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $transaction = Transaction::findOrFail($id);
+        $oldDescription = $transaction->description;
+        $newDescription = trim($validated['description']);
+
+        if ($oldDescription === $newDescription) {
+            return redirect()->back()->with('info', 'Tidak ada perubahan pada keterangan transaksi.');
+        }
+
+        $reason = !empty($validated['reason']) ? trim($validated['reason']) : 'Koreksi salah ketik (typo)';
+
+        $transaction->update([
+            'description' => $newDescription,
+        ]);
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => Transaction::class,
+            'auditable_id' => $transaction->id,
+            'action' => 'transaction_description_updated',
+            'old_values' => ['description' => $oldDescription],
+            'new_values' => ['description' => $newDescription],
+            'reason' => $reason,
+            'created_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', "Keterangan transaksi #{$transaction->id} berhasil diubah dari \"{$oldDescription}\" menjadi \"{$newDescription}\".");
+    }
+
+    /**
      * Reset Seluruh Data ke Kondisi Awal (Khusus Mode Uji Coba)
      */
     public function resetTrialData(Request $request): RedirectResponse

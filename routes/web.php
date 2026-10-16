@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/account-deduction', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeAccountDeduction'])->name('operational.account-deduction.store');
     Route::post('/operational/account-deduction/{id}/execute', [\App\Http\Controllers\Web\OperationalWebController::class, 'executeAccountDeduction'])->name('operational.account-deduction.execute');
     Route::delete('/operational/account-deduction/{id}', [\App\Http\Controllers\Web\OperationalWebController::class, 'destroyAccountDeduction'])->name('operational.account-deduction.destroy');
+    Route::post('/operational/transactions/{id}/edit-description', [\App\Http\Controllers\Web\OperationalWebController::class, 'updateTransactionDescription'])->name('operational.transactions.edit-description');
     Route::post('/operational/reset-trial-data', [\App\Http\Controllers\Web\OperationalWebController::class, 'resetTrialData'])->name('operational.reset-trial-data');
 
     Route::get('/analytics/driver', [DriverAnalyticsController::class, 'index'])->name('analytics.driver');

@@ -1452,9 +1452,18 @@
                                 </div>
                                 <span class="text-[10px] text-slate-300 font-medium">{{ $tx->transaction_time->format('d M Y H:i') }} &bull; Shift {{ $tx->workDay->work_date->format('d/m/Y') }}</span>
                             </div>
-                            <span class="font-bold px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200">
-                                {{ strtoupper($tx->type) }}
-                            </span>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" 
+                                    onclick="openEditTxModal({{ $tx->id }}, '{{ addslashes($tx->description) }}', 'Rp {{ number_format($tx->amount, 0, ',', '.') }}', '{{ $tx->transaction_time->format('d M Y H:i') }}')" 
+                                    class="px-2 py-1 bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg border border-slate-600 text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm" 
+                                    title="Edit Keterangan / Perbaiki Typo">
+                                    <span>✏️</span>
+                                    <span>Edit</span>
+                                </button>
+                                <span class="font-bold px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200">
+                                    {{ strtoupper($tx->type) }}
+                                </span>
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -2023,6 +2032,73 @@
                 <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
                     <button type="button" onclick="closeModal('modal-cancel-cod')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Tutup</button>
                     <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow">Batalkan & Pulihkan Saldo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Edit Keterangan Transaksi (Koreksi Typo / Catatan) --}}
+    <div id="modal-edit-tx" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8">
+            <div class="flex justify-between items-start mb-3 pb-2 border-b border-slate-700/80">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-2xl">✏️</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Edit Keterangan Transaksi</h3>
+                        <p class="text-xs text-slate-300 font-medium">Koreksi salah ketik (typo) atau perjelas catatan transaksi</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-edit-tx')" class="text-slate-300 hover:text-white font-bold text-xl leading-none">&times;</button>
+            </div>
+
+            <form id="form-edit-tx" method="POST" action="" class="space-y-4">
+                @csrf
+                <div class="p-3 bg-slate-900/80 border border-slate-700 rounded-xl space-y-1 text-xs">
+                    <div class="flex justify-between text-slate-300">
+                        <span>Nominal Transaksi:</span>
+                        <strong id="edit-tx-amount" class="text-emerald-400 font-black">Rp 0</strong>
+                    </div>
+                    <div class="flex justify-between text-slate-400 text-[11px]">
+                        <span>Waktu Transaksi:</span>
+                        <span id="edit-tx-time" class="text-slate-300 font-medium">-</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Keterangan Transaksi <span class="text-rose-400">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="description" 
+                        id="edit-tx-description" 
+                        required 
+                        maxlength="255"
+                        placeholder="Misal: Beli makan siang ayam geprek" 
+                        class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    >
+                    <span class="text-[10px] text-slate-400 mt-1 block">Perbaiki kata yang salah ketik (misal: 'brli' &rarr; 'beli').</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Alasan Koreksi (Opsional)
+                    </label>
+                    <input 
+                        type="text" 
+                        name="reason" 
+                        placeholder="Misal: Typo pengetikan keterangan" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    >
+                    <span class="text-[10px] text-slate-400 mt-1 block">Catatan ini otomatis dicatat ke Audit Log demi integritas pembukuan.</span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700/80">
+                    <button type="button" onclick="closeModal('modal-edit-tx')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
+                        <span>💾</span>
+                        <span>Simpan Perubahan</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -4302,6 +4378,22 @@
             const codeEl = document.getElementById('cancel-cod-code');
             if (codeEl) codeEl.innerText = '#' + code;
             openModal('modal-cancel-cod');
+        }
+
+        function openEditTxModal(id, description, amount, time) {
+            const form = document.getElementById('form-edit-tx');
+            if (form) form.action = '/operational/transactions/' + id + '/edit-description';
+
+            const descInput = document.getElementById('edit-tx-description');
+            if (descInput) descInput.value = description;
+
+            const amountEl = document.getElementById('edit-tx-amount');
+            if (amountEl) amountEl.innerText = amount;
+
+            const timeEl = document.getElementById('edit-tx-time');
+            if (timeEl) timeEl.innerText = time;
+
+            openModal('modal-edit-tx');
         }
 
         // ================= JAVASCRIPT LOGIKA DIGITAL REKONSILIASI & SURVIVAL GOALS =================
