@@ -1454,9 +1454,9 @@
                             </div>
                             <div class="flex items-center space-x-2">
                                 <button type="button" 
-                                    onclick="openEditTxModal({{ $tx->id }}, '{{ addslashes($tx->description) }}', 'Rp {{ number_format($tx->amount, 0, ',', '.') }}', '{{ $tx->transaction_time->format('d M Y H:i') }}')" 
+                                    onclick="openEditTxModal({{ $tx->id }}, '{{ addslashes($tx->description) }}', 'Rp {{ number_format($tx->amount, 0, ',', '.') }}', '{{ $tx->transaction_time->format('d M Y H:i') }} WIB', '{{ $tx->transaction_time->format('Y-m-d\TH:i') }}')" 
                                     class="px-2 py-1 bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg border border-slate-600 text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm" 
-                                    title="Edit Keterangan / Perbaiki Typo">
+                                    title="Edit Keterangan / Jam Transaksi">
                                     <span>✏️</span>
                                     <span>Edit</span>
                                 </button>
@@ -2078,6 +2078,19 @@
                         class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     >
                     <span class="text-[10px] text-slate-400 mt-1 block">Perbaiki kata yang salah ketik (misal: 'brli' &rarr; 'beli').</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Waktu & Jam Transaksi (WIB)
+                    </label>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="edit-tx-time-input" 
+                        class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    >
+                    <span class="text-[10px] text-slate-400 mt-1 block">Sesuaikan jika jam sebenarnya saat transaksi di lapangan berbeda.</span>
                 </div>
 
                 <div>
@@ -4401,7 +4414,7 @@
             openModal('modal-cancel-cod');
         }
 
-        function openEditTxModal(id, description, amount, time) {
+        function openEditTxModal(id, description, amount, time, rawIsoTime) {
             const form = document.getElementById('form-edit-tx');
             if (form) form.action = '/operational/transactions/' + id + '/edit-description';
 
@@ -4413,6 +4426,9 @@
 
             const timeEl = document.getElementById('edit-tx-time');
             if (timeEl) timeEl.innerText = time;
+
+            const timeInput = document.getElementById('edit-tx-time-input');
+            if (timeInput) timeInput.value = rawIsoTime || '';
 
             openModal('modal-edit-tx');
         }

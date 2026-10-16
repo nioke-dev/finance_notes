@@ -101,4 +101,36 @@ class TransactionDescriptionEditWebTest extends TestCase
         $response->assertSessionHasErrors('description');
         $this->assertEquals('beli es teh', $tx->fresh()->description);
     }
+
+    public function test_user_can_edit_transaction_time_and_description(): void
+    {
+        $tx = Transaction::create([
+            'work_day_id' => $this->workDay->id,
+            'type' => 'expense',
+            'description' => 'Parkir Motor Suhat',
+            'transaction_time' => now()->subHours(2),
+            'is_estimated_time' => false,
+        ]);
+
+        $targetTime = now()->format('Y-m-d H:i');
+
+        $response = $this->post("/operational/transactions/{$tx->id}/edit-description", [
+            'description' => 'Parkir Motor Suhat Depan Bank',
+            'transaction_time' => $targetTime,
+            'reason' => 'Koreksi jam dan detail lokasi',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $freshTx = $tx->fresh();
+        $this->assertEquals('Parkir Motor Suhat Depan Bank', $freshTx->description);
+        $this->assertEquals($targetTime, $freshTx->transaction_time->format('Y-m-d H:i'));
+
+        $this->assertDatabaseHas('audit_logs', [
+            'auditable_type' => Transaction::class,
+            'auditable_id' => $tx->id,
+            'action' => 'transaction_details_updated',
+        ]);
+    }
 }

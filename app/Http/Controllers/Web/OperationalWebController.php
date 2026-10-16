@@ -1735,6 +1735,7 @@ class OperationalWebController extends Controller
     {
         $validated = $request->validate([
             'description' => 'required|string|max:255',
+            'transaction_time' => 'nullable|date',
             'reason' => 'nullable|string|max:255',
         ]);
 
@@ -1742,27 +1743,54 @@ class OperationalWebController extends Controller
         $oldDescription = $transaction->description;
         $newDescription = trim($validated['description']);
 
-        if ($oldDescription === $newDescription) {
-            return redirect()->back()->with('info', 'Tidak ada perubahan pada keterangan transaksi.');
+        $oldTime = $transaction->transaction_time;
+        $newTime = !empty($validated['transaction_time'])
+            ? Carbon::parse($validated['transaction_time'])
+            : $oldTime;
+
+        $descChanged = ($oldDescription !== $newDescription);
+        $timeChanged = ($newTime && $oldTime->format('Y-m-d H:i') !== $newTime->format('Y-m-d H:i'));
+
+        if (!$descChanged && !$timeChanged) {
+            return redirect()->back()->with('info', 'Tidak ada perubahan pada keterangan maupun waktu transaksi.');
         }
 
-        $reason = !empty($validated['reason']) ? trim($validated['reason']) : 'Koreksi salah ketik (typo)';
+        $reason = !empty($validated['reason']) ? trim($validated['reason']) : 'Koreksi keterangan / waktu transaksi';
 
-        $transaction->update([
-            'description' => $newDescription,
-        ]);
+        $updateData = ['description' => $newDescription];
+        if ($timeChanged) {
+            $updateData['transaction_time'] = $newTime;
+        }
+
+        $transaction->update($updateData);
+
+        $actionName = $timeChanged ? 'transaction_details_updated' : 'transaction_description_updated';
 
         \App\Models\AuditLog::create([
             'auditable_type' => Transaction::class,
             'auditable_id' => $transaction->id,
-            'action' => 'transaction_description_updated',
-            'old_values' => ['description' => $oldDescription],
-            'new_values' => ['description' => $newDescription],
+            'action' => $actionName,
+            'old_values' => [
+                'description' => $oldDescription,
+                'transaction_time' => $oldTime->toDateTimeString(),
+            ],
+            'new_values' => [
+                'description' => $newDescription,
+                'transaction_time' => $newTime->toDateTimeString(),
+            ],
             'reason' => $reason,
             'created_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', "Keterangan transaksi #{$transaction->id} berhasil diubah dari \"{$oldDescription}\" menjadi \"{$newDescription}\".");
+        $msg = "Transaksi #{$transaction->id} berhasil diperbarui!";
+        if ($descChanged) {
+            $msg .= " Keterangan: \"{$newDescription}\".";
+        }
+        if ($timeChanged) {
+            $msg .= " Waktu disesuaikan ke " . $newTime->format('d M Y H:i') . " WIB.";
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**
