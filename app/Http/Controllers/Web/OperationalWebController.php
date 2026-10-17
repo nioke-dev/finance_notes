@@ -85,6 +85,33 @@ class OperationalWebController extends Controller
             $denomRecord->fill($validated);
             $denomRecord->total_physical_amount = $calculatedDenom;
             $denomRecord->save();
+        } else {
+            // Salin otomatis pecahan dari closing/update fisik terakhir agar shift hari ini langsung punya baseline
+            $latestDenom = \App\Models\CashDenomination::where('work_day_id', '!=', $workDay->id)
+                ->where('total_physical_amount', '>', 0)
+                ->latest('id')
+                ->first();
+
+            if ($latestDenom) {
+                $denomRecord = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+                $denomRecord->fill($latestDenom->only([
+                    'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
+                    'bill_5000', 'bill_2000', 'bill_1000',
+                    'coin_1000', 'coin_500', 'coin_200', 'coin_100',
+                    'damaged_notes_amount', 'damaged_notes_note'
+                ]));
+                $denomRecord->total_physical_amount = $latestDenom->total_physical_amount;
+                $denomRecord->save();
+            } else {
+                $cashAcc = Account::where('name', 'Cash')->orWhere('type', AccountType::CASH)->first();
+                $savedDenoms = $cashAcc?->metadata['denominations'] ?? null;
+                if (!empty($savedDenoms) && \App\Models\CashDenomination::calculateSum($savedDenoms) > 0) {
+                    $denomRecord = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+                    $denomRecord->fill($savedDenoms);
+                    $denomRecord->total_physical_amount = \App\Models\CashDenomination::calculateSum($savedDenoms);
+                    $denomRecord->save();
+                }
+            }
         }
 
         if ($totalCashInitial > 0) {
@@ -333,7 +360,13 @@ class OperationalWebController extends Controller
             'coin_100' => 'nullable|integer|min:0',
         ]);
 
-        $calculatedDenom = \App\Models\CashDenomination::calculateSum($request->all());
+        $denomFields = [
+            'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
+            'bill_5000', 'bill_2000', 'bill_1000',
+            'coin_1000', 'coin_500', 'coin_200', 'coin_100'
+        ];
+        $denomData = $request->only($denomFields);
+        $calculatedDenom = \App\Models\CashDenomination::calculateSum($denomData);
         $amount = $calculatedDenom > 0 ? $calculatedDenom : (int) ($validated['amount'] ?? 0);
 
         $account = Account::findOrFail($validated['account_id']);
@@ -341,26 +374,32 @@ class OperationalWebController extends Controller
             return redirect()->back()->with('error', "Hanya akun aset / wadah simpanan kas (Bank, E-Wallet, Kas) yang dapat memiliki saldo awal.");
         }
 
+        $passedDenoms = ($account->type === AccountType::CASH && $calculatedDenom > 0) ? $denomData : null;
+
         if ($account->initial_balance == 0) {
-            $initialBalanceService->setInitialBalance($account, $amount);
+            $initialBalanceService->setInitialBalance($account, $amount, $passedDenoms);
         } else {
             $reason = $validated['reason'] ?? "Koreksi saldo awal akun {$account->name}";
-            $initialBalanceService->correctInitialBalance($account, $amount, $reason);
+            $initialBalanceService->correctInitialBalance($account, $amount, $reason, $passedDenoms);
         }
 
-        // Jika akun bertipe Kas dan ada rincian pecahan fisik, simpan/update ke shift aktif hari ini jika ada
+        // Jika akun bertipe Kas dan ada rincian pecahan fisik, simpan/update ke CashDenomination shift hari ini / aktif
         if ($account->type === AccountType::CASH && $calculatedDenom > 0) {
-            $todayWorkDay = WorkDay::whereDate('work_date', now()->toDateString())->first();
-            if ($todayWorkDay) {
-                $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $todayWorkDay->id]);
-                $denom->fill($request->only([
-                    'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
-                    'bill_5000', 'bill_2000', 'bill_1000',
-                    'coin_1000', 'coin_500', 'coin_200', 'coin_100'
-                ]));
-                $denom->total_physical_amount = $calculatedDenom;
-                $denom->save();
+            $workDay = WorkDay::whereDate('work_date', now()->toDateString())->first()
+                ?? WorkDay::latest('work_date')->first();
+
+            if (!$workDay) {
+                $workDay = WorkDay::create([
+                    'work_date' => now()->toDateString(),
+                    'day_type' => WorkDay::TYPE_DAY_OFF,
+                    'status' => 'active',
+                ]);
             }
+
+            $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+            $denom->fill($denomData);
+            $denom->total_physical_amount = $calculatedDenom;
+            $denom->save();
         }
 
         return redirect()->back()->with('success', "Saldo awal akun {$account->name} berhasil diperbarui (Rp" . number_format($amount, 0, ',', '.') . ").");
@@ -419,10 +458,15 @@ class OperationalWebController extends Controller
         $denom->total_physical_amount = $totalPhysical;
         $denom->save();
 
-        // 1. Sinkronkan Saldo Akun Kas
-        $cashAcc = Account::where('name', 'Cash')->first();
+        // 1. Sinkronkan Saldo Akun Kas & metadata denominasi
+        $cashAcc = Account::where('name', 'Cash')->orWhere('type', AccountType::CASH)->first();
         if ($cashAcc) {
-            $cashAcc->update(['current_balance' => $totalPhysical]);
+            $meta = $cashAcc->metadata ?? [];
+            $meta['denominations'] = $denom->toArray();
+            $cashAcc->update([
+                'current_balance' => $totalPhysical,
+                'metadata' => $meta,
+            ]);
         }
 
         // 2. Sinkronkan ke Checkpoint DriverSnapshot terbaru jika ada

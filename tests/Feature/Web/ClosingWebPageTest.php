@@ -294,5 +294,70 @@ class ClosingWebPageTest extends TestCase
         $this->assertEquals(2, $viewDenom->bill_50000);
         $this->assertFalse($response->viewData('isPreFilledFromPrevious'));
     }
+
+    public function test_closing_page_auto_prefills_from_initial_cash_balance_metadata_when_user_never_closed_before(): void
+    {
+        // Kondisi riil: Pengguna BARU PERTAMA KALI pakai aplikasi, belum pernah closing shift sama sekali!
+        // Akun kas dikunci saldo awalnya dengan rincian lembaran & koin
+        $cashAcc = Account::where('name', 'Cash')->orWhere('type', AccountType::CASH)->first();
+        $this->assertNotNull($cashAcc);
+
+        $cashAcc->update([
+            'initial_balance' => 77000,
+            'current_balance' => 77000,
+            'metadata' => [
+                'denominations' => [
+                    'bill_50000' => 1,
+                    'bill_20000' => 1,
+                    'bill_5000' => 1,
+                    'bill_2000' => 1,
+                ],
+            ],
+        ]);
+
+        // Pastikan tabel cash_denominations KOSONG (karena belum pernah closing)
+        CashDenomination::query()->delete();
+
+        // Akses halaman closing shift pertama kali
+        $response = $this->get('/closing/' . $this->workDay->id);
+        $response->assertOk();
+
+        $viewDenom = $response->viewData('denominations');
+        $this->assertNotNull($viewDenom);
+        // Field pecahan TIDAK 0, melainkan terisi dari rincian saldo awal
+        $this->assertEquals(1, $viewDenom->bill_50000);
+        $this->assertEquals(1, $viewDenom->bill_20000);
+        $this->assertEquals(1, $viewDenom->bill_5000);
+        $this->assertEquals(1, $viewDenom->bill_2000);
+        $this->assertEquals(77000, $viewDenom->total_physical_amount);
+        $this->assertTrue($response->viewData('isPreFilledFromPrevious'));
+        $this->assertStringContainsString('Saldo Modal Awal Kas', $response->viewData('previousDenominationDate'));
+    }
+
+    public function test_closing_page_auto_prefills_via_balance_decomposition_when_no_breakdown_exists(): void
+    {
+        // Pengguna memiliki saldo kas Rp170.000 tetapi belum ada riwayat closing dan belum ada metadata pecahan
+        $cashAcc = Account::where('name', 'Cash')->orWhere('type', AccountType::CASH)->first();
+        $cashAcc->update([
+            'initial_balance' => 170000,
+            'current_balance' => 170000,
+            'metadata' => null,
+        ]);
+
+        CashDenomination::query()->delete();
+
+        $response = $this->get('/closing/' . $this->workDay->id);
+        $response->assertOk();
+
+        $viewDenom = $response->viewData('denominations');
+        $this->assertNotNull($viewDenom);
+        // Otomatis terdekomposisi (170.000 = 1x 100k, 1x 50k, 1x 20k)
+        $this->assertEquals(1, $viewDenom->bill_100000);
+        $this->assertEquals(1, $viewDenom->bill_50000);
+        $this->assertEquals(1, $viewDenom->bill_20000);
+        $this->assertEquals(170000, $viewDenom->total_physical_amount);
+        $this->assertTrue($response->viewData('isPreFilledFromPrevious'));
+        $this->assertStringContainsString('Saldo Kas Berjalan', $response->viewData('previousDenominationDate'));
+    }
 }
 

@@ -160,9 +160,20 @@ class DashboardController extends Controller
             $cashDenomination = $currentWorkDay->cashDenomination;
         }
 
-        // Jika shift saat ini belum ada hitungan fisik, ambil dari closing fisik terakhir yang pernah dicatat
-        if (!$cashDenomination) {
-            $cashDenomination = \App\Models\CashDenomination::with('workDay')->latest()->first();
+        // Jika shift saat ini belum ada hitungan fisik, ambil dari closing fisik terakhir atau saldo modal awal
+        if (!$cashDenomination || $cashDenomination->calculateTotal() === 0) {
+            $cashDenomination = \App\Models\CashDenomination::with('workDay')->where('total_physical_amount', '>', 0)->latest('id')->first();
+            if (!$cashDenomination) {
+                $cashAcc = $accounts->firstWhere('type', AccountType::CASH);
+                if ($cashAcc && !empty($cashAcc->metadata['denominations'])) {
+                    $cashDenomination = new \App\Models\CashDenomination($cashAcc->metadata['denominations']);
+                    $cashDenomination->total_physical_amount = $cashDenomination->calculateTotal();
+                } elseif ($cashAcc && ($cashAcc->current_balance > 0 || $cashAcc->initial_balance > 0)) {
+                    $bal = $cashAcc->current_balance > 0 ? $cashAcc->current_balance : $cashAcc->initial_balance;
+                    $cashDenomination = new \App\Models\CashDenomination(\App\Models\CashDenomination::decomposeAmount($bal));
+                    $cashDenomination->total_physical_amount = $bal;
+                }
+            }
         }
 
         if ($cashDenomination) {

@@ -17,6 +17,7 @@ class Account extends Model
         'current_balance',
         'initial_balance',
         'is_active',
+        'metadata',
     ];
 
     protected $casts = [
@@ -24,6 +25,7 @@ class Account extends Model
         'current_balance' => 'integer',
         'initial_balance' => 'integer',
         'is_active' => 'boolean',
+        'metadata' => 'array',
     ];
 
     public function scopeActive(Builder $query): Builder

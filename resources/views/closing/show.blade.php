@@ -363,9 +363,9 @@
                         <div class="flex items-start space-x-2.5">
                             <span class="text-xl leading-none">💡</span>
                             <div class="space-y-0.5">
-                                <span class="font-extrabold text-amber-300 block">Otomatis Terisi dari Hitungan Sebelumnya{{ !empty($previousDenominationDate) ? " (Shift {$previousDenominationDate})" : '' }}</span>
+                                <span class="font-extrabold text-amber-300 block">Otomatis Terisi dari Hitungan Sebelumnya{{ !empty($previousDenominationDate) ? " ({$previousDenominationDate})" : '' }}</span>
                                 <span class="text-[11px] text-slate-300 block leading-relaxed">
-                                    Pecahan lembaran dan koin telah disalin otomatis dari perhitungan closing terakhir. Anda tinggal mengubah pecahan yang bertambah atau berkurang hari ini tanpa perlu mengetik ulang dari 0.
+                                    Pecahan lembaran dan koin telah disalin otomatis. Anda tinggal mengubah pecahan yang bertambah atau berkurang hari ini tanpa perlu mengetik ulang dari 0.
                                 </span>
                             </div>
                         </div>

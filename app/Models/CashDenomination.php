@@ -73,6 +73,50 @@ class CashDenomination extends Model
     }
 
     /**
+     * Estimasi dekomposisi nominal saldo kas ke pecahan lembaran & koin secara otomatis.
+     */
+    public static function decomposeAmount(int $amount): array
+    {
+        $denoms = [
+            'bill_100000' => 100000,
+            'bill_50000' => 50000,
+            'bill_20000' => 20000,
+            'bill_10000' => 10000,
+            'bill_5000' => 5000,
+            'bill_2000' => 2000,
+            'bill_1000' => 1000,
+            'coin_500' => 500,
+            'coin_200' => 200,
+            'coin_100' => 100,
+        ];
+
+        $result = [
+            'bill_100000' => 0,
+            'bill_50000' => 0,
+            'bill_20000' => 0,
+            'bill_10000' => 0,
+            'bill_5000' => 0,
+            'bill_2000' => 0,
+            'bill_1000' => 0,
+            'coin_1000' => 0,
+            'coin_500' => 0,
+            'coin_200' => 0,
+            'coin_100' => 0,
+        ];
+
+        $remaining = max(0, $amount);
+        foreach ($denoms as $key => $val) {
+            if ($remaining >= $val) {
+                $count = intdiv($remaining, $val);
+                $result[$key] = $count;
+                $remaining %= $val;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Hitung total lembar & keping uang di dompet
      */
     public function getTotalPiecesAttribute(): int

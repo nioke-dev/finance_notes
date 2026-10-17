@@ -26,33 +26,66 @@ class ClosingWebController extends Controller
         $previousDenominationDate = null;
 
         if (!$denominations || $denominations->calculateTotal() === 0) {
+            // 1. Cari CashDenomination dari shift lain di database yang memiliki total > 0
             $previousDenomination = CashDenomination::with('workDay')
                 ->where('work_day_id', '!=', $workDay->id)
                 ->where('total_physical_amount', '>', 0)
                 ->latest('id')
                 ->first();
 
+            $sourceData = null;
+            $sourceLabel = null;
+
             if ($previousDenomination) {
+                $sourceData = $previousDenomination->toArray();
+                $sourceLabel = "Shift " . ($previousDenomination->workDay?->work_date?->translatedFormat('d M Y') ?? 'Sebelumnya');
+            } else {
+                // 2. Jika belum pernah closing sama sekali, cek saldo awal kas di akun Cash (metadata atau audit log)
+                $cashAcc = Account::where('name', 'Cash')->orWhere('type', \App\Enums\AccountType::CASH)->first();
+                if ($cashAcc) {
+                    $savedDenom = $cashAcc->metadata['denominations'] ?? null;
+                    if (!$savedDenom) {
+                        $auditLog = \App\Models\AuditLog::where('auditable_type', Account::class)
+                            ->where('auditable_id', $cashAcc->id)
+                            ->whereNotNull('new_values->denominations')
+                            ->latest('id')
+                            ->first();
+                        $savedDenom = $auditLog?->new_values['denominations'] ?? null;
+                    }
+
+                    if (!empty($savedDenom) && CashDenomination::calculateSum($savedDenom) > 0) {
+                        $sourceData = $savedDenom;
+                        $sourceLabel = "Saldo Modal Awal Kas Terkunci";
+                    } elseif ($cashAcc->current_balance > 0 || $cashAcc->initial_balance > 0) {
+                        // 3. Fallback dekomposisi otomatis dari saldo kas berjalan
+                        $cashBal = $cashAcc->current_balance > 0 ? $cashAcc->current_balance : $cashAcc->initial_balance;
+                        $sourceData = CashDenomination::decomposeAmount($cashBal);
+                        $sourceLabel = "Saldo Kas Berjalan (Rp " . number_format($cashBal, 0, ',', '.') . ")";
+                    }
+                }
+            }
+
+            if ($sourceData) {
                 if (!$denominations) {
                     $denominations = new CashDenomination(['work_day_id' => $workDay->id]);
                 }
-                $denominations->bill_100000 = $previousDenomination->bill_100000;
-                $denominations->bill_50000 = $previousDenomination->bill_50000;
-                $denominations->bill_20000 = $previousDenomination->bill_20000;
-                $denominations->bill_10000 = $previousDenomination->bill_10000;
-                $denominations->bill_5000 = $previousDenomination->bill_5000;
-                $denominations->bill_2000 = $previousDenomination->bill_2000;
-                $denominations->bill_1000 = $previousDenomination->bill_1000;
-                $denominations->coin_1000 = $previousDenomination->coin_1000;
-                $denominations->coin_500 = $previousDenomination->coin_500;
-                $denominations->coin_200 = $previousDenomination->coin_200;
-                $denominations->coin_100 = $previousDenomination->coin_100;
-                $denominations->total_physical_amount = $previousDenomination->total_physical_amount;
-                $denominations->damaged_notes_amount = $previousDenomination->damaged_notes_amount;
-                $denominations->damaged_notes_note = $previousDenomination->damaged_notes_note;
+                $denominations->bill_100000 = (int) ($sourceData['bill_100000'] ?? 0);
+                $denominations->bill_50000 = (int) ($sourceData['bill_50000'] ?? 0);
+                $denominations->bill_20000 = (int) ($sourceData['bill_20000'] ?? 0);
+                $denominations->bill_10000 = (int) ($sourceData['bill_10000'] ?? 0);
+                $denominations->bill_5000 = (int) ($sourceData['bill_5000'] ?? 0);
+                $denominations->bill_2000 = (int) ($sourceData['bill_2000'] ?? 0);
+                $denominations->bill_1000 = (int) ($sourceData['bill_1000'] ?? 0);
+                $denominations->coin_1000 = (int) ($sourceData['coin_1000'] ?? 0);
+                $denominations->coin_500 = (int) ($sourceData['coin_500'] ?? 0);
+                $denominations->coin_200 = (int) ($sourceData['coin_200'] ?? 0);
+                $denominations->coin_100 = (int) ($sourceData['coin_100'] ?? 0);
+                $denominations->total_physical_amount = CashDenomination::calculateSum($denominations->toArray());
+                $denominations->damaged_notes_amount = (int) ($sourceData['damaged_notes_amount'] ?? 0);
+                $denominations->damaged_notes_note = $sourceData['damaged_notes_note'] ?? null;
 
                 $isPreFilledFromPrevious = true;
-                $previousDenominationDate = $previousDenomination->workDay?->work_date?->translatedFormat('d M Y');
+                $previousDenominationDate = $sourceLabel;
             } else {
                 if (!$denominations) {
                     $denominations = new CashDenomination(['work_day_id' => $workDay->id]);
@@ -196,6 +229,14 @@ class ClosingWebController extends Controller
         $denomination->fill($validated);
         $denomination->total_physical_amount = $denomination->calculateTotal();
         $denomination->save();
+
+        // Sinkronkan ke metadata akun kas agar selalu tercatat
+        $cashAcc = Account::where('name', 'Cash')->orWhere('type', \App\Enums\AccountType::CASH)->first();
+        if ($cashAcc) {
+            $meta = $cashAcc->metadata ?? [];
+            $meta['denominations'] = $denomination->toArray();
+            $cashAcc->update(['metadata' => $meta]);
+        }
 
         return redirect()->back()->with('success', 'Perhitungan fisik uang dompet berhasil disimpan.');
     }
