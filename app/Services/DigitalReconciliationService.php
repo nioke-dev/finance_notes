@@ -23,14 +23,18 @@ class DigitalReconciliationService
      *
      * @param WorkDay $workDay
      * @param array<int, array{account_id: int, actual_balance: int}> $accountBalances
-     * @return array{adjusted_count: int, total_surplus: int, total_shortage: int}
+     * @param int $codQrisAmount Nominal pembayaran tagihan pokok COD yang dibayar via QRIS (Bukan tip)
+     * @return array{adjusted_count: int, total_surplus: int, total_shortage: int, cod_reimbursed: int, net_qris_tip: int}
      */
-    public function reconcileDigitalAccounts(WorkDay $workDay, array $accountBalances): array
+    public function reconcileDigitalAccounts(WorkDay $workDay, array $accountBalances, int $codQrisAmount = 0): array
     {
-        return DB::transaction(function () use ($workDay, $accountBalances) {
+        return DB::transaction(function () use ($workDay, $accountBalances, $codQrisAmount) {
             $adjustedCount = 0;
             $totalSurplus = 0;
             $totalShortage = 0;
+            $remainingCodQris = max(0, $codQrisAmount);
+            $totalCodReimbursed = 0;
+            $totalNetQrisTip = 0;
 
             foreach ($accountBalances as $item) {
                 $accountId = (int) $item['account_id'];
@@ -56,13 +60,88 @@ class DigitalReconciliationService
                         );
                         $txDesc = "Penyelarasan Saldo ShopeePay Driver: +Rp " . number_format($diff, 0, ',', '.');
                         $auditReason = "Penyelarasan saldo ShopeePay: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai pendapatan narik ShopeeFood.";
-                    } elseif (in_array($account->name, ['GoPay', 'GoPay Merchant'])) {
-                        $surplusAccount = Account::firstOrCreate(
-                            ['name' => 'Pendapatan QRIS / Tip Non-Tunai'],
-                            ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+
+                        $this->ledgerService->recordTransaction(
+                            workDay: $workDay,
+                            type: 'income',
+                            description: $txDesc,
+                            transactionTime: now(),
+                            entries: [
+                                ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $diff],
+                                ['account_id' => $surplusAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $diff],
+                            ],
+                            isEstimatedTime: false,
+                            metadata: [
+                                'type' => 'digital_reconciliation_surplus',
+                                'account_id' => $account->id,
+                                'diff' => $diff,
+                            ]
                         );
-                        $txDesc = "Surplus QRIS Tip Nyusul {$account->name}: +Rp " . number_format($diff, 0, ',', '.');
-                        $auditReason = "Penyelarasan saldo digital {$account->name}: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai tip QRIS non-tunai.";
+                    } elseif (in_array($account->name, ['GoPay', 'GoPay Merchant'])) {
+                        // Perhitungan Teliti: Apakah sebagian dari uang masuk QRIS ini adalah pelunasan tagihan COD makanan customer?
+                        $codPortion = 0;
+                        if ($remainingCodQris > 0) {
+                            $codPortion = min($diff, $remainingCodQris);
+                            $remainingCodQris -= $codPortion;
+                            $totalCodReimbursed += $codPortion;
+                        }
+
+                        $tipPortion = $diff - $codPortion;
+                        $totalNetQrisTip += $tipPortion;
+
+                        // 1. Jika ada porsi pelunasan tagihan COD customer via QRIS (Pengembalian modal makanan, BUKAN tip!)
+                        if ($codPortion > 0) {
+                            $talanganAccount = Account::firstOrCreate(
+                                ['name' => 'Talangan Pesanan COD'],
+                                ['type' => AccountType::RECEIVABLE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                            );
+
+                            $this->ledgerService->recordTransaction(
+                                workDay: $workDay,
+                                type: 'income',
+                                description: "Pelunasan Tagihan COD Customer via QRIS {$account->name}: Rp " . number_format($codPortion, 0, ',', '.') . " (Pengembalian Modal Makanan)",
+                                transactionTime: now(),
+                                entries: [
+                                    ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $codPortion],
+                                    ['account_id' => $talanganAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $codPortion],
+                                ],
+                                isEstimatedTime: false,
+                                metadata: [
+                                    'type' => 'cod_qris_settlement',
+                                    'account_id' => $account->id,
+                                    'bill_amount' => $codPortion,
+                                ]
+                            );
+                        }
+
+                        // 2. Jika ada sisa kelebihan di atas tagihan COD, baru diakui sebagai Tip Non-Tunai Murni!
+                        if ($tipPortion > 0) {
+                            $surplusAccount = Account::firstOrCreate(
+                                ['name' => 'Pendapatan QRIS / Tip Non-Tunai'],
+                                ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                            );
+
+                            $this->ledgerService->recordTransaction(
+                                workDay: $workDay,
+                                type: 'income',
+                                description: "Surplus Tip QRIS Murni {$account->name}: +Rp " . number_format($tipPortion, 0, ',', '.'),
+                                transactionTime: now(),
+                                entries: [
+                                    ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $tipPortion],
+                                    ['account_id' => $surplusAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $tipPortion],
+                                ],
+                                isEstimatedTime: false,
+                                metadata: [
+                                    'type' => 'digital_reconciliation_surplus',
+                                    'account_id' => $account->id,
+                                    'diff' => $tipPortion,
+                                    'cod_portion' => $codPortion,
+                                ]
+                            );
+                        }
+
+                        $auditReason = "Penyelarasan saldo digital {$account->name}: total +Rp " . number_format($diff, 0, ',', '.') . 
+                            ($codPortion > 0 ? " (Rp " . number_format($codPortion, 0, ',', '.') . " pokok COD makanan + Rp " . number_format($tipPortion, 0, ',', '.') . " tip murni)." : " diakui sebagai tip QRIS non-tunai.");
                     } elseif ($account->name === 'Cash' || $account->type === AccountType::CASH) {
                         $surplusAccount = Account::firstOrCreate(
                             ['name' => 'Pendapatan Tip Tunai Langsung'],
@@ -70,6 +149,23 @@ class DigitalReconciliationService
                         );
                         $txDesc = "Surplus Uang Kas Dompet: +Rp " . number_format($diff, 0, ',', '.');
                         $auditReason = "Penyelarasan uang kas dompet: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai tip tunai langsung dari pelanggan.";
+
+                        $this->ledgerService->recordTransaction(
+                            workDay: $workDay,
+                            type: 'income',
+                            description: $txDesc,
+                            transactionTime: now(),
+                            entries: [
+                                ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $diff],
+                                ['account_id' => $surplusAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $diff],
+                            ],
+                            isEstimatedTime: false,
+                            metadata: [
+                                'type' => 'digital_reconciliation_surplus',
+                                'account_id' => $account->id,
+                                'diff' => $diff,
+                            ]
+                        );
                     } else {
                         $surplusAccount = Account::firstOrCreate(
                             ['name' => 'Pendapatan Selisih Kas (Surplus Tak Terlacak)'],
@@ -77,24 +173,24 @@ class DigitalReconciliationService
                         );
                         $txDesc = "Surplus Digital Nyusul {$account->name}: +Rp " . number_format($diff, 0, ',', '.');
                         $auditReason = "Penyelarasan saldo digital {$account->name}: surplus +Rp " . number_format($diff, 0, ',', '.') . " diakui sebagai pendapatan digital nyusul.";
-                    }
 
-                    $tx = $this->ledgerService->recordTransaction(
-                        workDay: $workDay,
-                        type: 'income',
-                        description: $txDesc,
-                        transactionTime: now(),
-                        entries: [
-                            ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $diff],
-                            ['account_id' => $surplusAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $diff],
-                        ],
-                        isEstimatedTime: false,
-                        metadata: [
-                            'type' => 'digital_reconciliation_surplus',
-                            'account_id' => $account->id,
-                            'diff' => $diff,
-                        ]
-                    );
+                        $this->ledgerService->recordTransaction(
+                            workDay: $workDay,
+                            type: 'income',
+                            description: $txDesc,
+                            transactionTime: now(),
+                            entries: [
+                                ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $diff],
+                                ['account_id' => $surplusAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $diff],
+                            ],
+                            isEstimatedTime: false,
+                            metadata: [
+                                'type' => 'digital_reconciliation_surplus',
+                                'account_id' => $account->id,
+                                'diff' => $diff,
+                            ]
+                        );
+                    }
 
                     AuditLog::create([
                         'auditable_type' => Account::class,
@@ -159,6 +255,8 @@ class DigitalReconciliationService
                 'adjusted_count' => $adjustedCount,
                 'total_surplus' => $totalSurplus,
                 'total_shortage' => $totalShortage,
+                'cod_reimbursed' => $totalCodReimbursed,
+                'net_qris_tip' => $totalNetQrisTip,
             ];
         });
     }

@@ -237,5 +237,63 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
         $dashResponse->assertSee('Cek poin jam 21.00 di Suhat');
         $dashResponse->assertSee('10 Pesanan Selesai');
     }
+
+    public function test_reconcile_digital_properly_separates_cod_food_bill_from_pure_qris_tip_and_allocates_correctly(): void
+    {
+        $gopay = Account::where('name', 'GoPay')->firstOrFail();
+        $gopay->update(['current_balance' => 10000]);
+
+        // Skenario Nyata Driver:
+        // Customer COD pesan makanan Rp 45.000, tapi bayar transfer via QRIS GoPay Rp 50.000 (kasih tip Rp 5.000).
+        // Saldo GoPay driver di aplikasi HP bertambah +50.000 menjadi Rp 60.000.
+        // Driver memasukkan tagihan pokok COD Rp 45.000 agar tidak ditelan mentah-mentah sebagai tip!
+        $payload = [
+            'work_day_id' => $this->workDay->id,
+            'cod_qris_amount' => 45000,
+            'balances' => [
+                [
+                    'account_id' => $gopay->id,
+                    'actual_balance' => 60000,
+                ],
+            ],
+        ];
+
+        $response = $this->post('/operational/digital-reconciliation', $payload);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // 1. Saldo GoPay terupdate menjadi 60.000
+        $this->assertEquals(60000, $gopay->fresh()->current_balance);
+
+        // 2. Transaksi 1: Modal COD Makanan Rp 45.000 masuk melunasi Talangan Pesanan COD (Bukan Tip!)
+        $talanganAccount = Account::where('name', 'Talangan Pesanan COD')->firstOrFail();
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'description' => 'Pelunasan Tagihan COD Customer via QRIS GoPay: Rp 45.000 (Pengembalian Modal Makanan)',
+        ]);
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $talanganAccount->id,
+            'entry_type' => 'credit',
+            'amount' => 45000,
+        ]);
+
+        // 3. Transaksi 2: Hanya sisa kelebihan Rp 5.000 yang diakui sebagai Tip QRIS Murni
+        $qrisTipAccount = Account::where('name', 'Pendapatan QRIS / Tip Non-Tunai')->firstOrFail();
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'description' => 'Surplus Tip QRIS Murni GoPay: +Rp 5.000',
+        ]);
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $qrisTipAccount->id,
+            'entry_type' => 'credit',
+            'amount' => 5000,
+        ]);
+
+        // 4. Pastikan session flash message memuat info alokasi modal COD & tip murni
+        $response->assertSessionHas('success', function ($msg) {
+            return str_contains($msg, 'Modal COD via QRIS Rp 45.000 dialokasikan ke Talangan')
+                && str_contains($msg, 'Tip QRIS Murni +Rp 5.000');
+        });
+    }
 }
 

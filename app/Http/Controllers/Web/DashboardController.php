@@ -281,6 +281,16 @@ class DashboardController extends Controller
             : collect();
         $latestSnapshot = $currentWorkDay?->latestSnapshot;
 
+        // Total tagihan makanan COD (aktif atau selesai via QRIS) untuk panduan pengurang modal rekonsiliasi
+        $todayCodQrisBillTotal = $currentWorkDay 
+            ? (int) $currentWorkDay->activeCodOrders()
+                ->where(function ($q) {
+                    $q->where('payment_method', 'qris')
+                      ->orWhere('status', 'on_delivery');
+                })
+                ->sum('bill_amount')
+            : 0;
+
         return view('dashboard.index', compact(
             'accounts',
             'paylaterProviders',
@@ -325,7 +335,8 @@ class DashboardController extends Controller
             'totalMonthlySubscriptions',
             'unpaidSubscriptionsAmount',
             'driverSnapshots',
-            'latestSnapshot'
+            'latestSnapshot',
+            'todayCodQrisBillTotal'
         ));
     }
 }

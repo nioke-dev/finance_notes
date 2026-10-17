@@ -3203,6 +3203,62 @@
                     </div>
                 </div>
 
+                {{-- PEMISAH POKOK COD VIA QRIS (PENGEMBALIAN MODAL MAKANAN vs TIP MURNI) --}}
+                <div class="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">🍜</span>
+                            <div>
+                                <label for="recon-cod-qris-amount" class="text-xs font-black text-amber-300 block">
+                                    Tagihan Pokok COD Dibayar Customer via QRIS (Rp)
+                                </label>
+                                <p class="text-[11px] text-slate-300 leading-snug">
+                                    Pernah antar pesanan COD tapi customer membayar tagihan makanannya transfer lewat QRIS GoPay/Merchant?
+                                </p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 shrink-0">
+                            Pengurang Modal Makanan
+                        </span>
+                    </div>
+
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-amber-400 font-bold">Rp</span>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            name="cod_qris_amount" 
+                            id="recon-cod-qris-amount" 
+                            value="0" 
+                            min="0" 
+                            step="1" 
+                            oninput="calculateDigitalReconDiff()" 
+                            placeholder="0 jika tidak ada customer COD bayar QRIS"
+                            class="w-full bg-slate-950 border border-amber-500/50 rounded-xl pl-9 pr-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        >
+                    </div>
+
+                    @if(!empty($todayCodQrisBillTotal) && $todayCodQrisBillTotal > 0)
+                        <div class="flex items-center justify-between bg-amber-900/30 border border-amber-500/30 rounded-xl px-3 py-1.5">
+                            <span class="text-[11px] text-amber-200">
+                                💡 Terdeteksi tagihan order COD hari ini: <strong>Rp {{ number_format($todayCodQrisBillTotal, 0, ',', '.') }}</strong>
+                            </span>
+                            <button 
+                                type="button" 
+                                onclick="document.getElementById('recon-cod-qris-amount').value = {{ $todayCodQrisBillTotal }}; calculateDigitalReconDiff();"
+                                class="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-black transition"
+                            >
+                                Pakai Angka Ini
+                            </button>
+                        </div>
+                    @endif
+
+                    <div class="text-[10px] text-amber-200/90 leading-relaxed bg-slate-950/60 p-2.5 rounded-xl border border-amber-500/20">
+                        🛡️ <strong>Prinsip Anti Ambil Mentah-Mentah:</strong> Uang masuk QRIS tidak akan dianggap 100% tip. Sebesar nominal pokok makanan ini dialokasikan ke <em>Talangan Pesanan COD</em> (menggantikan modal ShopeePay yang terpotong resto). Hanya sisa kelebihannya yang diakui sebagai <strong>Tip QRIS Murni</strong> untuk diadu dengan biaya parkir.
+                    </div>
+                </div>
+
                 {{-- BAGIAN 3: HASIL COMPARE LIVE (REAL-TIME KOMPARASI) --}}
                 <div id="recon-compare-box" class="bg-gradient-to-br from-slate-950 to-purple-950/40 border border-purple-500/50 rounded-2xl p-4 space-y-3">
                     <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
@@ -4587,7 +4643,14 @@
                     }
                 });
 
-                const totalTipsAndInflow = shopeeTip + gopayInflow + gopayMerchantInflow + cashInflow;
+                // PERHITUNGAN TELITI COD VIA QRIS:
+                // Jangan ambil mentah-mentah inflow QRIS sebagai tip!
+                const codQrisBill = parseInt(document.getElementById('recon-cod-qris-amount')?.value) || 0;
+                const grossQrisInflow = gopayInflow + gopayMerchantInflow;
+                const codReimbursed = Math.min(grossQrisInflow, codQrisBill);
+                const netQrisTip = Math.max(0, grossQrisInflow - codQrisBill);
+
+                const totalTipsAndInflow = shopeeTip + netQrisTip + cashInflow;
                 const netParkingResult = totalTipsAndInflow - parkingExpense;
 
                 const expenseDisp = document.getElementById('parking-compare-expense-disp');
@@ -4612,18 +4675,25 @@
                 }
 
                 if (statusBanner) {
+                    let codNoticeHtml = '';
+                    if (codReimbursed > 0) {
+                        codNoticeHtml = `<div class="mt-2 p-2 rounded-lg bg-amber-950/60 border border-amber-500/40 text-[11px] text-amber-200 leading-snug">` +
+                            `🛡️ <strong>Alokasi COD Presisi:</strong> Dari total inflow QRIS Rp ${grossQrisInflow.toLocaleString('id-ID')}, sebesar <strong>Rp ${codReimbursed.toLocaleString('id-ID')}</strong> diperhitungkan sebagai pembayaran tagihan pokok makanan COD (pengembalian modal ShopeePay, bukan tip). Hanya sisa <strong>Rp ${netQrisTip.toLocaleString('id-ID')}</strong> yang diakui sebagai Tip Murni untuk diadu dengan biaya parkir.` +
+                            `</div>`;
+                    }
+
                     if (netParkingResult > 0) {
                         statusBanner.className = 'p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium';
                         statusBanner.innerHTML = `<strong>🎉 SURPLUS PARKIR (UNTUNG): +Rp ${netParkingResult.toLocaleString('id-ID')}</strong><br>` +
-                            `Total tip & QRIS yang Anda peroleh (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) <strong>MENUTUP 100%</strong> biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')}) dengan sisa untung Rp ${netParkingResult.toLocaleString('id-ID')}. Narik hari ini tidak boncos di parkiran!`;
+                            `Total tip riil & QRIS murni (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) <strong>MENUTUP 100%</strong> biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')}) dengan sisa untung Rp ${netParkingResult.toLocaleString('id-ID')}. Narik hari ini tidak boncos di parkiran!` + codNoticeHtml;
                     } else if (netParkingResult < 0) {
                         statusBanner.className = 'p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl text-xs text-rose-200 leading-relaxed font-medium';
                         statusBanner.innerHTML = `<strong>⚠️ MINUS / BONCOS PARKIR: -Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}</strong><br>` +
-                            `Biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')} dari ${parkingPaidCount} spot bayar) <strong>LEBIH BESAR</strong> daripada total tip & QRIS yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}). Biaya parkir Anda minus Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}.`;
+                            `Biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')} dari ${parkingPaidCount} spot bayar) <strong>LEBIH BESAR</strong> daripada total tip riil & QRIS murni yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}). Biaya parkir Anda minus Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}.` + codNoticeHtml;
                     } else {
                         statusBanner.className = 'p-3 bg-indigo-950/40 border border-indigo-500/40 rounded-xl text-xs text-indigo-200 leading-relaxed font-medium';
                         statusBanner.innerHTML = `<strong>✓ PARKIR IMPAS SEMPURNA (Rp 0)</strong><br>` +
-                            `Total tip & QRIS yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) pas persis menutup pengeluaran parkir (Rp ${parkingExpense.toLocaleString('id-ID')}). Beban parkir tertutup tanpa minus.`;
+                            `Total tip riil & QRIS murni yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) pas persis menutup pengeluaran parkir (Rp ${parkingExpense.toLocaleString('id-ID')}). Beban parkir tertutup tanpa minus.` + codNoticeHtml;
                     }
                 }
             }

@@ -99,6 +99,13 @@ class ClosingWebController extends Controller
                 ELSE 5 END")
             ->get();
 
+        $todayCodQrisBillTotal = (int) \App\Models\ActiveCodOrder::where('work_day_id', $workDay->id)
+            ->where(function ($q) {
+                $q->where('payment_method', 'qris')
+                  ->orWhere('status', 'on_delivery');
+            })
+            ->sum('bill_amount');
+
         return view('closing.show', compact(
             'workDay',
             'accounts',
@@ -117,7 +124,8 @@ class ClosingWebController extends Controller
             'cashSurplus',
             'totalTipsAndQris',
             'parkingNetResult',
-            'digitalReconAccounts'
+            'digitalReconAccounts',
+            'todayCodQrisBillTotal'
         ));
     }
 
@@ -165,13 +173,15 @@ class ClosingWebController extends Controller
 
         $validated = $request->validate([
             'closing_notes' => 'nullable|string',
+            'cod_qris_amount' => 'nullable|integer|min:0',
             'digital_balances' => 'nullable|array',
             'digital_balances.*.account_id' => 'required_with:digital_balances|exists:accounts,id',
             'digital_balances.*.actual_balance' => 'required_with:digital_balances|integer|min:0',
         ]);
 
         if (!empty($validated['digital_balances'])) {
-            $digitalReconciliationService->reconcileDigitalAccounts($workDay, $validated['digital_balances']);
+            $codQrisAmount = (int) ($validated['cod_qris_amount'] ?? 0);
+            $digitalReconciliationService->reconcileDigitalAccounts($workDay, $validated['digital_balances'], $codQrisAmount);
         }
 
         try {

@@ -1364,6 +1364,7 @@ class OperationalWebController extends Controller
             'hub_income' => 'nullable|integer|min:0',
             'hub_bonus' => 'nullable|integer|min:0',
             'customer_tips' => 'nullable|integer|min:0',
+            'cod_qris_amount' => 'nullable|integer|min:0',
             'notes' => 'nullable|string|max:500',
             'balances' => 'required|array',
             'balances.*.account_id' => 'required|exists:accounts,id',
@@ -1378,8 +1379,10 @@ class OperationalWebController extends Controller
             return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan. Silakan buka hari kerja terlebih dahulu.');
         }
 
-        // 1. Eksekusi rekonsiliasi saldo akun melalui DigitalReconciliationService
-        $result = $service->reconcileDigitalAccounts($workDay, $validated['balances']);
+        $codQrisAmount = (int) ($validated['cod_qris_amount'] ?? 0);
+
+        // 1. Eksekusi rekonsiliasi saldo akun melalui DigitalReconciliationService (memisahkan tagihan COD & tip murni)
+        $result = $service->reconcileDigitalAccounts($workDay, $validated['balances'], $codQrisAmount);
 
         // 2. Simpan Checkpoint DriverSnapshot
         $recordedAt = !empty($validated['recorded_at'])
@@ -1433,7 +1436,12 @@ class OperationalWebController extends Controller
 
         if ($result['adjusted_count'] > 0) {
             $parts = [];
-            if ($result['total_surplus'] > 0) {
+            if (!empty($result['cod_reimbursed']) && $result['cod_reimbursed'] > 0) {
+                $parts[] = "Modal COD via QRIS Rp " . number_format($result['cod_reimbursed'], 0, ',', '.') . " dialokasikan ke Talangan";
+            }
+            if (!empty($result['net_qris_tip']) && $result['net_qris_tip'] > 0) {
+                $parts[] = "Tip QRIS Murni +Rp " . number_format($result['net_qris_tip'], 0, ',', '.');
+            } elseif ($result['total_surplus'] > 0 && empty($result['cod_reimbursed'])) {
                 $parts[] = "Surplus/Tip Terdeteksi +Rp " . number_format($result['total_surplus'], 0, ',', '.');
             }
             if ($result['total_shortage'] > 0) {
