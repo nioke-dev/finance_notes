@@ -84,6 +84,13 @@ class CashDenominationOnDemandTest extends TestCase
 
         // Checkpoint DriverSnapshot tersinkron
         $this->assertEquals($expectedTotal, $snapshot->fresh()->cash_balance);
+
+        // Audit log tercatat dengan benar
+        $this->assertDatabaseHas('audit_logs', [
+            'auditable_type' => CashDenomination::class,
+            'auditable_id' => $denom->id,
+            'action' => 'cash_denom_update',
+        ]);
     }
 
     public function test_can_record_fuel_with_optional_cash_breakdown_and_updates_denomination(): void

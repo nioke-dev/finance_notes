@@ -483,7 +483,7 @@ class OperationalWebController extends Controller
         \App\Models\AuditLog::create([
             'auditable_type' => \App\Models\CashDenomination::class,
             'auditable_id' => $denom->id,
-            'action' => 'update_cash_denominations_ondemand',
+            'action' => 'cash_denom_update',
             'old_values' => $oldValues,
             'new_values' => $denom->toArray(),
             'reason' => "Update fisik kas di saku/dompet on-demand: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin)",
