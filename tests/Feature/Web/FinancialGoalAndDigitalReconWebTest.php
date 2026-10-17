@@ -601,5 +601,146 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
         $this->assertEquals(25000, $dailySummary['mode_overall']['breakdown_outcome']['personal_expense']);
         $this->assertEquals(67000 - 44000, $dailySummary['mode_overall']['net']);
     }
+
+    public function test_driver_can_update_hub_bonus_and_reflects_in_latest_checkpoint(): void
+    {
+        // 1. Buat snapshot awal checkpoint
+        $snapshot = \App\Models\DriverSnapshot::create([
+            'work_day_id' => $this->workDay->id,
+            'recorded_at' => now()->startOfDay()->addHours(18),
+            'completed_orders' => 12,
+            'delivery_fee' => 96000,
+            'hub_income' => 0,
+            'hub_bonus' => 0,
+            'customer_tips' => 0,
+            'shopeepay_balance' => 50000,
+            'gopay_balance' => 0,
+            'gopay_merchant_balance' => 0,
+            'cash_balance' => 10000,
+        ]);
+
+        // 2. Update bonus hub jam 20:00+ dengan 23 pesanan & sudah online >= 9 jam
+        // Formula 23 pesanan: 1-15 (0) + 16-20 (5 * 1000 = 5000) + 21-23 (3 * 1500 = 4500) = 9.500
+        $response = $this->post('/operational/update-hub-bonus', [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 23,
+            'is_online_9_hours' => 1,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Verifikasi WorkDay ter-update
+        $this->workDay->refresh();
+        $this->assertEquals(23, $this->workDay->total_orders);
+        $this->assertTrue($this->workDay->is_performance_eligible);
+        $this->assertGreaterThanOrEqual(9.0, (float) $this->workDay->online_hours);
+
+        // Verifikasi Checkpoint DriverSnapshot terbaru ter-update nilai bonusnya
+        $snapshot->refresh();
+        $this->assertEquals(9500, $snapshot->hub_bonus);
+        $this->assertEquals(23, $snapshot->completed_orders);
+    }
+
+    public function test_driver_cannot_get_hub_bonus_if_online_less_than_9_hours(): void
+    {
+        $snapshot = \App\Models\DriverSnapshot::create([
+            'work_day_id' => $this->workDay->id,
+            'recorded_at' => now(),
+            'completed_orders' => 25,
+            'delivery_fee' => 200000,
+            'hub_income' => 0,
+            'hub_bonus' => 12500,
+            'customer_tips' => 0,
+            'shopeepay_balance' => 50000,
+            'gopay_balance' => 0,
+            'gopay_merchant_balance' => 0,
+            'cash_balance' => 10000,
+        ]);
+
+        // Kirim tanpa centang is_online_9_hours (online < 9 jam)
+        $response = $this->post('/operational/update-hub-bonus', [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 25,
+            'is_online_9_hours' => 0,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->workDay->refresh();
+        $this->assertFalse($this->workDay->is_performance_eligible);
+
+        // Nilai bonus di checkpoint disetel ke 0 karena < 9 jam
+        $snapshot->refresh();
+        $this->assertEquals(0, $snapshot->hub_bonus);
+    }
+
+    public function test_driver_can_claim_hub_bonus_directly_into_shopeepay_and_prevents_double_claim(): void
+    {
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $initialShopeePayBalance = 100000;
+        $shopeePay->update(['current_balance' => $initialShopeePayBalance]);
+
+        // Buat snapshot dengan bonus hub 18.500 (28 pesanan)
+        $snapshot = \App\Models\DriverSnapshot::create([
+            'work_day_id' => $this->workDay->id,
+            'recorded_at' => now(),
+            'completed_orders' => 28,
+            'delivery_fee' => 220000,
+            'hub_income' => 0,
+            'hub_bonus' => 18500,
+            'customer_tips' => 0,
+            'shopeepay_balance' => $initialShopeePayBalance,
+            'gopay_balance' => 0,
+            'gopay_merchant_balance' => 0,
+            'cash_balance' => 10000,
+        ]);
+        $this->workDay->update([
+            'total_orders' => 28,
+            'is_performance_eligible' => true,
+            'online_hours' => 9.5,
+        ]);
+
+        // 1. Eksekusi klaim bonus masuk ke ShopeePay
+        $response = $this->post('/operational/claim-hub-bonus', [
+            'work_day_id' => $this->workDay->id,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Saldo ShopeePay bertambah Rp 18.500
+        $this->assertEquals($initialShopeePayBalance + 18500, $shopeePay->fresh()->current_balance);
+
+        // Transaksi tercatat di buku besar
+        $bonusIncomeAcc = Account::where('name', 'Bonus Hub ShopeeFood')->firstOrFail();
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $bonusIncomeAcc->id,
+            'entry_type' => 'credit',
+            'amount' => 18500,
+        ]);
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $shopeePay->id,
+            'entry_type' => 'debit',
+            'amount' => 18500,
+        ]);
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'description' => 'Pencairan Resmi Bonus Insentif Hub ke ShopeePay: Rp 18.500',
+        ]);
+
+        // 2. Proteksi Double-Claim (Mencegah pencairan ganda)
+        $responseDuplicate = $this->post('/operational/claim-hub-bonus', [
+            'work_day_id' => $this->workDay->id,
+        ]);
+        $responseDuplicate->assertRedirect();
+        $responseDuplicate->assertSessionHas('error');
+        $this->assertTrue(str_contains(session('error'), 'sudah pernah dikonfirmasi'));
+
+        // Saldo ShopeePay tetap tidak bertambah lagi
+        $this->assertEquals($initialShopeePayBalance + 18500, $shopeePay->fresh()->current_balance);
+    }
 }
+
 

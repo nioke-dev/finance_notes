@@ -110,8 +110,8 @@ class DashboardController extends Controller
                         $dayParkingExpense += $tx->amount;
                         $dayPaidParkingCount++;
                     }
-                } elseif ($type === 'shopeepay_bonus_disbursement') {
-                    $dayBonusIncome += (int) ($meta['amount'] ?? 0);
+                } elseif ($type === 'shopeepay_bonus_disbursement' || $type === 'hub_bonus_payout') {
+                    $dayBonusIncome += (int) ($meta['amount'] ?? $tx->amount);
                 } elseif ($type === 'digital_reconciliation_surplus') {
                     $accId = (int) ($meta['account_id'] ?? 0);
                     $acc = $accounts->firstWhere('id', $accId);
@@ -400,6 +400,40 @@ class DashboardController extends Controller
                 ELSE 6 END")
             ->get();
 
+        // 6. Kelayakan & Status Pencairan Bonus Hub ShopeeFood (Evaluasi Jam 20:00+ & Otomasi Jam 23:00)
+        $nowWib = now()->timezone('Asia/Jakarta');
+        $currentHour = (int) $nowWib->format('H');
+        $isAfter20 = ($currentHour >= 20 || $currentHour < 5);
+        $isAfter23 = ($currentHour >= 23 || $currentHour < 5);
+
+        $existingBonusTx = $currentWorkDay 
+            ? Transaction::where('work_day_id', $currentWorkDay->id)
+                ->where(function ($q) {
+                    $q->whereJsonContains('metadata->type', 'hub_bonus_payout')
+                      ->orWhereJsonContains('metadata->type', 'shopeepay_bonus_disbursement');
+                })->first()
+            : null;
+
+        $isBonusClaimed = ($existingBonusTx !== null);
+        $claimedBonusAmount = $existingBonusTx ? (int) ($existingBonusTx->metadata['amount'] ?? $existingBonusTx->amount) : 0;
+
+        $pendingBonusAmount = (int) ($latestSnapshot?->hub_bonus ?? 0);
+        if ($pendingBonusAmount === 0 && ($currentWorkDay?->is_performance_eligible ?? false) && ($currentWorkDay?->total_orders ?? 0) > 15) {
+            $pendingBonusAmount = app(\App\Services\ShopeeBonusCalculatorService::class)->calculateBonus((int) $currentWorkDay->total_orders);
+        }
+
+        $hubBonusEligibility = [
+            'current_hour' => $currentHour,
+            'is_after_20' => $isAfter20,
+            'is_after_23' => $isAfter23,
+            'is_online_9_hours' => (bool) ($currentWorkDay?->is_performance_eligible ?? false),
+            'total_orders' => (int) ($currentWorkDay?->total_orders ?? $latestSnapshot?->completed_orders ?? $dayOrdersCount ?? 0),
+            'pending_bonus_amount' => $pendingBonusAmount,
+            'is_bonus_claimed' => $isBonusClaimed,
+            'claimed_bonus_amount' => $claimedBonusAmount,
+            'should_show_23_alert' => ($isAfter23 && !$isBonusClaimed),
+        ];
+
         return view('dashboard.index', compact(
             'accounts',
             'paylaterProviders',
@@ -448,7 +482,8 @@ class DashboardController extends Controller
             'todayCodQrisBillTotal',
             'driverCashAcc',
             'dailySummaryData',
-            'tipAccounts'
+            'tipAccounts',
+            'hubBonusEligibility'
         ));
     }
 }

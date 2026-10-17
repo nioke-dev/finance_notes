@@ -279,6 +279,87 @@
                     </div>
                 </div>
 
+                {{-- BANNER PERINGATAN KONFIRMASI BONUS HUB PUKUL 23:00 WIB --}}
+                @if(isset($hubBonusEligibility) && $hubBonusEligibility['should_show_23_alert'])
+                    @if($hubBonusEligibility['is_online_9_hours'] && $hubBonusEligibility['pending_bonus_amount'] > 0)
+                        <div class="bg-gradient-to-r from-emerald-950 via-slate-900 to-amber-950 border-2 border-emerald-500 rounded-2xl p-5 shadow-2xl relative overflow-hidden animate-pulse">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div class="flex items-start space-x-3.5">
+                                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-3xl shrink-0">
+                                        🎉
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2.5 py-0.5 rounded-md bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-black text-[11px] uppercase tracking-wider">
+                                                ⏰ Pukul 23:00 WIB: Siap Masuk ShopeePay
+                                            </span>
+                                            <span class="text-[11px] text-amber-300 font-bold">Waktu Online ≥ 9 Jam Terverifikasi</span>
+                                        </div>
+                                        <h4 class="text-base font-black text-white mt-1">
+                                            Bonus Hub ShopeeFood Hari Ini: <span class="text-emerald-400">Rp {{ number_format($hubBonusEligibility['pending_bonus_amount'], 0, ',', '.') }}</span>
+                                        </h4>
+                                        <p class="text-xs text-slate-300 mt-0.5">
+                                            Target performa {{ $hubBonusEligibility['total_orders'] }} pesanan telah tervalidasi. Konfirmasi sekarang untuk mencairkan bonus resmi langsung ke saldo <strong>ShopeePay</strong> Anda!
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center space-x-2.5 w-full md:w-auto shrink-0 justify-end">
+                                    <button type="button" onclick="openModal('modal-update-hub-bonus')" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold rounded-xl border border-slate-700 transition">
+                                        Edit Pesanan/Jam
+                                    </button>
+                                    <form method="POST" action="/operational/claim-hub-bonus" onsubmit="return confirm('Konfirmasi pencairan Bonus Hub Rp {{ number_format($hubBonusEligibility['pending_bonus_amount'], 0, ',', '.') }} langsung ke ShopeePay?')">
+                                        @csrf
+                                        <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+                                        <button type="submit" class="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-amber-500 hover:from-emerald-400 hover:to-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-lg flex items-center justify-center space-x-2 transition transform active:scale-95">
+                                            <span>⚡</span>
+                                            <span>Konfirmasi Masuk ke ShopeePay</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif(!$hubBonusEligibility['is_online_9_hours'])
+                        <div class="bg-gradient-to-r from-amber-950/80 via-slate-900 to-indigo-950/80 border-2 border-amber-500/60 rounded-2xl p-5 shadow-2xl">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div class="flex items-start space-x-3.5">
+                                    <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-3xl shrink-0">
+                                        ⏰
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2.5 py-0.5 rounded-md bg-amber-500/30 text-amber-300 border border-amber-500/40 font-black text-[11px] uppercase tracking-wider">
+                                                Pukul 23:00 WIB: Evaluasi Bonus Hub
+                                            </span>
+                                        </div>
+                                        <h4 class="text-sm font-black text-white mt-1">
+                                            Apakah Hari Ini Anda Online ≥ 9 Jam Narik?
+                                        </h4>
+                                        <p class="text-xs text-slate-300 mt-0.5">
+                                            Sistem mendeteksi jam 23:00 WIB namun belum ada konfirmasi waktu online ≥ 9 jam. Klik tombol di bawah untuk verifikasi total pesanan eligible (10:00 - 20:00) agar bonus hub Anda terhitung.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="w-full md:w-auto shrink-0 flex justify-end">
+                                    <button type="button" onclick="openModal('modal-update-hub-bonus')" class="w-full md:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black rounded-xl shadow flex items-center justify-center space-x-1.5 transition">
+                                        <span>⭐</span>
+                                        <span>Update Bonus Hub (Jam 20:00+)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @elseif(isset($hubBonusEligibility) && $hubBonusEligibility['is_bonus_claimed'])
+                    <div class="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl px-4 py-3 flex items-center justify-between text-xs text-emerald-300 shadow">
+                        <div class="flex items-center space-x-2">
+                            <span>✅</span>
+                            <span><strong>Bonus Hub Hari Ini Telah Cair:</strong> Rp {{ number_format($hubBonusEligibility['claimed_bonus_amount'], 0, ',', '.') }} sukses masuk ke saldo ShopeePay.</span>
+                        </div>
+                        <span class="text-[10px] bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">ShopeePay +{{ number_format($hubBonusEligibility['claimed_bonus_amount'], 0, ',', '.') }}</span>
+                    </div>
+                @endif
+
                 {{-- WIDGET REKAP FINANSIAL HARI INI: INCOME VS OUTCOME (MODE DRIVER & MODE OVERALL) --}}
                 <div id="card-daily-financial-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-purple-500/40 rounded-2xl p-6 shadow-2xl space-y-5">
                     {{-- Header & Mode Selector Pill Toggle --}}
@@ -652,10 +733,16 @@
                                 </div>
                             </div>
 
-                            <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0">
-                                <span>⚡</span>
-                                <span>Update Jam Sekarang</span>
-                            </button>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="openModal('modal-update-hub-bonus')" class="px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0" title="Hitung Bonus Hub pesanan jam 10-20 & cek online >= 9 jam">
+                                    <span>⭐</span>
+                                    <span>Bonus Hub (20:00+)</span>
+                                </button>
+                                <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0">
+                                    <span>⚡</span>
+                                    <span>Update Jam Sekarang</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="divide-y divide-slate-700/50">
@@ -930,6 +1017,17 @@
                             <div>
                                 <span class="text-xs font-bold text-amber-300 block group-hover:text-amber-200">Tip Pelanggan</span>
                                 <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Cash / QRIS / SPay</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-update-hub-bonus')" class="p-3.5 bg-gradient-to-br from-indigo-950/60 to-slate-900 hover:from-indigo-900/80 hover:to-slate-800 border border-indigo-500/60 hover:border-indigo-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="text-2xl block mb-1">⭐</span>
+                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">20:00+</span>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-indigo-300 block group-hover:text-indigo-200">Bonus Hub</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Order & 9 Jam</span>
                             </div>
                         </button>
 
@@ -2084,6 +2182,127 @@
                         <span>💾</span>
                         <span>Simpan Tip Pelanggan</span>
                     </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- MODAL UPDATE & HITUNG BONUS HUB SHOPEEFOOD (JAM 20:00+) --}}
+    <div id="modal-update-hub-bonus" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-900 border border-indigo-500/50 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xl">
+                        ⭐
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-sm font-extrabold text-white">Update & Hitung Bonus Hub</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                                Cut-off Jam 20:00+
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-0.5">Validasi pesanan jam 10.00–20.00 & performa online ≥ 9 jam.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-update-hub-bonus')" class="text-slate-400 hover:text-white font-bold text-xl leading-none">&times;</button>
+            </div>
+
+            {{-- Kotak Aturan Resmi ShopeeFood --}}
+            <div class="p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-xl text-xs text-indigo-200 leading-relaxed space-y-1.5">
+                <div class="flex items-center space-x-1.5 font-bold text-indigo-300">
+                    <span>💡</span>
+                    <span>Ketentuan Resmi Bonus Hub ShopeeFood:</span>
+                </div>
+                <ul class="text-[11px] text-slate-300 list-disc list-inside space-y-0.5">
+                    <li>Hanya pesanan yang selesai pukul <strong>10.00 – 20.00 WIB</strong> yang eligible dihitung ke kuota bonus.</li>
+                    <li>Wajib memenuhi syarat waktu online: <strong>≥ 9 Jam Online Narik</strong>. Jika kurang dari 9 jam, bonus = Rp0.</li>
+                    <li>Skema Bertingkat: <strong>1–15 Order: Rp0</strong> | <strong>16–20: +Rp1.000/order</strong> (maks 5k) | <strong>21–25: +Rp1.500/order</strong> (maks 7.5k) | <strong>26+: +Rp2.000/order</strong>.</li>
+                </ul>
+            </div>
+
+            <form method="POST" action="/operational/update-hub-bonus" class="space-y-4">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                {{-- Input 1: Total Pesanan Eligible --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">
+                        Total Pesanan Selesai Eligible (Jam 10.00 – 20.00)
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="number" 
+                            name="completed_orders" 
+                            id="hub-bonus-orders-input" 
+                            value="{{ $hubBonusEligibility['total_orders'] ?? 0 }}" 
+                            min="0" 
+                            step="1" 
+                            required 
+                            oninput="calculateHubBonusPreview()"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-base font-black focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        >
+                        <span class="absolute right-3 top-3 text-xs text-slate-400 font-bold">Pesanan</span>
+                    </div>
+
+                    {{-- Tombol Cepat Jumlah Order --}}
+                    <div class="flex items-center space-x-1.5 mt-2 flex-wrap gap-y-1">
+                        <span class="text-[11px] text-slate-400 mr-1">Preset:</span>
+                        <button type="button" onclick="document.getElementById('hub-bonus-orders-input').value = 15; calculateHubBonusPreview();" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded border border-slate-700">15</button>
+                        <button type="button" onclick="document.getElementById('hub-bonus-orders-input').value = 18; calculateHubBonusPreview();" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] font-bold rounded border border-slate-700">18 (Tier 2)</button>
+                        <button type="button" onclick="document.getElementById('hub-bonus-orders-input').value = 20; calculateHubBonusPreview();" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] font-bold rounded border border-slate-700">20 (Tier 2 Max)</button>
+                        <button type="button" onclick="document.getElementById('hub-bonus-orders-input').value = 23; calculateHubBonusPreview();" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] font-bold rounded border border-slate-700">23 (Tier 3)</button>
+                        <button type="button" onclick="document.getElementById('hub-bonus-orders-input').value = 26; calculateHubBonusPreview();" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[11px] font-bold rounded border border-slate-700">26 (Tier 4)</button>
+                    </div>
+                </div>
+
+                {{-- Input 2: Syarat Waktu Online >= 9 Jam --}}
+                <div class="p-3.5 bg-slate-950/80 border border-slate-700 rounded-xl">
+                    <label class="flex items-start space-x-3 cursor-pointer select-none">
+                        <input 
+                            type="checkbox" 
+                            name="is_online_9_hours" 
+                            id="hub-bonus-online-check" 
+                            value="1" 
+                            {{ ($hubBonusEligibility['is_online_9_hours'] ?? false) ? 'checked' : '' }} 
+                            onchange="calculateHubBonusPreview()"
+                            class="mt-1 w-5 h-5 text-indigo-600 bg-slate-900 border-slate-700 rounded focus:ring-indigo-500"
+                        >
+                        <div class="space-y-0.5">
+                            <span class="text-xs font-black text-white block">
+                                Ya, Saya Sudah Online Aktif Narik &ge; 9 Jam Hari Ini
+                            </span>
+                            <span class="text-[11px] text-slate-400 block leading-tight">
+                                Centang jika aplikasi ShopeeFood Driver Anda mencatat total online &ge; 9 jam (misal 10.00 – 19.30, dll). Jika tidak dicentang, bonus dihitung Rp 0.
+                            </span>
+                        </div>
+                    </label>
+                </div>
+
+                {{-- Live Simulation / Kalkulasi Hasil --}}
+                <div id="hub-bonus-calc-result" class="p-4 bg-slate-950 border border-indigo-500/40 rounded-xl space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-300">Estimasi Bonus Insentif:</span>
+                        <span id="hub-bonus-amount-text" class="text-xl font-black text-emerald-400">Rp 0</span>
+                    </div>
+                    <div id="hub-bonus-breakdown-text" class="pt-2 border-t border-slate-800 space-y-1 text-xs">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="p-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl text-[11px] text-slate-300 flex items-center space-x-2">
+                    <span>📌</span>
+                    <span>Menyimpan form ini akan otomatis memperbarui nilai <strong>Bonus Insentif</strong> di Checkpoint Saldo terbaru Anda.</span>
+                </div>
+
+                <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-update-hub-bonus')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <div class="flex items-center space-x-2">
+                        <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-xs rounded-xl shadow flex items-center space-x-1.5 transition">
+                            <span>💾</span>
+                            <span>Simpan & Update Checkpoint</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -4219,12 +4438,81 @@
             } catch (e) {}
         }
 
+        function calculateHubBonusPreview() {
+            const ordersInput = document.getElementById('hub-bonus-orders-input');
+            const onlineCheck = document.getElementById('hub-bonus-online-check');
+            const amountText = document.getElementById('hub-bonus-amount-text');
+            const breakdownText = document.getElementById('hub-bonus-breakdown-text');
+
+            if (!ordersInput || !onlineCheck) return;
+
+            const orders = parseInt(ordersInput.value) || 0;
+            const isOnline9 = onlineCheck.checked;
+
+            if (!isOnline9) {
+                if (amountText) {
+                    amountText.innerText = 'Rp 0';
+                    amountText.className = 'text-xl font-black text-slate-400';
+                }
+                if (breakdownText) {
+                    breakdownText.innerHTML = '<span class="text-rose-400 font-bold">⚠️ Syarat Waktu Online &ge; 9 Jam Belum Dicentang &rarr; Bonus = Rp 0 (Sesuai regulasi ShopeeFood).</span>';
+                }
+                return;
+            }
+
+            let bonus = 0;
+            let details = [];
+
+            // Tier 1: 1-15 (Rp 0)
+            if (orders <= 15) {
+                details.push('Order 1–15: Rp 0 (Belum mencapai ambang batas Tier 2)');
+            } else {
+                details.push('Order 1–15: Rp 0 (Batas awal)');
+            }
+
+            // Tier 2: 16-20 (Rp 1.000)
+            if (orders >= 16) {
+                const count = Math.min(orders, 20) - 15;
+                const b = count * 1000;
+                bonus += b;
+                details.push(`Tier 2 (Order 16–20): ${count} order &times; Rp1.000 = +Rp ${b.toLocaleString('id-ID')}`);
+            }
+
+            // Tier 3: 21-25 (Rp 1.500)
+            if (orders >= 21) {
+                const count = Math.min(orders, 25) - 20;
+                const b = count * 1500;
+                bonus += b;
+                details.push(`Tier 3 (Order 21–25): ${count} order &times; Rp1.500 = +Rp ${b.toLocaleString('id-ID')}`);
+            }
+
+            // Tier 4: 26+ (Rp 2.000)
+            if (orders >= 26) {
+                const count = orders - 25;
+                const b = count * 2000;
+                bonus += b;
+                details.push(`Tier 4 (Order 26+): ${count} order &times; Rp2.000 = +Rp ${b.toLocaleString('id-ID')}`);
+            }
+
+            if (amountText) {
+                amountText.innerText = 'Rp ' + bonus.toLocaleString('id-ID');
+                amountText.className = bonus > 0 ? 'text-xl font-black text-emerald-400' : 'text-xl font-black text-slate-400';
+            }
+            if (breakdownText) {
+                breakdownText.innerHTML = details.map(d => `<div class="text-[11px] text-slate-300 flex items-center space-x-1.5"><span>&bull;</span><span>${d}</span></div>`).join('');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             try {
                 const savedMode = localStorage.getItem('dashboard_daily_financial_mode');
                 if (savedMode === 'overall') {
                     switchDailyFinancialMode('overall');
                 }
+            } catch (e) {}
+
+            try {
+                calculateHubBonusPreview();
             } catch (e) {}
         });
 

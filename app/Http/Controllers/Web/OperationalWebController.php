@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\ActiveCodOrder;
 use App\Models\Debt;
 use App\Models\DebtInstallment;
+use App\Models\DriverSnapshot;
 use App\Models\FinancialGoal;
 use App\Models\Transaction;
 use App\Models\WorkDay;
@@ -23,6 +24,7 @@ use App\Services\LoanDisbursementService;
 use App\Services\OpenWorkDayService;
 use App\Services\QuickFuelService;
 use App\Services\QuickParkingService;
+use App\Services\ShopeeBonusCalculatorService;
 use App\Services\SPayLaterPaymentService;
 use App\Services\TransferService;
 use Illuminate\Http\RedirectResponse;
@@ -1556,6 +1558,165 @@ class OperationalWebController extends Controller
         }
 
         return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Update Bonus Hub ShopeeFood (Jam 20:00+ Cut-off, Total Pesanan & Validasi Online >= 9 Jam)
+     */
+    public function updateHubBonus(
+        Request $request,
+        ShopeeBonusCalculatorService $calculator
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'completed_orders' => 'required|integer|min:0',
+            'is_online_9_hours' => 'nullable',
+        ]);
+
+        $workDay = !empty($validated['work_day_id'])
+            ? WorkDay::findOrFail($validated['work_day_id'])
+            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
+
+        if (!$workDay) {
+            return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan.');
+        }
+
+        $completedOrders = (int) $validated['completed_orders'];
+        $isOnline9Hours = filter_var($request->input('is_online_9_hours', false), FILTER_VALIDATE_BOOLEAN);
+
+        // Rumus bertingkat jika online >= 9 jam, 0 jika < 9 jam
+        $calculatedBonus = $isOnline9Hours ? $calculator->calculateBonus($completedOrders) : 0;
+
+        // Update WorkDay
+        $workDay->total_orders = $completedOrders;
+        $workDay->is_performance_eligible = $isOnline9Hours;
+        if ($isOnline9Hours) {
+            $workDay->online_hours = max(9.0, (float) ($workDay->online_hours ?? 9.0));
+        }
+        $workDay->save();
+
+        // Update checkpoint / DriverSnapshot terbaru
+        $latestSnapshot = $workDay->latestSnapshot;
+        if ($latestSnapshot) {
+            $latestSnapshot->update([
+                'hub_bonus' => $calculatedBonus,
+                'completed_orders' => max($latestSnapshot->completed_orders, $completedOrders),
+            ]);
+        } else {
+            $cashAcc = Account::where('name', 'Cash')->first();
+            $spayAcc = Account::where('name', 'ShopeePay')->first();
+            $gopayAcc = Account::where('name', 'GoPay')->first();
+            $merchantAcc = Account::where('name', 'GoPay Merchant')->first();
+
+            DriverSnapshot::create([
+                'work_day_id' => $workDay->id,
+                'recorded_at' => now(),
+                'completed_orders' => $completedOrders,
+                'delivery_fee' => 0,
+                'hub_income' => 0,
+                'hub_bonus' => $calculatedBonus,
+                'customer_tips' => 0,
+                'shopeepay_balance' => $spayAcc?->current_balance ?? 0,
+                'gopay_balance' => $gopayAcc?->current_balance ?? 0,
+                'gopay_merchant_balance' => $merchantAcc?->current_balance ?? 0,
+                'cash_balance' => $cashAcc?->current_balance ?? 0,
+                'notes' => 'Update Bonus Hub Jam 20:00+',
+            ]);
+        }
+
+        if ($isOnline9Hours) {
+            $msg = "Bonus Hub berhasil dihitung: Rp " . number_format($calculatedBonus, 0, ',', '.') . " ({$completedOrders} pesanan, status online ≥ 9 jam: TERPENUHI). Data insentif di checkpoint terbaru telah diperbarui!";
+            if ($calculatedBonus > 0 && (now()->hour >= 23 || now()->hour < 5)) {
+                $msg .= " Jam 23:00 telah tiba, Anda dapat langsung mengonfirmasi pencairan ke ShopeePay.";
+            }
+        } else {
+            $msg = "Status waktu online narik tercatat < 9 jam. Sesuai regulasi ShopeeFood, bonus insentif hari ini adalah Rp 0. Data checkpoint telah disesuaikan.";
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Konfirmasi Pencairan Bonus Hub ShopeeFood Langsung Masuk ke ShopeePay (Pukul 23:00 WIB)
+     */
+    public function claimHubBonus(
+        Request $request,
+        LedgerService $ledgerService,
+        ShopeeBonusCalculatorService $calculator
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'work_day_id' => 'nullable|exists:work_days,id',
+        ]);
+
+        $workDay = !empty($validated['work_day_id'])
+            ? WorkDay::findOrFail($validated['work_day_id'])
+            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
+
+        if (!$workDay) {
+            return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan.');
+        }
+
+        // Cek apakah bonus hari ini sudah pernah dicairkan
+        $existingClaim = Transaction::where('work_day_id', $workDay->id)
+            ->where(function ($q) {
+                $q->whereJsonContains('metadata->type', 'hub_bonus_payout')
+                  ->orWhereJsonContains('metadata->type', 'shopeepay_bonus_disbursement');
+            })->first();
+
+        if ($existingClaim) {
+            return redirect()->back()->with('error', 'Bonus Hub untuk hari ini sudah pernah dikonfirmasi dan dicairkan ke ShopeePay.');
+        }
+
+        $latestSnapshot = $workDay->latestSnapshot;
+        $bonusAmount = (int) ($latestSnapshot?->hub_bonus ?? 0);
+
+        if ($bonusAmount <= 0 && $workDay->is_performance_eligible && $workDay->total_orders > 15) {
+            $bonusAmount = $calculator->calculateBonus((int) $workDay->total_orders);
+        }
+
+        if ($bonusAmount <= 0) {
+            return redirect()->back()->with('error', 'Tidak ada nominal bonus hub yang eligible untuk dicairkan (Wajib online ≥ 9 jam dan pesanan eligible > 15).');
+        }
+
+        $shopeePay = Account::firstOrCreate(
+            ['name' => 'ShopeePay'],
+            ['type' => AccountType::EWALLET, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+        );
+
+        $bonusIncomeAcc = Account::firstOrCreate(
+            ['name' => 'Bonus Hub ShopeeFood'],
+            ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+        );
+
+        $desc = "Pencairan Resmi Bonus Insentif Hub ke ShopeePay: Rp " . number_format($bonusAmount, 0, ',', '.');
+
+        $ledgerService->recordTransaction(
+            workDay: $workDay,
+            type: 'income',
+            description: $desc,
+            transactionTime: now(),
+            entries: [
+                ['account_id' => $shopeePay->id, 'entry_type' => EntryType::DEBIT, 'amount' => $bonusAmount],
+                ['account_id' => $bonusIncomeAcc->id, 'entry_type' => EntryType::CREDIT, 'amount' => $bonusAmount],
+            ],
+            isEstimatedTime: false,
+            metadata: [
+                'type' => 'hub_bonus_payout',
+                'amount' => $bonusAmount,
+                'work_day_id' => $workDay->id,
+                'orders_count' => $workDay->total_orders,
+                'online_hours_eligible' => true,
+            ]
+        );
+
+        if ($latestSnapshot) {
+            $latestSnapshot->update([
+                'hub_bonus' => $bonusAmount,
+                'shopeepay_balance' => $shopeePay->fresh()->current_balance,
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Alhamdulillah! Bonus Hub Rp " . number_format($bonusAmount, 0, ',', '.') . " berhasil dikonfirmasi dan langsung masuk ke saldo ShopeePay Anda (Saldo ShopeePay baru: Rp " . number_format($shopeePay->fresh()->current_balance, 0, ',', '.') . ").");
     }
 
     /**
