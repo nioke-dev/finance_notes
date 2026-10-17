@@ -1987,14 +1987,17 @@
                             {{-- Pecahan Kertas --}}
                             <div>
                                 <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
-                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="fuel_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="fuel_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display'); updateFuelCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-10 h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2004,14 +2007,17 @@
                             {{-- Pecahan Logam (Koin) --}}
                             <div>
                                 <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
-                                <div class="grid grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('fuel_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="fuel_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('fuel_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="fuel_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display'); updateFuelCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-10 h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2041,14 +2047,17 @@
                             {{-- Pecahan Kertas --}}
                             <div>
                                 <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
-                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="fuel_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="fuel_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display'); updateFuelCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-10 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2058,14 +2067,17 @@
                             {{-- Pecahan Logam (Koin) --}}
                             <div>
                                 <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
-                                <div class="grid grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('fuel_change_coin_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="fuel_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('fuel_change_coin_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('fuel_change_coin_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="fuel_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display'); updateFuelCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_change_coin_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-10 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2269,14 +2281,17 @@
                             {{-- Pecahan Kertas --}}
                             <div>
                                 <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
-                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="parking_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="parking_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display'); updateParkingCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-10 h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2286,14 +2301,17 @@
                             {{-- Pecahan Logam (Koin) --}}
                             <div>
                                 <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
-                                <div class="grid grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('parking_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="parking_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('parking_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('parking_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="parking_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display'); updateParkingCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-10 h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2323,14 +2341,17 @@
                             {{-- Pecahan Kertas --}}
                             <div>
                                 <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
-                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="parking_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="parking_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display'); updateParkingCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-10 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2340,14 +2361,17 @@
                             {{-- Pecahan Logam (Koin) --}}
                             <div>
                                 <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
-                                <div class="grid grid-cols-4 gap-1.5">
+                                <div class="grid grid-cols-2 gap-2">
                                     @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('parking_change_coin_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="parking_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
-                                                <button type="button" onclick="stepTxCash('parking_change_coin_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('parking_change_coin_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="parking_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display'); updateParkingCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_change_coin_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-10 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -2891,14 +2915,17 @@
                                 {{-- Pecahan Kertas --}}
                                 <div>
                                     <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
-                                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    <div class="grid grid-cols-2 gap-2">
                                         @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                                <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
-                                                <div class="flex items-center space-x-1 mt-1">
-                                                    <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                    <input type="number" name="customer_cash_breakdown[bill_{{ $nom }}]" id="cod_cust_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
-                                                    <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                                </div>
+                                                <div class="flex items-center space-x-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                    <input type="number" name="customer_cash_breakdown[bill_{{ $nom }}]" id="cod_cust_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display'); updateCodCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-10 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                                 </div>
                                             </div>
                                         @endforeach
@@ -2908,14 +2935,17 @@
                                 {{-- Pecahan Logam (Koin) --}}
                                 <div>
                                     <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
-                                    <div class="grid grid-cols-4 gap-1.5">
+                                    <div class="grid grid-cols-2 gap-2">
                                         @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
-                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                                <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
-                                                <div class="flex items-center space-x-1 mt-1">
-                                                    <button type="button" onclick="stepTxCash('cod_cust_coin_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                    <input type="number" name="customer_cash_breakdown[coin_{{ $nom }}]" id="cod_cust_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
-                                                    <button type="button" onclick="stepTxCash('cod_cust_coin_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                                </div>
+                                                <div class="flex items-center space-x-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_coin_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                    <input type="number" name="customer_cash_breakdown[coin_{{ $nom }}]" id="cod_cust_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display'); updateCodCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_coin_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-10 h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                                 </div>
                                             </div>
                                         @endforeach
@@ -2949,14 +2979,17 @@
                                 {{-- Pecahan Kertas --}}
                                 <div>
                                     <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
-                                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    <div class="grid grid-cols-2 gap-2">
                                         @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                                <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
-                                                <div class="flex items-center space-x-1 mt-1">
-                                                    <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                    <input type="number" name="change_cash_breakdown[bill_{{ $nom }}]" id="cod_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
-                                                    <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                                </div>
+                                                <div class="flex items-center space-x-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                    <input type="number" name="change_cash_breakdown[bill_{{ $nom }}]" id="cod_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display'); updateCodCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-10 h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                                 </div>
                                             </div>
                                         @endforeach
@@ -2966,14 +2999,17 @@
                                 {{-- Pecahan Logam (Koin) --}}
                                 <div>
                                     <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
-                                    <div class="grid grid-cols-4 gap-1.5">
+                                    <div class="grid grid-cols-2 gap-2">
                                         @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
-                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
-                                                <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
-                                                <div class="flex items-center space-x-1 mt-1">
-                                                    <button type="button" onclick="stepTxCash('cod_change_coin_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
-                                                    <input type="number" name="change_cash_breakdown[coin_{{ $nom }}]" id="cod_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
-                                                    <button type="button" onclick="stepTxCash('cod_change_coin_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                                </div>
+                                                <div class="flex items-center space-x-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('cod_change_coin_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-10 h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">-</button>
+                                                    <input type="number" name="change_cash_breakdown[coin_{{ $nom }}]" id="cod_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display'); updateCodCashLiveCalculator();" class="flex-1 min-w-0 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_change_coin_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-10 h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-base font-black flex items-center justify-center shrink-0 shadow select-none">+</button>
                                                 </div>
                                             </div>
                                         @endforeach
@@ -3167,10 +3203,10 @@
                                     <span class="text-xs font-extrabold text-white block">Rp{{ $label }}</span>
                                     <span id="subtotal-quick-cash-{{ $field }}" class="text-[10px] text-slate-400 font-semibold">Rp {{ number_format($count * $nom, 0, ',', '.') }}</span>
                                 </div>
-                                <div class="flex items-center space-x-1">
-                                    <button type="button" onclick="stepQuickCash('{{ $field }}', -1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-black text-sm flex items-center justify-center transition select-none">-</button>
-                                    <input type="number" name="{{ $field }}" id="input-quick-cash-{{ $field }}" value="{{ $count }}" min="0" oninput="onQuickCashInput('{{ $field }}', {{ $nom }})" class="w-12 text-center bg-slate-900 border border-slate-700 rounded-lg py-1 text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none">
-                                    <button type="button" onclick="stepQuickCash('{{ $field }}', 1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white font-black text-sm flex items-center justify-center transition select-none">+</button>
+                                <div class="flex items-center space-x-1.5 shrink-0">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', -1, {{ $nom }})" class="w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-black text-sm flex items-center justify-center transition select-none shrink-0 shadow">-</button>
+                                    <input type="number" name="{{ $field }}" id="input-quick-cash-{{ $field }}" value="{{ $count }}" min="0" oninput="onQuickCashInput('{{ $field }}', {{ $nom }})" class="w-12 h-9 text-center bg-slate-900 border border-slate-700 rounded-xl py-1 text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', 1, {{ $nom }})" class="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white font-black text-sm flex items-center justify-center transition select-none shrink-0 shadow">+</button>
                                 </div>
                             </div>
                         @endforeach
@@ -3180,7 +3216,7 @@
                 {{-- 2. Uang Logam (Koin) --}}
                 <div>
                     <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block mb-2">🪙 Uang Logam (Koin):</span>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
                             @php $field = 'coin_' . $nom; $count = $cashDenomination->$field ?? 0; @endphp
                             <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-2.5 flex items-center justify-between">
@@ -3188,10 +3224,10 @@
                                     <span class="text-xs font-extrabold text-white block">Rp{{ $label }}</span>
                                     <span id="subtotal-quick-cash-{{ $field }}" class="text-[10px] text-slate-400 font-semibold">Rp {{ number_format($count * $nom, 0, ',', '.') }}</span>
                                 </div>
-                                <div class="flex items-center space-x-1">
-                                    <button type="button" onclick="stepQuickCash('{{ $field }}', -1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-black text-sm flex items-center justify-center transition select-none">-</button>
-                                    <input type="number" name="{{ $field }}" id="input-quick-cash-{{ $field }}" value="{{ $count }}" min="0" oninput="onQuickCashInput('{{ $field }}', {{ $nom }})" class="w-10 sm:w-12 text-center bg-slate-900 border border-slate-700 rounded-lg py-1 text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none">
-                                    <button type="button" onclick="stepQuickCash('{{ $field }}', 1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white font-black text-sm flex items-center justify-center transition select-none">+</button>
+                                <div class="flex items-center space-x-1.5 shrink-0">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', -1, {{ $nom }})" class="w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-black text-sm flex items-center justify-center transition select-none shrink-0 shadow">-</button>
+                                    <input type="number" name="{{ $field }}" id="input-quick-cash-{{ $field }}" value="{{ $count }}" min="0" oninput="onQuickCashInput('{{ $field }}', {{ $nom }})" class="w-12 h-9 text-center bg-slate-900 border border-slate-700 rounded-xl py-1 text-white font-black text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', 1, {{ $nom }})" class="w-9 h-9 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white font-black text-sm flex items-center justify-center transition select-none shrink-0 shadow">+</button>
                                 </div>
                             </div>
                         @endforeach
