@@ -17,6 +17,19 @@
     @else
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
+    <style>
+        @keyframes liveShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+        .live-input-shake {
+            animation: liveShake 0.35s ease-in-out;
+        }
+        .live-error-msg {
+            animation: fadeIn 0.2s ease-out;
+        }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
     <nav class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-2.5 w-full">
@@ -149,10 +162,10 @@
     </div>
 
     {{-- Global Floating Toast Alert (Tetap Terlihat Di Mana Pun Posisi Layar) --}}
-    @if(session('success') || session('error') || session('status'))
+    @if(session('success') || session('error') || session('status') || (isset($errors) && $errors->any()))
         @php
-            $isError = session()->has('error');
-            $toastMsg = session('success') ?? session('error') ?? session('status');
+            $isError = session()->has('error') || (isset($errors) && $errors->any());
+            $toastMsg = session('success') ?? session('error') ?? session('status') ?? ($errors->any() ? $errors->first() : null);
         @endphp
         <div id="global-floating-toast" class="fixed top-14 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 transform transition-all duration-300 ease-out flex items-center justify-between p-3.5 rounded-2xl shadow-2xl backdrop-blur-md {{ $isError ? 'bg-rose-950/95 border border-rose-500/60 text-rose-200' : 'bg-slate-900/95 border border-emerald-500/60 text-emerald-300' }}">
             <div class="flex items-center space-x-2.5">
@@ -279,5 +292,6 @@
             }
         });
     </script>
+    <script src="/js/live-validator.js"></script>
 </body>
 </html>

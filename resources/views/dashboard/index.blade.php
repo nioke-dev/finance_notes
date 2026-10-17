@@ -4928,24 +4928,36 @@
             if (toggleCustom && toggleCustom.checked) {
                 const customInput = document.getElementById('custom-recorded-at');
                 if (!customInput || !customInput.value) {
-                    alert('Silakan pilih tanggal dan jam custom untuk checkpoint ini.');
-                    if (customInput) customInput.focus();
+                    const msg = 'Silakan pilih tanggal dan jam custom untuk checkpoint ini.';
+                    if (window.showGlobalToast) window.showGlobalToast(msg, true);
+                    if (customInput) {
+                        customInput.focus();
+                        customInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+                    }
                     if (event) event.preventDefault();
                     return false;
                 }
                 const selectedTime = new Date(customInput.value);
                 const now = new Date();
                 if (selectedTime > now) {
-                    alert('Waktu checkpoint tidak boleh melebihi jam saat ini (masa depan)!');
-                    if (customInput) customInput.focus();
+                    const msg = 'Waktu checkpoint tidak boleh melebihi jam saat ini (masa depan)!';
+                    if (window.showGlobalToast) window.showGlobalToast(msg, true);
+                    if (customInput) {
+                        customInput.focus();
+                        customInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+                    }
                     if (event) event.preventDefault();
                     return false;
                 }
                 if (customInput.min) {
                     const minTime = new Date(customInput.min);
                     if (selectedTime < minTime) {
-                        alert('Waktu checkpoint baru tidak boleh mendahului atau sama dengan checkpoint sebelumnya! Waktu harus lebih baru.');
-                        if (customInput) customInput.focus();
+                        const msg = 'Waktu checkpoint baru tidak boleh mendahului atau sama dengan checkpoint sebelumnya! Waktu harus lebih baru.';
+                        if (window.showGlobalToast) window.showGlobalToast(msg, true);
+                        if (customInput) {
+                            customInput.focus();
+                            customInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+                        }
                         if (event) event.preventDefault();
                         return false;
                     }

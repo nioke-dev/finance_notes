@@ -428,68 +428,73 @@ class OperationalWebController extends Controller
             'damaged_notes_note' => 'nullable|string|max:255',
         ]);
 
-        $workDay = !empty($validated['work_day_id'])
-            ? WorkDay::findOrFail($validated['work_day_id'])
-            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
+        try {
+            $workDay = !empty($validated['work_day_id'])
+                ? WorkDay::findOrFail($validated['work_day_id'])
+                : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
 
-        if (!$workDay) {
-            $workDay = WorkDay::create([
-                'work_date' => now()->toDateString(),
-                'day_type' => WorkDay::TYPE_DAY_OFF,
-                'status' => 'active',
+            if (!$workDay) {
+                $workDay = WorkDay::create([
+                    'work_date' => now()->toDateString(),
+                    'day_type' => WorkDay::TYPE_DAY_OFF,
+                    'status' => 'active',
+                ]);
+            }
+
+            $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+            $oldValues = $denom->exists ? $denom->toArray() : null;
+
+            $fields = [
+                'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
+                'bill_5000', 'bill_2000', 'bill_1000',
+                'coin_1000', 'coin_500', 'coin_200', 'coin_100',
+            ];
+
+            foreach ($fields as $f) {
+                $denom->$f = (int) ($validated[$f] ?? 0);
+            }
+            $denom->damaged_notes_amount = (int) ($validated['damaged_notes_amount'] ?? 0);
+            $denom->damaged_notes_note = $validated['damaged_notes_note'] ?? null;
+            $totalPhysical = $denom->calculateTotal();
+            $denom->total_physical_amount = $totalPhysical;
+            $denom->save();
+
+            // 1. Sinkronkan Saldo Akun Kas & metadata denominasi
+            $cashAcc = Account::where('name', 'Cash')->orWhere('type', AccountType::CASH)->first();
+            if ($cashAcc) {
+                $meta = $cashAcc->metadata ?? [];
+                $meta['denominations'] = $denom->toArray();
+                $cashAcc->update([
+                    'current_balance' => $totalPhysical,
+                    'metadata' => $meta,
+                ]);
+            }
+
+            // 2. Sinkronkan ke Checkpoint DriverSnapshot terbaru jika ada
+            $latestSnapshot = \App\Models\DriverSnapshot::where('work_day_id', $workDay->id)
+                ->latest('recorded_at')
+                ->first();
+
+            if ($latestSnapshot) {
+                $latestSnapshot->update([
+                    'cash_balance' => $totalPhysical,
+                ]);
+            }
+
+            \App\Models\AuditLog::create([
+                'auditable_type' => \App\Models\CashDenomination::class,
+                'auditable_id' => $denom->id,
+                'action' => 'cash_denom_update',
+                'old_values' => $oldValues,
+                'new_values' => $denom->toArray(),
+                'reason' => "Update fisik kas di saku/dompet on-demand: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin)",
             ]);
+
+            return redirect()->back()->with('success', "Kas fisik di dompet/saku berhasil diperbarui: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin). Saldo kas dan data checkpoint driver langsung sinkron!");
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Gagal update pecahan kas: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', "Gagal memperbarui kas fisik: " . $e->getMessage());
         }
-
-        $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
-        $oldValues = $denom->exists ? $denom->toArray() : null;
-
-        $fields = [
-            'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
-            'bill_5000', 'bill_2000', 'bill_1000',
-            'coin_1000', 'coin_500', 'coin_200', 'coin_100',
-        ];
-
-        foreach ($fields as $f) {
-            $denom->$f = (int) ($validated[$f] ?? 0);
-        }
-        $denom->damaged_notes_amount = (int) ($validated['damaged_notes_amount'] ?? 0);
-        $denom->damaged_notes_note = $validated['damaged_notes_note'] ?? null;
-        $totalPhysical = $denom->calculateTotal();
-        $denom->total_physical_amount = $totalPhysical;
-        $denom->save();
-
-        // 1. Sinkronkan Saldo Akun Kas & metadata denominasi
-        $cashAcc = Account::where('name', 'Cash')->orWhere('type', AccountType::CASH)->first();
-        if ($cashAcc) {
-            $meta = $cashAcc->metadata ?? [];
-            $meta['denominations'] = $denom->toArray();
-            $cashAcc->update([
-                'current_balance' => $totalPhysical,
-                'metadata' => $meta,
-            ]);
-        }
-
-        // 2. Sinkronkan ke Checkpoint DriverSnapshot terbaru jika ada
-        $latestSnapshot = \App\Models\DriverSnapshot::where('work_day_id', $workDay->id)
-            ->latest('recorded_at')
-            ->first();
-
-        if ($latestSnapshot) {
-            $latestSnapshot->update([
-                'cash_balance' => $totalPhysical,
-            ]);
-        }
-
-        \App\Models\AuditLog::create([
-            'auditable_type' => \App\Models\CashDenomination::class,
-            'auditable_id' => $denom->id,
-            'action' => 'cash_denom_update',
-            'old_values' => $oldValues,
-            'new_values' => $denom->toArray(),
-            'reason' => "Update fisik kas di saku/dompet on-demand: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin)",
-        ]);
-
-        return redirect()->back()->with('success', "Kas fisik di dompet/saku berhasil diperbarui: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin). Saldo kas dan data checkpoint driver langsung sinkron!");
     }
 
     /**
