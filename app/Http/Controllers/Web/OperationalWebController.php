@@ -367,6 +367,202 @@ class OperationalWebController extends Controller
     }
 
     /**
+     * Update Fisik Uang Kas (Lembaran & Koin) Kapan Saja di Jalan (On-Demand)
+     * Sinkron langsung ke Saldo Kas dan Checkpoint DriverSnapshot
+     */
+    public function updateCashDenominations(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'bill_100000' => 'nullable|integer|min:0',
+            'bill_50000' => 'nullable|integer|min:0',
+            'bill_20000' => 'nullable|integer|min:0',
+            'bill_10000' => 'nullable|integer|min:0',
+            'bill_5000' => 'nullable|integer|min:0',
+            'bill_2000' => 'nullable|integer|min:0',
+            'bill_1000' => 'nullable|integer|min:0',
+            'coin_1000' => 'nullable|integer|min:0',
+            'coin_500' => 'nullable|integer|min:0',
+            'coin_200' => 'nullable|integer|min:0',
+            'coin_100' => 'nullable|integer|min:0',
+            'damaged_notes_amount' => 'nullable|integer|min:0',
+            'damaged_notes_note' => 'nullable|string|max:255',
+        ]);
+
+        $workDay = !empty($validated['work_day_id'])
+            ? WorkDay::findOrFail($validated['work_day_id'])
+            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
+
+        if (!$workDay) {
+            $workDay = WorkDay::create([
+                'work_date' => now()->toDateString(),
+                'day_type' => WorkDay::TYPE_DAY_OFF,
+                'status' => 'active',
+            ]);
+        }
+
+        $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+        $oldValues = $denom->exists ? $denom->toArray() : null;
+
+        $fields = [
+            'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
+            'bill_5000', 'bill_2000', 'bill_1000',
+            'coin_1000', 'coin_500', 'coin_200', 'coin_100',
+        ];
+
+        foreach ($fields as $f) {
+            $denom->$f = (int) ($validated[$f] ?? 0);
+        }
+        $denom->damaged_notes_amount = (int) ($validated['damaged_notes_amount'] ?? 0);
+        $denom->damaged_notes_note = $validated['damaged_notes_note'] ?? null;
+        $totalPhysical = $denom->calculateTotal();
+        $denom->total_physical_amount = $totalPhysical;
+        $denom->save();
+
+        // 1. Sinkronkan Saldo Akun Kas
+        $cashAcc = Account::where('name', 'Cash')->first();
+        if ($cashAcc) {
+            $cashAcc->update(['current_balance' => $totalPhysical]);
+        }
+
+        // 2. Sinkronkan ke Checkpoint DriverSnapshot terbaru jika ada
+        $latestSnapshot = \App\Models\DriverSnapshot::where('work_day_id', $workDay->id)
+            ->latest('recorded_at')
+            ->first();
+
+        if ($latestSnapshot) {
+            $latestSnapshot->update([
+                'cash_balance' => $totalPhysical,
+            ]);
+        }
+
+        \App\Models\AuditLog::create([
+            'auditable_type' => \App\Models\CashDenomination::class,
+            'auditable_id' => $denom->id,
+            'action' => 'update_cash_denominations_ondemand',
+            'old_values' => $oldValues,
+            'new_values' => $denom->toArray(),
+            'reason' => "Update fisik kas di saku/dompet on-demand: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin)",
+        ]);
+
+        return redirect()->back()->with('success', "Kas fisik di dompet/saku berhasil diperbarui: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin). Saldo kas dan data checkpoint driver langsung sinkron!");
+    }
+
+    /**
+     * Terapkan Rincian Pecahan Transaksi Cash (Opsional) ke Denominasi Fisik Dompet Shift
+     */
+    protected function applyCashBreakdown(
+        WorkDay $workDay,
+        ?array $inflowBreakdown,
+        ?array $outflowBreakdown,
+        string $context = 'expense'
+    ): void {
+        $fields = [
+            'bill_100000', 'bill_50000', 'bill_20000', 'bill_10000',
+            'bill_5000', 'bill_2000', 'bill_1000',
+            'coin_1000', 'coin_500', 'coin_200', 'coin_100',
+        ];
+
+        // Validasi apakah ada input pecahan yang > 0
+        $hasInflow = false;
+        if (is_array($inflowBreakdown)) {
+            foreach ($fields as $f) {
+                if (!empty($inflowBreakdown[$f]) && (int) $inflowBreakdown[$f] > 0) {
+                    $hasInflow = true;
+                    break;
+                }
+            }
+        }
+
+        $hasOutflow = false;
+        if (is_array($outflowBreakdown)) {
+            foreach ($fields as $f) {
+                if (!empty($outflowBreakdown[$f]) && (int) $outflowBreakdown[$f] > 0) {
+                    $hasOutflow = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$hasInflow && !$hasOutflow) {
+            return; // 100% Opsional: Tidak ada rincian pecahan yang diisi, abaikan dengan aman
+        }
+
+        // Ambil atau buat record denominasi kas shift ini
+        $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+        if (!$denom->exists) {
+            // Ambil closing fisik terakhir sebagai baseline awal jika belum ada
+            $lastDenom = \App\Models\CashDenomination::where('work_day_id', '!=', $workDay->id)->latest()->first();
+            if ($lastDenom) {
+                foreach ($fields as $f) {
+                    $denom->$f = (int) $lastDenom->$f;
+                }
+            }
+        }
+
+        // Context:
+        // 'expense'  : $inflowBreakdown = $paid (uang driver KELUAR), $outflowBreakdown = $change (kembalian MASUK)
+        // 'cod_cash' : $inflowBreakdown = $customerGave (uang customer MASUK), $outflowBreakdown = $changeReturned (kembalian KELUAR)
+        // 'income'   : $inflowBreakdown = $tip (uang tip MASUK), $outflowBreakdown = null
+        if ($context === 'expense') {
+            if (is_array($inflowBreakdown)) {
+                foreach ($fields as $f) {
+                    $qty = (int) ($inflowBreakdown[$f] ?? 0);
+                    if ($qty > 0) {
+                        $denom->$f = max(0, (int) $denom->$f - $qty);
+                    }
+                }
+            }
+            if (is_array($outflowBreakdown)) {
+                foreach ($fields as $f) {
+                    $qty = (int) ($outflowBreakdown[$f] ?? 0);
+                    if ($qty > 0) {
+                        $denom->$f = (int) $denom->$f + $qty;
+                    }
+                }
+            }
+        } elseif ($context === 'cod_cash') {
+            if (is_array($inflowBreakdown)) {
+                foreach ($fields as $f) {
+                    $qty = (int) ($inflowBreakdown[$f] ?? 0);
+                    if ($qty > 0) {
+                        $denom->$f = (int) $denom->$f + $qty;
+                    }
+                }
+            }
+            if (is_array($outflowBreakdown)) {
+                foreach ($fields as $f) {
+                    $qty = (int) ($outflowBreakdown[$f] ?? 0);
+                    if ($qty > 0) {
+                        $denom->$f = max(0, (int) $denom->$f - $qty);
+                    }
+                }
+            }
+        } elseif ($context === 'income') {
+            if (is_array($inflowBreakdown)) {
+                foreach ($fields as $f) {
+                    $qty = (int) ($inflowBreakdown[$f] ?? 0);
+                    if ($qty > 0) {
+                        $denom->$f = (int) $denom->$f + $qty;
+                    }
+                }
+            }
+        }
+
+        $denom->total_physical_amount = $denom->calculateTotal();
+        $denom->save();
+
+        // Sinkronkan checkpoint DriverSnapshot jika ada
+        $latestSnapshot = $workDay->latestSnapshot;
+        if ($latestSnapshot) {
+            $cashAcc = Account::where('name', 'Cash')->first();
+            $latestSnapshot->update([
+                'cash_balance' => $cashAcc ? (int) $cashAcc->current_balance : (int) $denom->total_physical_amount,
+            ]);
+        }
+    }
+
+    /**
      * Catat Beli Bensin
      */
     public function storeFuel(
@@ -380,6 +576,8 @@ class OperationalWebController extends Controller
             'vendor_type' => 'required|in:spbu,madura',
             'amount' => 'required|integer|min:1000',
             'cashback_amount' => 'nullable|integer|min:0',
+            'paid_breakdown' => 'nullable|array',
+            'change_breakdown' => 'nullable|array',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -400,6 +598,22 @@ class OperationalWebController extends Controller
             $cashback,
             $tx->description
         );
+
+        // Penerapan rincian pecahan kas jika sumber pembayaran adalah Kas Tunai
+        $isCash = ($account->name === 'Cash' || $account->type === AccountType::CASH);
+        $paidBreakdown = $request->input('paid_breakdown');
+        $changeBreakdown = $request->input('change_breakdown');
+        if ($isCash && ($paidBreakdown || $changeBreakdown)) {
+            $this->applyCashBreakdown($workDay, $paidBreakdown, $changeBreakdown, 'expense');
+            $tx->update([
+                'metadata' => array_merge($tx->metadata ?? [], [
+                    'cash_breakdown' => [
+                        'paid' => $paidBreakdown,
+                        'change' => $changeBreakdown,
+                    ],
+                ]),
+            ]);
+        }
 
         $msg = 'Transaksi pembelian bensin berhasil dicatat.';
         if ($cashbackTx) {
@@ -428,6 +642,8 @@ class OperationalWebController extends Controller
             'cashback_amount' => 'nullable|integer|min:0',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
+            'paid_breakdown' => 'nullable|array',
+            'change_breakdown' => 'nullable|array',
         ]);
 
         $workDay = !empty($validated['work_day_id'])
@@ -473,6 +689,26 @@ class OperationalWebController extends Controller
                     $cashback,
                     $parkingTx->description
                 );
+            }
+        }
+
+        // Terapkan rincian pecahan kas jika parkir tidak gratis dan sumber pembayaran adalah Kas
+        if (!$isCovered) {
+            $sourceAcc = $sourceAccountId ? Account::find($sourceAccountId) : Account::where('name', 'Cash')->first();
+            $isCash = $sourceAcc ? ($sourceAcc->name === 'Cash' || $sourceAcc->type === AccountType::CASH) : true;
+            $paidBreakdown = $request->input('paid_breakdown');
+            $changeBreakdown = $request->input('change_breakdown');
+
+            if ($isCash && ($paidBreakdown || $changeBreakdown)) {
+                $this->applyCashBreakdown($workDay, $paidBreakdown, $changeBreakdown, 'expense');
+                $parkingTx->update([
+                    'metadata' => array_merge($parkingTx->metadata ?? [], [
+                        'cash_breakdown' => [
+                            'paid' => $paidBreakdown,
+                            'change' => $changeBreakdown,
+                        ],
+                    ]),
+                ]);
             }
         }
 
@@ -542,6 +778,8 @@ class OperationalWebController extends Controller
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'notes' => 'nullable|string|max:255',
+            'customer_cash_breakdown' => 'nullable|array',
+            'change_cash_breakdown' => 'nullable|array',
         ]);
 
         $completed = $service->completeCodOrder(
@@ -556,6 +794,16 @@ class OperationalWebController extends Controller
             longitude: !empty($validated['longitude']) ? (float) $validated['longitude'] : null,
             notes: $validated['notes'] ?? null
         );
+
+        // Jika bayar tunai (cash) dan ada rincian pecahan lembaran/koin yang diisi opsional
+        if ($completed->payment_method === 'cash') {
+            $customerBreakdown = $request->input('customer_cash_breakdown');
+            $changeBreakdown = $request->input('change_cash_breakdown');
+
+            if ($customerBreakdown || $changeBreakdown) {
+                $this->applyCashBreakdown($order->workDay, $customerBreakdown, $changeBreakdown, 'cod_cash');
+            }
+        }
 
         $methodLabel = $completed->payment_method === 'cash' ? 'Kas Dompet' : 'Rekening Digital (QRIS)';
         return redirect()->back()->with('success', "Pesanan COD #{$completed->order_code} selesai diantar! Uang Rp " . number_format($completed->received_amount, 0, ',', '.') . " berhasil masuk ke {$methodLabel}.");
@@ -1503,6 +1751,7 @@ class OperationalWebController extends Controller
             'amount' => 'required|integer|min:1000',
             'account_id' => 'required|exists:accounts,id',
             'notes' => 'nullable|string|max:255',
+            'tip_cash_breakdown' => 'nullable|array',
         ]);
 
         $workDay = !empty($validated['work_day_id'])
@@ -1532,7 +1781,7 @@ class OperationalWebController extends Controller
 
         $desc = "Tip Langsung Pelanggan via {$account->name}: Rp " . number_format($amount, 0, ',', '.') . ($notes ? " ({$notes})" : "");
 
-        $ledgerService->recordTransaction(
+        $tx = $ledgerService->recordTransaction(
             workDay: $workDay,
             type: 'income',
             description: $desc,
@@ -1551,6 +1800,19 @@ class OperationalWebController extends Controller
                 'notes' => $notes,
             ]
         );
+
+        // Jika tip cash dan ada rincian pecahan
+        $tipBreakdown = $request->input('tip_cash_breakdown');
+        if ($isCash && $tipBreakdown) {
+            $this->applyCashBreakdown($workDay, $tipBreakdown, null, 'income');
+            $tx->update([
+                'metadata' => array_merge($tx->metadata ?? [], [
+                    'cash_breakdown' => [
+                        'received' => $tipBreakdown,
+                    ],
+                ]),
+            ]);
+        }
 
         $msg = "Alhamdulillah! Tip Rp " . number_format($amount, 0, ',', '.') . " berhasil dicatat masuk ke {$account->name}.";
         if ($account->name === 'GoPay Merchant') {

@@ -640,11 +640,19 @@
                                     <span class="text-xs font-bold text-white block">{{ $elem['name'] }}</span>
                                     <span class="text-[11px] text-slate-300 leading-tight block mt-0.5">{{ $elem['desc'] }}</span>
                                 </div>
-                                <div class="pt-2.5 border-t border-slate-800">
-                                    <span class="text-[10px] text-slate-300 block font-semibold">Saldo Terkini:</span>
-                                    <span class="text-lg font-black {{ $elem['balance'] < 10000 ? 'text-amber-400' : 'text-slate-100' }}">
-                                        Rp {{ number_format($elem['balance'], 0, ',', '.') }}
-                                    </span>
+                                <div class="pt-2.5 border-t border-slate-800 flex justify-between items-end">
+                                    <div>
+                                        <span class="text-[10px] text-slate-300 block font-semibold">Saldo Terkini:</span>
+                                        <span class="text-lg font-black {{ $elem['balance'] < 10000 ? 'text-amber-400' : 'text-slate-100' }}">
+                                            Rp {{ number_format($elem['balance'], 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    @if($key === 'cash' || str_contains(strtolower($elem['name']), 'fisik'))
+                                        <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="text-[10px] font-extrabold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/30 transition flex items-center space-x-1">
+                                            <span>⚡</span>
+                                            <span>Update</span>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -851,16 +859,23 @@
                             <div>
                                 <div class="flex items-center space-x-2">
                                     <span class="text-base">👛</span>
-                                    <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Rincian Fisik Kas di Dompet (Hasil Closing Terakhir)</h4>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Rincian Fisik Kas di Dompet</h4>
+                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Tersinkron</span>
                                 </div>
                                 <span class="text-[11px] text-slate-300 block mt-0.5">
-                                    Shift: <strong class="text-white">{{ $cashDenomination->workDay?->work_date ? $cashDenomination->workDay->work_date->translatedFormat('l, d F Y') : 'Terakhir' }}</strong> &bull; Diperbarui setiap malam closingan
+                                    Shift: <strong class="text-white">{{ $cashDenomination->workDay?->work_date ? $cashDenomination->workDay->work_date->translatedFormat('l, d F Y') : 'Terakhir' }}</strong> &bull; Bisa diupdate kapan saja di jalan
                                 </span>
                             </div>
-                            <div class="text-left sm:text-right bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-1.5">
-                                <span class="text-xs text-slate-300 font-medium">Total Fisik:</span>
-                                <span class="text-sm font-extrabold text-white ml-1">Rp {{ number_format($cashDenomination->total_physical_amount, 0, ',', '.') }}</span>
-                                <span class="text-[10px] text-slate-300 block sm:inline">({{ $cashDenomination->total_pieces }} lembar & koin)</span>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center space-x-1.5">
+                                    <span>⚡</span>
+                                    <span>Update Kas Fisik</span>
+                                </button>
+                                <div class="text-left sm:text-right bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-1.5">
+                                    <span class="text-xs text-slate-300 font-medium">Total Fisik:</span>
+                                    <span class="text-sm font-extrabold text-white ml-1">Rp {{ number_format($cashDenomination->total_physical_amount, 0, ',', '.') }}</span>
+                                    <span class="text-[10px] text-slate-300 block sm:inline">({{ $cashDenomination->total_pieces }} lembar & koin)</span>
+                                </div>
                             </div>
                         </div>
 
@@ -893,10 +908,14 @@
                         </div>
                     </div>
                 @else
-                    <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl text-center">
-                        <span class="text-3xl block mb-2">👛</span>
-                        <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-1">Belum Ada Rekaman Fisik Pecahan Kas</h4>
-                        <p class="text-xs text-slate-300 max-w-md mx-auto">Jumlah lembar Rp5.000, Rp2.000, dst. akan otomatis muncul di sini setelah Anda melakukan <strong>Buka Shift</strong> atau <strong>Closing Kas Malam Hari</strong>.</p>
+                    <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl text-center space-y-3">
+                        <span class="text-3xl block mb-1">👛</span>
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Belum Ada Rekaman Fisik Pecahan Kas</h4>
+                        <p class="text-xs text-slate-300 max-w-md mx-auto">Jumlah lembar Rp5.000, Rp2.000, dst. dapat Anda update kapan saja di jalan tanpa perlu menunggu closing malam hari.</p>
+                        <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow inline-flex items-center space-x-1.5">
+                            <span>➕</span>
+                            <span>Input Kas Fisik Sekarang</span>
+                        </button>
                     </div>
                 @endif
 
@@ -993,6 +1012,14 @@
                             <div>
                                 <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Order COD Baru</span>
                                 <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Talangi ShopeePay</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="p-3.5 bg-gradient-to-br from-emerald-950/60 to-slate-900 hover:from-emerald-900/80 hover:to-slate-800 border border-emerald-500/50 hover:border-emerald-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">👛</span>
+                            <div>
+                                <span class="text-xs font-bold text-emerald-300 block group-hover:text-emerald-200">Update Kas Fisik</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Lembar/Koin Saku</span>
                             </div>
                         </button>
 
@@ -1909,8 +1936,68 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pembelian (Rp)</label>
-                    <input type="number" name="amount" min="1" step="1" placeholder="25000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <input type="number" name="amount" id="input-fuel-amount" min="1" step="1" placeholder="25000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                 </div>
+
+                {{-- Rincian Pecahan Uang Dibayar & Kembalian (Opsional) --}}
+                <div class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
+                    <button type="button" onclick="toggleCashBreakdownAccordion('fuel-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-emerald-400 text-sm">💵</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block">Rincian Pecahan Cash & Kembalian</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Lembaran yang dibayar & kembalian diterima</span>
+                            </div>
+                        </div>
+                        <span id="fuel-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                    </button>
+                    <div id="fuel-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                        {{-- Uang Dikeluarkan (Dibayar) --}}
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-[11px] font-bold text-amber-400 uppercase">Uang Dibayarkan:</span>
+                                <span id="fuel-paid-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                            </div>
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
+                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
+                                        <div class="flex items-center space-x-1 mt-1">
+                                            <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
+                                            <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="fuel_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
+                                            <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Kembalian Diterima --}}
+                        <div class="pt-2 border-t border-slate-800">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-[11px] font-bold text-emerald-400 uppercase">Kembalian Diterima:</span>
+                                <span id="fuel-change-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                            </div>
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
+                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
+                                        <div class="flex items-center space-x-1 mt-1">
+                                            <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
+                                            <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="fuel_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
+                                            <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-6 h-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="applyFuelNetFromCash()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[11px] font-bold rounded-lg border border-emerald-500/30 transition flex items-center justify-center space-x-1">
+                            <span>⚡ Set Selisih sebagai Nominal Bensin</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-fuel')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
                     <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Bensin</button>
@@ -2061,6 +2148,65 @@
                     </button>
                 </div>
 
+                {{-- Rincian Pecahan Uang Dibayar & Kembalian (Opsional) --}}
+                <div class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
+                    <button type="button" onclick="toggleCashBreakdownAccordion('parking-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-emerald-400 text-sm">💵</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block">Rincian Pecahan Cash & Kembalian</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Misal bayar 5k kembalian 3k, atau bayar pas</span>
+                            </div>
+                        </div>
+                        <span id="parking-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                    </button>
+                    <div id="parking-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                        {{-- Uang Dikeluarkan (Dibayar) --}}
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-[11px] font-bold text-amber-400 uppercase">Uang Parkir Dikeluarkan:</span>
+                                <span id="parking-paid-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                            </div>
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
+                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
+                                        <div class="flex items-center space-x-1 mt-1">
+                                            <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
+                                            <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="parking_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
+                                            <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Kembalian Diterima --}}
+                        <div class="pt-2 border-t border-slate-800">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-[11px] font-bold text-emerald-400 uppercase">Kembalian Diterima:</span>
+                                <span id="parking-change-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                            </div>
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                @foreach([10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
+                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
+                                        <div class="flex items-center space-x-1 mt-1">
+                                            <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
+                                            <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="parking_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
+                                            <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-6 h-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="applyParkingNetFromCash()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[11px] font-bold rounded-lg border border-emerald-500/30 transition flex items-center justify-center space-x-1">
+                            <span>⚡ Set Selisih sebagai Nominal Parkir</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700/80">
                     <button type="button" onclick="closeModal('modal-parking')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
                     <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
@@ -2163,6 +2309,41 @@
                     <p class="text-[11px] text-amber-300/90">
                         Jika customer scan QRIS GoPay Merchant, dana akan tertampung di <strong>GoPay Merchant</strong>. Sistem GoPay otomatis mentransfer (settle) saldo GoPay Merchant ke rekening <strong>GoPay reguler Anda setiap 1 jam sekali</strong> ketika saldo mencapai minimal <strong>Rp 10.000</strong>.
                     </p>
+                </div>
+
+                {{-- Rincian Pecahan Tip Cash (Opsional) --}}
+                <div id="quick-tip-cash-breakdown-drawer" class="border border-slate-700/80 rounded-xl bg-slate-950/60 overflow-hidden">
+                    <button type="button" onclick="toggleCashBreakdownAccordion('quick-tip-cash-drawer')" class="w-full flex items-center justify-between p-2.5 text-left hover:bg-slate-800/60 transition">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-amber-400 text-sm">💵</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block">Rincian Lembar Tip Cash (Opsional)</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Pilih lembar tip cash yang diberikan</span>
+                            </div>
+                        </div>
+                        <span id="quick-tip-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                    </button>
+                    <div id="quick-tip-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-2 bg-slate-950/40">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[11px] font-bold text-amber-400 uppercase">Pecahan Tip Cash:</span>
+                            <span id="tip-cash-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                        </div>
+                        <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                            @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
+                                    <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
+                                    <div class="flex items-center space-x-1 mt-1">
+                                        <button type="button" onclick="stepTxCash('tip_bill_{{ $nom }}', -1, {{ $nom }}, 'tip_cash')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
+                                        <input type="number" name="tip_cash_breakdown[bill_{{ $nom }}]" id="tip_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('tip_cash', 'tip-cash-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
+                                        <button type="button" onclick="stepTxCash('tip_bill_{{ $nom }}', 1, {{ $nom }}, 'tip_cash')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <button type="button" onclick="applyTipTotalToInput()" class="mt-1.5 w-full py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold rounded-lg border border-amber-500/30">
+                            ⚡ Gunakan sebagai Nominal Tip
+                        </button>
+                    </div>
                 </div>
 
                 {{-- Catatan Opsional --}}
@@ -2515,6 +2696,67 @@
                             <button type="button" onclick="setChangePreset(0)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-emerald-300 font-bold rounded-lg border border-emerald-500/40">Rp0 (Ambil Semua)</button>
                         </div>
                     </div>
+
+                    {{-- Rincian Pecahan Uang Customer & Kembalian (Opsional) --}}
+                    <div class="border border-slate-800 rounded-xl bg-slate-950/60 overflow-hidden">
+                        <button type="button" onclick="toggleCashBreakdownAccordion('cod-cash-drawer')" class="w-full flex items-center justify-between p-2.5 text-left hover:bg-slate-800/60 transition">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-emerald-400 text-sm">💵</span>
+                                <div>
+                                    <span class="text-xs font-bold text-white block">Rincian Pecahan Customer & Kembalian</span>
+                                    <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Tap lembaran uang untuk auto-isi kalkulator di atas</span>
+                                </div>
+                            </div>
+                            <span id="cod-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                        </button>
+                        <div id="cod-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3">
+                            {{-- Uang Dikasih Customer --}}
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[11px] font-bold text-emerald-400 uppercase">Lembar Dikasihkan Customer:</span>
+                                    <span id="cod-cust-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                                </div>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
+                                            <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
+                                                <input type="number" name="customer_cash_breakdown[bill_{{ $nom }}]" id="cod_cust_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
+                                                <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-6 h-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <button type="button" onclick="applyCodCustToGaveInput()" class="mt-1.5 w-full py-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[10px] font-bold rounded-lg border border-emerald-500/30">
+                                    ⚡ Gunakan sebagai "Uang Dikasihkan Customer"
+                                </button>
+                            </div>
+
+                            {{-- Kembalian yang Diserahkan Driver ke Customer --}}
+                            <div class="pt-2 border-t border-slate-800">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[11px] font-bold text-amber-400 uppercase">Lembar Kembalian ke Customer:</span>
+                                    <span id="cod-change-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                                </div>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
+                                            <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
+                                                <input type="number" name="change_cash_breakdown[bill_{{ $nom }}]" id="cod_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
+                                                <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <button type="button" onclick="applyCodChangeToChangeInput()" class="mt-1.5 w-full py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold rounded-lg border border-amber-500/30">
+                                    ⚡ Gunakan sebagai "Kembalian yang Diserahkan"
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- 2. Section QRIS (Jika Customer Transfer) --}}
@@ -2608,6 +2850,117 @@
                 <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
                     <button type="button" onclick="closeModal('modal-cancel-cod')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Tutup</button>
                     <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow">Batalkan & Pulihkan Saldo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- MODAL KHUSUS UPDATE FISIK KAS ON-DEMAND (KAPAN SAJA DI JALAN) --}}
+    <div id="modal-quick-cash-denominations" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden overflow-y-auto">
+        <div class="bg-slate-900 border-2 border-emerald-500/60 max-w-lg w-full rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 my-6 max-h-[92vh] overflow-y-auto flex flex-col">
+            <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-2xl">👛</span>
+                    <div>
+                        <h3 class="text-base font-extrabold text-white flex items-center space-x-2">
+                            <span>Update Kas Fisik di Jalan</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">On-Demand</span>
+                        </h3>
+                        <p class="text-xs text-slate-300">Update lembaran & koin kapan saja tanpa tunggu closing. Checkpoint otomatis sinkron.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-quick-cash-denominations')" class="text-slate-400 hover:text-white font-bold text-xl leading-none">&times;</button>
+            </div>
+
+            <form id="form-quick-cash-denominations" method="POST" action="{{ route('operational.cash-denominations') }}" class="space-y-4 flex-1">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                {{-- Live Counter Saldo Banner --}}
+                <div class="p-3 bg-gradient-to-r from-emerald-950/60 via-slate-950/90 to-slate-900 border border-emerald-500/40 rounded-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Uang Fisik Saku:</span>
+                        <div class="flex items-baseline space-x-2">
+                            <span id="quick-cash-total-display" class="text-xl sm:text-2xl font-black text-emerald-400">Rp 0</span>
+                            <span id="quick-cash-pieces-display" class="text-xs font-semibold text-slate-300">(0 pcs)</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="resetQuickCashDenominations()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-bold rounded-lg border border-slate-700 transition flex items-center space-x-1 shrink-0">
+                        <span>🔄</span>
+                        <span>Reset 0</span>
+                    </button>
+                </div>
+
+                {{-- 1. Uang Kertas (Lembaran) --}}
+                <div>
+                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-2">💵 Uang Kertas (Lembaran):</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        @foreach([100000 => '100.000', 50000 => '50.000', 20000 => '20.000', 10000 => '10.000', 5000 => '5.000', 2000 => '2.000', 1000 => '1.000'] as $nom => $label)
+                            @php $field = 'bill_' . $nom; $count = $cashDenomination->$field ?? 0; @endphp
+                            <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-2.5 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs font-extrabold text-white block">Rp{{ $label }}</span>
+                                    <span id="subtotal-quick-cash-{{ $field }}" class="text-[10px] text-slate-400 font-semibold">Rp {{ number_format($count * $nom, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', -1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-black text-sm flex items-center justify-center transition select-none">-</button>
+                                    <input type="number" name="{{ $field }}" id="input-quick-cash-{{ $field }}" value="{{ $count }}" min="0" oninput="onQuickCashInput('{{ $field }}', {{ $nom }})" class="w-12 text-center bg-slate-900 border border-slate-700 rounded-lg py-1 text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', 1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white font-black text-sm flex items-center justify-center transition select-none">+</button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- 2. Uang Logam (Koin) --}}
+                <div>
+                    <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block mb-2">🪙 Uang Logam (Koin):</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                            @php $field = 'coin_' . $nom; $count = $cashDenomination->$field ?? 0; @endphp
+                            <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-2.5 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs font-extrabold text-white block">Rp{{ $label }}</span>
+                                    <span id="subtotal-quick-cash-{{ $field }}" class="text-[10px] text-slate-400 font-semibold">Rp {{ number_format($count * $nom, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', -1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-black text-sm flex items-center justify-center transition select-none">-</button>
+                                    <input type="number" name="{{ $field }}" id="input-quick-cash-{{ $field }}" value="{{ $count }}" min="0" oninput="onQuickCashInput('{{ $field }}', {{ $nom }})" class="w-10 sm:w-12 text-center bg-slate-900 border border-slate-700 rounded-lg py-1 text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    <button type="button" onclick="stepQuickCash('{{ $field }}', 1, {{ $nom }})" class="w-8 h-8 rounded-lg bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white font-black text-sm flex items-center justify-center transition select-none">+</button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Uang Sobek / Rusak (Collapsible) --}}
+                <details class="bg-slate-950/60 border border-slate-800 rounded-xl overflow-hidden group">
+                    <summary class="flex items-center justify-between p-3 text-xs font-bold text-slate-300 hover:text-white cursor-pointer select-none">
+                        <div class="flex items-center space-x-2">
+                            <span>🩹</span>
+                            <span>Ada Uang Sobek / Rusak di Dompet? (Opsional)</span>
+                        </div>
+                        <span class="text-slate-400 transition-transform group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="p-3 pt-0 border-t border-slate-800 space-y-2 text-xs">
+                        <div>
+                            <label class="block text-[11px] text-slate-300 mb-1">Nominal Uang Rusak (Rp)</label>
+                            <input type="number" name="damaged_notes_amount" value="{{ $cashDenomination->damaged_notes_amount ?? 0 }}" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-300 mb-1">Keterangan / Kondisi Rusak</label>
+                            <input type="text" name="damaged_notes_note" value="{{ $cashDenomination->damaged_notes_note ?? '' }}" placeholder="Misal: Sobek di ujung, belanjakan ke SPBU" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs">
+                        </div>
+                    </div>
+                </details>
+
+                {{-- Sticky Action Footer --}}
+                <div class="pt-3 border-t border-slate-800 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('modal-quick-cash-denominations')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
+                        <span>💾</span>
+                        <span>Simpan & Sinkron Checkpoint</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -4514,6 +4867,10 @@
             try {
                 calculateHubBonusPreview();
             } catch (e) {}
+
+            try {
+                calculateQuickCashTotal();
+            } catch (e) {}
         });
 
         let reconClockInterval = null;
@@ -4615,6 +4972,9 @@
                 if (id === 'modal-parking') {
                     detectParkingGps(false);
                 }
+                if (id === 'modal-quick-cash-denominations') {
+                    calculateQuickCashTotal();
+                }
             }
         }
         function closeModal(id) {
@@ -4623,6 +4983,158 @@
             if (id === 'modal-reconcile-digital' && reconClockInterval) {
                 clearInterval(reconClockInterval);
                 reconClockInterval = null;
+            }
+        }
+
+        // ==========================================
+        // FITUR UPDATE KAS FISIK KAPAN SAJA & PECAHAN TRANSAKSI
+        // ==========================================
+
+        const NOMINAL_MAP = {
+            'bill_100000': 100000,
+            'bill_50000': 50000,
+            'bill_20000': 20000,
+            'bill_10000': 10000,
+            'bill_5000': 5000,
+            'bill_2000': 2000,
+            'bill_1000': 1000,
+            'coin_1000': 1000,
+            'coin_500': 500,
+            'coin_200': 200,
+            'coin_100': 100
+        };
+
+        function calculateQuickCashTotal() {
+            let total = 0;
+            let pieces = 0;
+            for (const [field, nom] of Object.entries(NOMINAL_MAP)) {
+                const input = document.getElementById(`input-quick-cash-${field}`);
+                const count = input ? (parseInt(input.value) || 0) : 0;
+                const subtotal = count * nom;
+                total += subtotal;
+                pieces += count;
+
+                const subtotalEl = document.getElementById(`subtotal-quick-cash-${field}`);
+                if (subtotalEl) {
+                    subtotalEl.innerText = `Rp ${subtotal.toLocaleString('id-ID')}`;
+                }
+            }
+
+            const totalEl = document.getElementById('quick-cash-total-display');
+            if (totalEl) totalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+
+            const piecesEl = document.getElementById('quick-cash-pieces-display');
+            if (piecesEl) piecesEl.innerText = `(${pieces} pcs)`;
+        }
+
+        function stepQuickCash(field, step, nom) {
+            const input = document.getElementById(`input-quick-cash-${field}`);
+            if (!input) return;
+            let current = parseInt(input.value) || 0;
+            current = Math.max(0, current + step);
+            input.value = current;
+            calculateQuickCashTotal();
+        }
+
+        function onQuickCashInput(field, nom) {
+            const input = document.getElementById(`input-quick-cash-${field}`);
+            if (input && parseInt(input.value) < 0) input.value = 0;
+            calculateQuickCashTotal();
+        }
+
+        function resetQuickCashDenominations() {
+            if (!confirm('Kosongkan semua hitungan lembaran & koin menjadi 0?')) return;
+            for (const field of Object.keys(NOMINAL_MAP)) {
+                const input = document.getElementById(`input-quick-cash-${field}`);
+                if (input) input.value = 0;
+            }
+            calculateQuickCashTotal();
+        }
+
+        function toggleCashBreakdownAccordion(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(`${id}-icon`);
+            if (!el) return;
+            const isHidden = el.classList.contains('hidden');
+            if (isHidden) {
+                el.classList.remove('hidden');
+                if (icon) icon.innerText = '▲';
+            } else {
+                el.classList.add('hidden');
+                if (icon) icon.innerText = '▼';
+            }
+        }
+
+        function stepTxCash(inputId, step, nom, groupPrefix) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            let current = parseInt(input.value) || 0;
+            current = Math.max(0, current + step);
+            input.value = current;
+            calcTxCash(groupPrefix, `${groupPrefix.replace('_', '-')}-total-display`);
+        }
+
+        function calcTxCash(prefix, displayId) {
+            let total = 0;
+            const inputs = document.querySelectorAll(`input[id^="${prefix}_bill_"], input[id^="${prefix}_coin_"]`);
+            inputs.forEach(inp => {
+                const parts = inp.id.split('_');
+                const nom = parseInt(parts[parts.length - 1]) || 0;
+                const count = parseInt(inp.value) || 0;
+                total += (nom * count);
+            });
+            const disp = document.getElementById(displayId);
+            if (disp) disp.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+            return total;
+        }
+
+        function applyFuelNetFromCash() {
+            const paid = calcTxCash('fuel_paid', 'fuel-paid-total-display');
+            const change = calcTxCash('fuel_change', 'fuel-change-total-display');
+            const net = Math.max(0, paid - change);
+            const amountInput = document.getElementById('input-fuel-amount');
+            if (amountInput) {
+                amountInput.value = (net > 0) ? net : (paid > 0 ? paid : amountInput.value);
+            }
+        }
+
+        function applyParkingNetFromCash() {
+            const paid = calcTxCash('parking_paid', 'parking-paid-total-display');
+            const change = calcTxCash('parking_change', 'parking-change-total-display');
+            const net = Math.max(0, paid - change);
+            const amountInput = document.getElementById('input-parking-amount');
+            if (amountInput) {
+                amountInput.value = (net > 0) ? net : (paid > 0 ? paid : amountInput.value);
+            }
+        }
+
+        function applyCodCustToGaveInput() {
+            const total = calcTxCash('cod_cust', 'cod-cust-total-display');
+            if (total > 0) {
+                const gaveInput = document.getElementById('calc-gave-amount');
+                if (gaveInput) {
+                    gaveInput.value = total;
+                    if (typeof onGaveAmountChanged === 'function') onGaveAmountChanged();
+                }
+            }
+        }
+
+        function applyCodChangeToChangeInput() {
+            const total = calcTxCash('cod_change', 'cod-change-total-display');
+            if (total >= 0) {
+                const changeInput = document.getElementById('calc-change-returned');
+                if (changeInput) {
+                    changeInput.value = total;
+                    if (typeof recalculateCodAmounts === 'function') recalculateCodAmounts();
+                }
+            }
+        }
+
+        function applyTipTotalToInput() {
+            const total = calcTxCash('tip_cash', 'tip-cash-total-display');
+            if (total > 0) {
+                const tipInput = document.getElementById('quick-tip-amount');
+                if (tipInput) tipInput.value = total;
             }
         }
 

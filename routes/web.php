@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/paylater-providers/{id}/toggle-active', [\App\Http\Controllers\Web\OperationalWebController::class, 'togglePaylaterProviderActive'])->name('operational.paylater-providers.toggle-active');
     Route::delete('/operational/paylater-providers/{id}', [\App\Http\Controllers\Web\OperationalWebController::class, 'destroyPaylaterProvider'])->name('operational.paylater-providers.destroy');
     Route::post('/operational/set-initial-balance', [\App\Http\Controllers\Web\OperationalWebController::class, 'setAccountInitialBalance'])->name('operational.set-initial-balance');
+    Route::post('/operational/cash-denominations', [\App\Http\Controllers\Web\OperationalWebController::class, 'updateCashDenominations'])->name('operational.cash-denominations');
     Route::post('/operational/fuel', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFuel'])->name('operational.fuel');
     Route::post('/operational/parking', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeParking'])->name('operational.parking');
     Route::post('/operational/quick-tip', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeQuickTip'])->name('operational.quick-tip');
