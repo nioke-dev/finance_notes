@@ -222,4 +222,77 @@ class ClosingWebPageTest extends TestCase
         $finalizeResponse->assertRedirect('/dashboard');
         $this->assertEquals(WorkDay::STATUS_FINAL, $this->workDay->fresh()->status);
     }
+
+    public function test_closing_page_auto_prefills_denominations_from_previous_calculation(): void
+    {
+        // 1. Buat shift kemarin yang sudah ada hasil hitungan fisik kasnya
+        $yesterdayWorkDay = WorkDay::create([
+            'work_date' => now()->subDay()->toDateString(),
+            'status' => WorkDay::STATUS_FINAL,
+        ]);
+
+        CashDenomination::create([
+            'work_day_id' => $yesterdayWorkDay->id,
+            'bill_100000' => 1,
+            'bill_50000' => 2,
+            'bill_20000' => 1,
+            'bill_10000' => 3,
+            'bill_5000' => 4,
+            'bill_2000' => 5,
+            'bill_1000' => 2,
+            'coin_1000' => 6,
+            'coin_500' => 4,
+            'coin_200' => 0,
+            'coin_100' => 0,
+        ]);
+
+        // 2. Akses halaman closing shift hari ini (yang belum pernah diinput kas fisik)
+        $response = $this->get('/closing/' . $this->workDay->id);
+        $response->assertOk();
+
+        // Verifikasi bahwa variabel view terisi otomatis dari shift kemarin
+        $viewDenom = $response->viewData('denominations');
+        $this->assertEquals(1, $viewDenom->bill_100000);
+        $this->assertEquals(2, $viewDenom->bill_50000);
+        $this->assertEquals(1, $viewDenom->bill_20000);
+        $this->assertEquals(3, $viewDenom->bill_10000);
+        $this->assertEquals(4, $viewDenom->bill_5000);
+        $this->assertEquals(5, $viewDenom->bill_2000);
+        $this->assertEquals(6, $viewDenom->coin_1000);
+
+        // Verifikasi banner informasi muncul di halaman
+        $response->assertSee('Otomatis Terisi dari Hitungan Sebelumnya');
+        $response->assertSee('Reset ke 0');
+    }
+
+    public function test_closing_page_uses_current_work_day_denominations_if_already_saved(): void
+    {
+        // 1. Shift kemarin punya pecahan tertentu
+        $yesterdayWorkDay = WorkDay::create([
+            'work_date' => now()->subDay()->toDateString(),
+            'status' => WorkDay::STATUS_FINAL,
+        ]);
+        CashDenomination::create([
+            'work_day_id' => $yesterdayWorkDay->id,
+            'bill_100000' => 5,
+        ]);
+
+        // 2. Shift hari ini SUDAH pernah disimpan hitungan fisiknya (misal 2 lembar 50rb)
+        CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_100000' => 0,
+            'bill_50000' => 2,
+        ]);
+
+        // 3. Akses closing hari ini
+        $response = $this->get('/closing/' . $this->workDay->id);
+        $response->assertOk();
+
+        $viewDenom = $response->viewData('denominations');
+        // Harus menggunakan data hari ini (0 lembar 100k, 2 lembar 50k), bukan milik kemarin
+        $this->assertEquals(0, $viewDenom->bill_100000);
+        $this->assertEquals(2, $viewDenom->bill_50000);
+        $this->assertFalse($response->viewData('isPreFilledFromPrevious'));
+    }
 }
+

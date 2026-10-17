@@ -357,6 +357,24 @@
                     </button>
                 </div>
 
+                {{-- Banner Info Pre-filled Otomatis dari Hitungan Sebelumnya --}}
+                @if(!empty($isPreFilledFromPrevious))
+                    <div class="p-3.5 bg-amber-950/40 border border-amber-500/50 rounded-xl text-xs text-amber-200 flex items-start justify-between gap-3 shadow">
+                        <div class="flex items-start space-x-2.5">
+                            <span class="text-xl leading-none">💡</span>
+                            <div class="space-y-0.5">
+                                <span class="font-extrabold text-amber-300 block">Otomatis Terisi dari Hitungan Sebelumnya{{ !empty($previousDenominationDate) ? " (Shift {$previousDenominationDate})" : '' }}</span>
+                                <span class="text-[11px] text-slate-300 block leading-relaxed">
+                                    Pecahan lembaran dan koin telah disalin otomatis dari perhitungan closing terakhir. Anda tinggal mengubah pecahan yang bertambah atau berkurang hari ini tanpa perlu mengetik ulang dari 0.
+                                </span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="resetDenominationsToZero()" class="px-2.5 py-1 text-[11px] font-bold text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 rounded-lg transition shrink-0" title="Kosongkan semua ke 0 jika ingin hitung dari nol">
+                            Reset ke 0
+                        </button>
+                    </div>
+                @endif
+
                 {{-- Pecahan Uang Kertas --}}
                 <div class="space-y-3">
                     <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Uang Kertas (Lembar)</span>
@@ -839,8 +857,18 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            calculateClosingTotal();
             calculateClosingReconDiff();
         });
+
+        function resetDenominationsToZero() {
+            if (confirm('Kosongkan semua pecahan lembaran dan koin menjadi 0?')) {
+                document.querySelectorAll('input[name^="bill_"], input[name^="coin_"]').forEach(input => {
+                    input.value = 0;
+                });
+                calculateClosingTotal();
+            }
+        }
 
         document.querySelectorAll('input[name^="bill_"], input[name^="coin_"]').forEach(input => {
             input.addEventListener('input', calculateClosingTotal);

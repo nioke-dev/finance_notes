@@ -21,7 +21,45 @@ class ClosingWebController extends Controller
         $accounts = Account::active()
             ->whereIn('type', [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])
             ->get();
-        $denominations = CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+        $denominations = CashDenomination::where('work_day_id', $workDay->id)->first();
+        $isPreFilledFromPrevious = false;
+        $previousDenominationDate = null;
+
+        if (!$denominations || $denominations->calculateTotal() === 0) {
+            $previousDenomination = CashDenomination::with('workDay')
+                ->where('work_day_id', '!=', $workDay->id)
+                ->where('total_physical_amount', '>', 0)
+                ->latest('id')
+                ->first();
+
+            if ($previousDenomination) {
+                if (!$denominations) {
+                    $denominations = new CashDenomination(['work_day_id' => $workDay->id]);
+                }
+                $denominations->bill_100000 = $previousDenomination->bill_100000;
+                $denominations->bill_50000 = $previousDenomination->bill_50000;
+                $denominations->bill_20000 = $previousDenomination->bill_20000;
+                $denominations->bill_10000 = $previousDenomination->bill_10000;
+                $denominations->bill_5000 = $previousDenomination->bill_5000;
+                $denominations->bill_2000 = $previousDenomination->bill_2000;
+                $denominations->bill_1000 = $previousDenomination->bill_1000;
+                $denominations->coin_1000 = $previousDenomination->coin_1000;
+                $denominations->coin_500 = $previousDenomination->coin_500;
+                $denominations->coin_200 = $previousDenomination->coin_200;
+                $denominations->coin_100 = $previousDenomination->coin_100;
+                $denominations->total_physical_amount = $previousDenomination->total_physical_amount;
+                $denominations->damaged_notes_amount = $previousDenomination->damaged_notes_amount;
+                $denominations->damaged_notes_note = $previousDenomination->damaged_notes_note;
+
+                $isPreFilledFromPrevious = true;
+                $previousDenominationDate = $previousDenomination->workDay?->work_date?->translatedFormat('d M Y');
+            } else {
+                if (!$denominations) {
+                    $denominations = new CashDenomination(['work_day_id' => $workDay->id]);
+                }
+            }
+        }
+
         $reconciliationReport = $reconciliationService->reconcileWorkDay($workDay, []);
 
         $cashAccount = Account::where('name', 'Cash')->first();
@@ -125,7 +163,9 @@ class ClosingWebController extends Controller
             'totalTipsAndQris',
             'parkingNetResult',
             'digitalReconAccounts',
-            'todayCodQrisBillTotal'
+            'todayCodQrisBillTotal',
+            'isPreFilledFromPrevious',
+            'previousDenominationDate'
         ));
     }
 
