@@ -269,4 +269,57 @@ class CashDenominationOnDemandTest extends TestCase
         $this->assertNotNull($auditShortage);
         $this->assertStringContainsString('Selisih kurang -Rp 30.000', $auditShortage->reason);
     }
+
+    public function test_can_record_fuel_with_50k_and_change_breakdown_including_coins(): void
+    {
+        // Denominasi awal: 1 lembar 50k (Total 50.000)
+        CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_50000' => 1,
+            'bill_20000' => 0,
+            'bill_5000' => 0,
+            'bill_2000' => 0,
+            'coin_1000' => 0,
+            'total_physical_amount' => 50000,
+        ]);
+        $this->cashAccount->update(['current_balance' => 50000]);
+
+        // Skenario User: Beli bensin 22.000, bayar 50.000, kembalian 28.000 (20k + 5k + 2k + koin 1k)
+        $response = $this->post(route('operational.fuel'), [
+            'work_day_id' => $this->workDay->id,
+            'source_account_id' => $this->cashAccount->id,
+            'vendor_type' => 'spbu',
+            'amount' => 22000,
+            'paid_breakdown' => [
+                'bill_50000' => 1,
+            ],
+            'change_breakdown' => [
+                'bill_20000' => 1,
+                'bill_5000' => 1,
+                'bill_2000' => 1,
+                'coin_1000' => 1,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Denominasi baru di dompet:
+        // bill_50000 keluar (jadi 0)
+        // bill_20000 masuk 1
+        // bill_5000 masuk 1
+        // bill_2000 masuk 1
+        // coin_1000 masuk 1
+        // Total fisik sisa = 20k + 5k + 2k + 1k = 28.000
+        $denom = CashDenomination::where('work_day_id', $this->workDay->id)->first();
+        $this->assertEquals(0, $denom->bill_50000);
+        $this->assertEquals(1, $denom->bill_20000);
+        $this->assertEquals(1, $denom->bill_5000);
+        $this->assertEquals(1, $denom->bill_2000);
+        $this->assertEquals(1, $denom->coin_1000);
+        $this->assertEquals(28000, $denom->total_physical_amount);
+
+        // Saldo kas sistem juga berkurang 22.000: 50.000 - 22.000 = 28.000
+        $this->assertEquals(28000, $this->cashAccount->fresh()->current_balance);
+    }
 }

@@ -1937,65 +1937,149 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pembelian (Rp)</label>
-                    <input type="number" name="amount" id="input-fuel-amount" min="1" step="1" placeholder="25000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Nominal Pembelian Bensin (Rp)</label>
+                        <span class="text-[10px] text-slate-400">Pilih nominal cepat:</span>
+                    </div>
+                    <input type="number" name="amount" id="input-fuel-amount" min="1" step="1" placeholder="25000" required oninput="onFuelAmountChange()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-black text-base focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button type="button" onclick="setFuelAmountPreset(10000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">10k</button>
+                        <button type="button" onclick="setFuelAmountPreset(15000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">15k</button>
+                        <button type="button" onclick="setFuelAmountPreset(20000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">20k</button>
+                        <button type="button" onclick="setFuelAmountPreset(25000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-emerald-400 font-bold rounded-lg border border-emerald-500/30 transition">25k</button>
+                        <button type="button" onclick="setFuelAmountPreset(30000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">30k</button>
+                        <button type="button" onclick="setFuelAmountPreset(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">50k</button>
+                    </div>
                 </div>
 
-                {{-- Rincian Pecahan Uang Dibayar & Kembalian (Opsional) --}}
+                {{-- Rincian Pecahan Uang Dibayar & Kembalian (Opsional tapi Cerdas & Cepat) --}}
                 <div class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
                     <button type="button" onclick="toggleCashBreakdownAccordion('fuel-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
                         <div class="flex items-center space-x-2">
                             <span class="text-emerald-400 text-sm">💵</span>
                             <div>
                                 <span class="text-xs font-bold text-white block">Rincian Pecahan Cash & Kembalian</span>
-                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Lembaran yang dibayar & kembalian diterima</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Auto-hitung uang pas, uang bulat, dan kembalian live</span>
                             </div>
                         </div>
                         <span id="fuel-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
                     </button>
                     <div id="fuel-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
-                        {{-- Uang Dikeluarkan (Dibayar) --}}
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-[11px] font-bold text-amber-400 uppercase">Uang Dibayarkan:</span>
-                                <span id="fuel-paid-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                        {{-- Tombol Cepat Pilihan Bayar Kas --}}
+                        <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Bayar:</span>
+                            <button type="button" onclick="setTxCashExactPay('fuel', 'input-fuel-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal bensin ke uang lembaran/koin secara otomatis">
+                                <span>⚡</span>
+                                <span>Bayar Uang Pas</span>
+                            </button>
+                            <button type="button" onclick="setTxCashRoundPay('fuel', 50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">50k</button>
+                            <button type="button" onclick="setTxCashRoundPay('fuel', 100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">100k</button>
+                            <button type="button" onclick="resetTxCashGroup('fuel_paid'); resetTxCashGroup('fuel_change'); updateFuelCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                        </div>
+
+                        {{-- 1. Uang Dikeluarkan (Dibayar) --}}
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-amber-400 uppercase tracking-wide">Uang Dibayarkan:</span>
+                                <span id="fuel-paid-total-display" class="text-sm font-black text-amber-300">Rp 0</span>
                             </div>
-                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                                @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
-                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
-                                        <div class="flex items-center space-x-1 mt-1">
-                                            <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
-                                            <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="fuel_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
-                                            <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+
+                            {{-- Pecahan Kertas --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="fuel_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Pecahan Logam (Koin) --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                <div class="grid grid-cols-4 gap-1.5">
+                                    @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="fuel_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_paid', 'fuel-paid-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'fuel_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
 
-                        {{-- Kembalian Diterima --}}
-                        <div class="pt-2 border-t border-slate-800">
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-[11px] font-bold text-emerald-400 uppercase">Kembalian Diterima:</span>
-                                <span id="fuel-change-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                        {{-- Perhitungan Live & Tombol Auto-Set Kembalian --}}
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400 font-medium">Harusnya Kembalian:</span>
+                                <span id="fuel-expected-change-display" class="font-black text-amber-300 text-sm">Rp 0</span>
                             </div>
-                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                                @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
-                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
-                                        <div class="flex items-center space-x-1 mt-1">
-                                            <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
-                                            <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="fuel_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
-                                            <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-6 h-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                            <button type="button" id="btn-fuel-auto-set-change" onclick="autoSetTxCashChange('fuel', this.getAttribute('data-target-change'))" class="hidden w-full py-1.5 bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 text-[11px] font-bold rounded-lg border border-indigo-500/40 transition flex items-center justify-center space-x-1">
+                                <span>⚡</span>
+                                <span class="btn-change-text">Auto-Set Pecahan Kembalian</span>
+                            </button>
+                        </div>
+
+                        {{-- 2. Kembalian Diterima --}}
+                        <div class="space-y-2 pt-1 border-t border-slate-800">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">Kembalian Diterima:</span>
+                                <span id="fuel-change-total-display" class="text-sm font-black text-emerald-400">Rp 0</span>
+                            </div>
+
+                            {{-- Pecahan Kertas --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="fuel_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_change_bill_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                </div>
                             </div>
+
+                            {{-- Pecahan Logam (Koin) --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                <div class="grid grid-cols-4 gap-1.5">
+                                    @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('fuel_change_coin_{{ $nom }}', -1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="fuel_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('fuel_change', 'fuel-change-total-display'); updateFuelCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('fuel_change_coin_{{ $nom }}', 1, {{ $nom }}, 'fuel_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Banner Status Evaluasi Kembalian Live --}}
+                        <div id="fuel-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                            <span>💡 Ketik nominal bensin di atas atau pilih pecahan uang yang dibayarkan.</span>
                         </div>
 
                         <button type="button" onclick="applyFuelNetFromCash()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[11px] font-bold rounded-lg border border-emerald-500/30 transition flex items-center justify-center space-x-1">
-                            <span>⚡ Set Selisih sebagai Nominal Bensin</span>
+                            <span>⚡ Set Selisih Netto (Bayar - Kembalian) ke Nominal Bensin</span>
                         </button>
                     </div>
                 </div>
@@ -2105,7 +2189,7 @@
                         </button>
                     </div>
 
-                    <input type="number" name="amount" id="input-parking-amount" value="2000" min="0" step="1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <input type="number" name="amount" id="input-parking-amount" value="2000" min="0" step="1" oninput="onParkingAmountChange()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-base font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
 
                 {{-- Sumber Dana / Wadah --}}
@@ -2150,61 +2234,134 @@
                     </button>
                 </div>
 
-                {{-- Rincian Pecahan Uang Dibayar & Kembalian (Opsional) --}}
+                {{-- Rincian Pecahan Uang Dibayar & Kembalian (Opsional tapi Cerdas & Cepat) --}}
                 <div class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
                     <button type="button" onclick="toggleCashBreakdownAccordion('parking-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
                         <div class="flex items-center space-x-2">
                             <span class="text-emerald-400 text-sm">💵</span>
                             <div>
                                 <span class="text-xs font-bold text-white block">Rincian Pecahan Cash & Kembalian</span>
-                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Misal bayar 5k kembalian 3k, atau bayar pas</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Auto-hitung bayar pas, uang bulat, dan kembalian live</span>
                             </div>
                         </div>
                         <span id="parking-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
                     </button>
                     <div id="parking-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
-                        {{-- Uang Dikeluarkan (Dibayar) --}}
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-[11px] font-bold text-amber-400 uppercase">Uang Parkir Dikeluarkan:</span>
-                                <span id="parking-paid-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                        {{-- Tombol Cepat Pilihan Bayar Kas --}}
+                        <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Bayar:</span>
+                            <button type="button" onclick="setTxCashExactPay('parking', 'input-parking-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal parkir ke uang lembaran/koin secara otomatis">
+                                <span>⚡</span>
+                                <span>Bayar Uang Pas</span>
+                            </button>
+                            <button type="button" onclick="setTxCashRoundPay('parking', 5000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">5k</button>
+                            <button type="button" onclick="setTxCashRoundPay('parking', 10000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">10k</button>
+                            <button type="button" onclick="resetTxCashGroup('parking_paid'); resetTxCashGroup('parking_change'); updateParkingCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                        </div>
+
+                        {{-- 1. Uang Parkir Dikeluarkan (Dibayar) --}}
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-amber-400 uppercase tracking-wide">Uang Parkir Dibayarkan:</span>
+                                <span id="parking-paid-total-display" class="text-sm font-black text-amber-300">Rp 0</span>
                             </div>
-                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                                @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
-                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
-                                        <div class="flex items-center space-x-1 mt-1">
-                                            <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
-                                            <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="parking_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
-                                            <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+
+                            {{-- Pecahan Kertas --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="parking_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Pecahan Logam (Koin) --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                <div class="grid grid-cols-4 gap-1.5">
+                                    @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('parking_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="parking_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_paid', 'parking-paid-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'parking_paid')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
 
-                        {{-- Kembalian Diterima --}}
-                        <div class="pt-2 border-t border-slate-800">
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-[11px] font-bold text-emerald-400 uppercase">Kembalian Diterima:</span>
-                                <span id="parking-change-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                        {{-- Perhitungan Live & Tombol Auto-Set Kembalian --}}
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400 font-medium">Harusnya Kembalian:</span>
+                                <span id="parking-expected-change-display" class="font-black text-amber-300 text-sm">Rp 0</span>
                             </div>
-                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                                @foreach([10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                    <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
-                                        <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
-                                        <div class="flex items-center space-x-1 mt-1">
-                                            <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
-                                            <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="parking_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
-                                            <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-6 h-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+                            <button type="button" id="btn-parking-auto-set-change" onclick="autoSetTxCashChange('parking', this.getAttribute('data-target-change'))" class="hidden w-full py-1.5 bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 text-[11px] font-bold rounded-lg border border-indigo-500/40 transition flex items-center justify-center space-x-1">
+                                <span>⚡</span>
+                                <span class="btn-change-text">Auto-Set Pecahan Kembalian</span>
+                            </button>
+                        </div>
+
+                        {{-- 2. Kembalian Diterima --}}
+                        <div class="space-y-2 pt-1 border-t border-slate-800">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">Kembalian Diterima:</span>
+                                <span id="parking-change-total-display" class="text-sm font-black text-emerald-400">Rp 0</span>
+                            </div>
+
+                            {{-- Pecahan Kertas --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                    @foreach([20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="parking_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_change_bill_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                </div>
                             </div>
+
+                            {{-- Pecahan Logam (Koin) --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                <div class="grid grid-cols-4 gap-1.5">
+                                    @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                            <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                            <div class="flex items-center space-x-1 mt-1">
+                                                <button type="button" onclick="stepTxCash('parking_change_coin_{{ $nom }}', -1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="parking_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('parking_change', 'parking-change-total-display'); updateParkingCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                <button type="button" onclick="stepTxCash('parking_change_coin_{{ $nom }}', 1, {{ $nom }}, 'parking_change')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Banner Status Evaluasi Kembalian Live --}}
+                        <div id="parking-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                            <span>💡 Ketik nominal parkir di atas atau pilih pecahan uang yang dibayarkan.</span>
                         </div>
 
                         <button type="button" onclick="applyParkingNetFromCash()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[11px] font-bold rounded-lg border border-emerald-500/30 transition flex items-center justify-center space-x-1">
-                            <span>⚡ Set Selisih sebagai Nominal Parkir</span>
+                            <span>⚡ Set Selisih Netto (Bayar - Kembalian) ke Nominal Parkir</span>
                         </button>
                     </div>
                 </div>
@@ -2699,63 +2856,138 @@
                         </div>
                     </div>
 
-                    {{-- Rincian Pecahan Uang Customer & Kembalian (Opsional) --}}
+                    {{-- Rincian Pecahan Uang Customer & Kembalian (Opsional tapi Cerdas & Cepat) --}}
                     <div class="border border-slate-800 rounded-xl bg-slate-950/60 overflow-hidden">
                         <button type="button" onclick="toggleCashBreakdownAccordion('cod-cash-drawer')" class="w-full flex items-center justify-between p-2.5 text-left hover:bg-slate-800/60 transition">
                             <div class="flex items-center space-x-2">
                                 <span class="text-emerald-400 text-sm">💵</span>
                                 <div>
                                     <span class="text-xs font-bold text-white block">Rincian Pecahan Customer & Kembalian</span>
-                                    <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Tap lembaran uang untuk auto-isi kalkulator di atas</span>
+                                    <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Auto-hitung uang pas, uang bulat, dan kembalian live</span>
                                 </div>
                             </div>
                             <span id="cod-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
                         </button>
                         <div id="cod-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3">
-                            {{-- Uang Dikasih Customer --}}
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="text-[11px] font-bold text-emerald-400 uppercase">Lembar Dikasihkan Customer:</span>
-                                    <span id="cod-cust-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                            {{-- Tombol Cepat Pilihan Bayar Kas Customer --}}
+                            <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Bayar:</span>
+                                <button type="button" onclick="setTxCashExactPay('cod_cust', 'calc-gave-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal yang diserahkan ke lembaran/koin secara otomatis">
+                                    <span>⚡</span>
+                                    <span>Bayar Uang Pas</span>
+                                </button>
+                                <button type="button" onclick="setTxCashRoundPay('cod_cust', 50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">50k</button>
+                                <button type="button" onclick="setTxCashRoundPay('cod_cust', 100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">100k</button>
+                                <button type="button" onclick="resetTxCashGroup('cod_cust'); resetTxCashGroup('cod_change'); updateCodCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                            </div>
+
+                            {{-- 1. Uang Dikasih Customer --}}
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">Lembar Dikasihkan Customer:</span>
+                                    <span id="cod-cust-total-display" class="text-sm font-black text-emerald-300">Rp 0</span>
                                 </div>
-                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                                    @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
-                                            <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
-                                                <input type="number" name="customer_cash_breakdown[bill_{{ $nom }}]" id="cod_cust_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
-                                                <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-6 h-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+
+                                {{-- Pecahan Kertas --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                        @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                                <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <div class="flex items-center space-x-1 mt-1">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                    <input type="number" name="customer_cash_breakdown[bill_{{ $nom }}]" id="cod_cust_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    @endforeach
+                                        @endforeach
+                                    </div>
                                 </div>
-                                <button type="button" onclick="applyCodCustToGaveInput()" class="mt-1.5 w-full py-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[10px] font-bold rounded-lg border border-emerald-500/30">
-                                    ⚡ Gunakan sebagai "Uang Dikasihkan Customer"
+
+                                {{-- Pecahan Logam (Koin) --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                    <div class="grid grid-cols-4 gap-1.5">
+                                        @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                                <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <div class="flex items-center space-x-1 mt-1">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_coin_{{ $nom }}', -1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                    <input type="number" name="customer_cash_breakdown[coin_{{ $nom }}]" id="cod_cust_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_cust', 'cod-cust-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_cust_coin_{{ $nom }}', 1, {{ $nom }}, 'cod_cust')" class="w-7 h-7 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <button type="button" onclick="applyCodCustToGaveInput()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[11px] font-bold rounded-lg border border-emerald-500/30 transition flex items-center justify-center space-x-1">
+                                    <span>⚡ Salin ke Input "Uang Dikasihkan Customer" di Atas</span>
                                 </button>
                             </div>
 
-                            {{-- Kembalian yang Diserahkan Driver ke Customer --}}
-                            <div class="pt-2 border-t border-slate-800">
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="text-[11px] font-bold text-amber-400 uppercase">Lembar Kembalian ke Customer:</span>
-                                    <span id="cod-change-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                            {{-- Perhitungan Live & Tombol Auto-Set Kembalian --}}
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 font-medium">Harusnya Kembalian ke Customer:</span>
+                                    <span id="cod-expected-change-display" class="font-black text-amber-300 text-sm">Rp 0</span>
                                 </div>
-                                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                                    @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                        <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
-                                            <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
-                                            <div class="flex items-center space-x-1 mt-1">
-                                                <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
-                                                <input type="number" name="change_cash_breakdown[bill_{{ $nom }}]" id="cod_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
-                                                <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                                <button type="button" onclick="applyCodChangeToChangeInput()" class="mt-1.5 w-full py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold rounded-lg border border-amber-500/30">
-                                    ⚡ Gunakan sebagai "Kembalian yang Diserahkan"
+                                <button type="button" id="btn-cod-auto-set-change" onclick="autoSetTxCashChange('cod', this.getAttribute('data-target-change'))" class="hidden w-full py-1.5 bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 text-[11px] font-bold rounded-lg border border-indigo-500/40 transition flex items-center justify-center space-x-1">
+                                    <span>⚡</span>
+                                    <span class="btn-change-text">Auto-Set Pecahan Kembalian</span>
                                 </button>
+                            </div>
+
+                            {{-- 2. Kembalian yang Diserahkan Driver ke Customer --}}
+                            <div class="space-y-2 pt-1 border-t border-slate-800">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-black text-amber-400 uppercase tracking-wide">Lembar Kembalian ke Customer:</span>
+                                    <span id="cod-change-total-display" class="text-sm font-black text-amber-300">Rp 0</span>
+                                </div>
+
+                                {{-- Pecahan Kertas --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                        @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                                <span class="text-[10px] text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <div class="flex items-center space-x-1 mt-1">
+                                                    <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                    <input type="number" name="change_cash_breakdown[bill_{{ $nom }}]" id="cod_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_change_bill_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Pecahan Logam (Koin) --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                    <div class="grid grid-cols-4 gap-1.5">
+                                        @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 flex flex-col items-center justify-between shadow-sm">
+                                                <span class="text-[10px] text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <div class="flex items-center space-x-1 mt-1">
+                                                    <button type="button" onclick="stepTxCash('cod_change_coin_{{ $nom }}', -1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">-</button>
+                                                    <input type="number" name="change_cash_breakdown[coin_{{ $nom }}]" id="cod_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('cod_change', 'cod-change-total-display'); updateCodCashLiveCalculator();" class="w-8 h-7 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-extrabold text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                    <button type="button" onclick="stepTxCash('cod_change_coin_{{ $nom }}', 1, {{ $nom }}, 'cod_change')" class="w-7 h-7 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-xs font-black flex items-center justify-center transition select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <button type="button" onclick="applyCodChangeToChangeInput()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] font-bold rounded-lg border border-amber-500/30 transition flex items-center justify-center space-x-1">
+                                    <span>⚡ Salin ke Input "Kembalian yang Diserahkan" di Atas</span>
+                                </button>
+                            </div>
+
+                            {{-- Banner Status Evaluasi Kembalian Live COD --}}
+                            <div id="cod-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                                <span>💡 Masukkan uang yang diserahkan customer di atas atau pilih lembaran/koin.</span>
                             </div>
                         </div>
                     </div>
@@ -5014,8 +5246,15 @@
                     reconClockInterval = setInterval(updateReconLiveClock, 1000);
                     calculateDigitalReconDiff();
                 }
+                if (id === 'modal-fuel') {
+                    updateFuelCashLiveCalculator();
+                }
                 if (id === 'modal-parking') {
                     detectParkingGps(false);
+                    updateParkingCashLiveCalculator();
+                }
+                if (id === 'modal-complete-cod') {
+                    updateCodCashLiveCalculator();
                 }
                 if (id === 'modal-quick-cash-denominations') {
                     calculateQuickCashTotal();
@@ -5164,6 +5403,9 @@
             current = Math.max(0, current + step);
             input.value = current;
             calcTxCash(groupPrefix, `${groupPrefix.replace('_', '-')}-total-display`);
+            if (groupPrefix.startsWith('fuel')) updateFuelCashLiveCalculator();
+            if (groupPrefix.startsWith('parking')) updateParkingCashLiveCalculator();
+            if (groupPrefix.startsWith('cod')) updateCodCashLiveCalculator();
         }
 
         function calcTxCash(prefix, displayId) {
@@ -5178,6 +5420,481 @@
             const disp = document.getElementById(displayId);
             if (disp) disp.innerText = `Rp ${total.toLocaleString('id-ID')}`;
             return total;
+        }
+
+        // ==========================================
+        // AUTO-DEKOMPOSISI & LIVE CALCULATOR TRANSAKSI CASH
+        // ==========================================
+
+        function decomposeCashAmount(amount) {
+            let remaining = Math.max(0, parseInt(amount, 10) || 0);
+            const result = {
+                bill_100000: 0, bill_50000: 0, bill_20000: 0, bill_10000: 0,
+                bill_5000: 0, bill_2000: 0, bill_1000: 0,
+                coin_1000: 0, coin_500: 0, coin_200: 0, coin_100: 0
+            };
+
+            const steps = [
+                { key: 'bill_100000', nom: 100000 },
+                { key: 'bill_50000', nom: 50000 },
+                { key: 'bill_20000', nom: 20000 },
+                { key: 'bill_10000', nom: 10000 },
+                { key: 'bill_5000', nom: 5000 },
+                { key: 'bill_2000', nom: 2000 },
+                { key: 'bill_1000', nom: 1000 },
+                { key: 'coin_500', nom: 500 },
+                { key: 'coin_200', nom: 200 },
+                { key: 'coin_100', nom: 100 },
+            ];
+
+            for (const s of steps) {
+                if (remaining >= s.nom) {
+                    const count = Math.floor(remaining / s.nom);
+                    result[s.key] = count;
+                    remaining -= (count * s.nom);
+                }
+            }
+            return result;
+        }
+
+        function setTxCashExactPay(prefix, amountInputId) {
+            const amountInput = document.getElementById(amountInputId);
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            if (nominal <= 0) {
+                alert('Silakan tentukan atau ketik nominal transaksi terlebih dahulu.');
+                if (amountInput) amountInput.focus();
+                return;
+            }
+
+            resetTxCashGroup(prefix + '_paid');
+            resetTxCashGroup(prefix + '_change');
+
+            const decomp = decomposeCashAmount(nominal);
+            for (const [key, qty] of Object.entries(decomp)) {
+                const input = document.getElementById(`${prefix}_paid_${key}`);
+                if (input) input.value = qty;
+            }
+
+            if (prefix === 'fuel') updateFuelCashLiveCalculator();
+            if (prefix === 'parking') updateParkingCashLiveCalculator();
+            if (prefix === 'cod_cust' || prefix === 'cod') updateCodCashLiveCalculator();
+        }
+
+        function setTxCashRoundPay(prefix, roundNominal) {
+            resetTxCashGroup(prefix + '_paid');
+            resetTxCashGroup(prefix + '_change');
+
+            const decomp = decomposeCashAmount(roundNominal);
+            for (const [key, qty] of Object.entries(decomp)) {
+                const input = document.getElementById(`${prefix}_paid_${key}`);
+                if (input) input.value = qty;
+            }
+
+            if (prefix === 'fuel') updateFuelCashLiveCalculator();
+            if (prefix === 'parking') updateParkingCashLiveCalculator();
+            if (prefix === 'cod_cust' || prefix === 'cod') updateCodCashLiveCalculator();
+        }
+
+        function autoSetTxCashChange(prefix, targetChange) {
+            const target = parseInt(targetChange, 10) || 0;
+            if (target <= 0) return;
+
+            resetTxCashGroup(prefix + '_change');
+            const decomp = decomposeCashAmount(target);
+            for (const [key, qty] of Object.entries(decomp)) {
+                const input = document.getElementById(`${prefix}_change_${key}`);
+                if (input) input.value = qty;
+            }
+
+            if (prefix === 'fuel') updateFuelCashLiveCalculator();
+            if (prefix === 'parking') updateParkingCashLiveCalculator();
+            if (prefix === 'cod') updateCodCashLiveCalculator();
+        }
+
+        function resetTxCashGroup(groupPrefix) {
+            const inputs = document.querySelectorAll(`input[id^="${groupPrefix}_bill_"], input[id^="${groupPrefix}_coin_"]`);
+            inputs.forEach(inp => { inp.value = 0; });
+            const disp = document.getElementById(`${groupPrefix.replace('_', '-')}-total-display`);
+            if (disp) disp.innerText = 'Rp 0';
+        }
+
+        function onFuelAmountChange() {
+            updateFuelCashLiveCalculator();
+        }
+
+        function setFuelAmountPreset(val) {
+            const input = document.getElementById('input-fuel-amount');
+            if (input) {
+                input.value = val;
+                onFuelAmountChange();
+            }
+        }
+
+        function updateFuelCashLiveCalculator() {
+            const amountInput = document.getElementById('input-fuel-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            const paid = calcTxCash('fuel_paid', 'fuel-paid-total-display');
+            const change = calcTxCash('fuel_change', 'fuel-change-total-display');
+
+            const expectedChangeEl = document.getElementById('fuel-expected-change-display');
+            const statusBanner = document.getElementById('fuel-cash-status-banner');
+            const autoSetChangeBtn = document.getElementById('btn-fuel-auto-set-change');
+
+            if (!statusBanner) return;
+
+            if (nominal <= 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between';
+                statusBanner.innerHTML = '<span>ℹ️ Ketik nominal bensin di atas untuk mengaktifkan kalkulator kembalian live.</span>';
+                if (expectedChangeEl) expectedChangeEl.innerText = 'Rp 0';
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+                return;
+            }
+
+            const expectedChange = Math.max(0, paid - nominal);
+            if (expectedChangeEl) expectedChangeEl.innerText = `Rp ${expectedChange.toLocaleString('id-ID')}`;
+
+            if (paid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Total Tagihan Bensin: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Pilih pecahan uang yang dibayarkan atau tap <strong>⚡ Bayar Uang Pas</strong>.</span>
+                    </div>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid < nominal) {
+                const shortage = nominal - paid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Uang Dibayar Masih Kurang: Rp ${shortage.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-rose-300 font-normal">Dibayar Rp ${paid.toLocaleString('id-ID')} dari tagihan bensin Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${shortage.toLocaleString('id-ID')}</span>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid === nominal) {
+                if (change === 0) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang PAS (Rp ${nominal.toLocaleString('id-ID')})</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Tidak ada kembalian. Saku fisik kas dompet Anda langsung sinkron.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">UANG PAS</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang Pas Tapi Ada Input Kembalian</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Kembalian harusnya Rp 0 karena uang yang dibayar pas.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else {
+                if (autoSetChangeBtn) {
+                    autoSetChangeBtn.classList.remove('hidden');
+                    autoSetChangeBtn.setAttribute('data-target-change', expectedChange);
+                    const spanText = autoSetChangeBtn.querySelector('.btn-change-text');
+                    if (spanText) spanText.innerText = `Auto-Set Pecahan Kembalian (Rp ${expectedChange.toLocaleString('id-ID')})`;
+                }
+
+                const diffChange = change - expectedChange;
+                const absDiffChange = Math.abs(diffChange).toLocaleString('id-ID');
+
+                if (change === expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN PAS: Rp ${change.toLocaleString('id-ID')}</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Kembalian yang diterima cocok 100% (Bayar Rp ${paid.toLocaleString('id-ID')} - Tagihan Rp ${nominal.toLocaleString('id-ID')}).</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                    `;
+                } else if (change < expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🚨</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN KURANG: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-rose-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, baru diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${absDiffChange}</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN LEBIH: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, tapi diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${absDiffChange}</span>
+                    `;
+                }
+            }
+        }
+
+        function onParkingAmountChange() {
+            updateParkingCashLiveCalculator();
+        }
+
+        function updateParkingCashLiveCalculator() {
+            const amountInput = document.getElementById('input-parking-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            const paid = calcTxCash('parking_paid', 'parking-paid-total-display');
+            const change = calcTxCash('parking_change', 'parking-change-total-display');
+
+            const expectedChangeEl = document.getElementById('parking-expected-change-display');
+            const statusBanner = document.getElementById('parking-cash-status-banner');
+            const autoSetChangeBtn = document.getElementById('btn-parking-auto-set-change');
+
+            if (!statusBanner) return;
+
+            if (nominal <= 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between';
+                statusBanner.innerHTML = '<span>ℹ️ Parkir gratis (Rp 0). Tidak memerlukan uang kas.</span>';
+                if (expectedChangeEl) expectedChangeEl.innerText = 'Rp 0';
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+                return;
+            }
+
+            const expectedChange = Math.max(0, paid - nominal);
+            if (expectedChangeEl) expectedChangeEl.innerText = `Rp ${expectedChange.toLocaleString('id-ID')}`;
+
+            if (paid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Nominal Parkir: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Pilih pecahan uang dibayar atau tap <strong>⚡ Bayar Uang Pas</strong>.</span>
+                    </div>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid < nominal) {
+                const shortage = nominal - paid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Uang Parkir Dibayar Kurang: Rp ${shortage.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-rose-300 font-normal">Dibayar Rp ${paid.toLocaleString('id-ID')} dari tarif parkir Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${shortage.toLocaleString('id-ID')}</span>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid === nominal) {
+                if (change === 0) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang PAS (Rp ${nominal.toLocaleString('id-ID')})</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Tidak ada kembalian. Saku fisik kas dompet Anda langsung sinkron.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">UANG PAS</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang Pas Tapi Ada Input Kembalian</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Kembalian harusnya Rp 0.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else {
+                if (autoSetChangeBtn) {
+                    autoSetChangeBtn.classList.remove('hidden');
+                    autoSetChangeBtn.setAttribute('data-target-change', expectedChange);
+                    const spanText = autoSetChangeBtn.querySelector('.btn-change-text');
+                    if (spanText) spanText.innerText = `Auto-Set Pecahan Kembalian (Rp ${expectedChange.toLocaleString('id-ID')})`;
+                }
+
+                const diffChange = change - expectedChange;
+                const absDiffChange = Math.abs(diffChange).toLocaleString('id-ID');
+
+                if (change === expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN PAS: Rp ${change.toLocaleString('id-ID')}</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Kembalian parkir cocok 100% (Bayar Rp ${paid.toLocaleString('id-ID')} - Parkir Rp ${nominal.toLocaleString('id-ID')}).</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                    `;
+                } else if (change < expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🚨</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN KURANG: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-rose-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, baru diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${absDiffChange}</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN LEBIH: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, tapi diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${absDiffChange}</span>
+                    `;
+                }
+            }
+        }
+
+        function updateCodCashLiveCalculator() {
+            const billLabel = document.getElementById('calc-bill-amount-label');
+            const billText = billLabel ? billLabel.innerText.replace(/[^\d]/g, '') : '';
+            const nominal = parseInt(billText, 10) || 0;
+
+            const custPaid = calcTxCash('cod_cust', 'cod-cust-total-display');
+            const custChange = calcTxCash('cod_change', 'cod-change-total-display');
+
+            const expectedChangeEl = document.getElementById('cod-expected-change-display');
+            const statusBanner = document.getElementById('cod-cash-status-banner');
+            const autoSetChangeBtn = document.getElementById('btn-cod-auto-set-change');
+
+            if (!statusBanner) return;
+
+            const expectedChange = Math.max(0, custPaid - nominal);
+            if (expectedChangeEl) expectedChangeEl.innerText = `Rp ${expectedChange.toLocaleString('id-ID')}`;
+
+            if (custPaid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Tagihan Pokok COD: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Masukkan pecahan lembaran yang diserahkan pelanggan.</span>
+                    </div>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (custPaid < nominal) {
+                const shortage = nominal - custPaid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Uang Pelanggan Kurang: Rp ${shortage.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-rose-300 font-normal">Diserahkan Rp ${custPaid.toLocaleString('id-ID')} dari tagihan pokok Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${shortage.toLocaleString('id-ID')}</span>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (custPaid === nominal) {
+                if (custChange === 0) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">Pelanggan Bayar Uang PAS (Rp ${nominal.toLocaleString('id-ID')})</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Tanpa kembalian. Kas kasir/saku Anda bertambah pas.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">UANG PAS</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">Bayar Pas Tapi Ada Input Kembalian</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Kembalian harusnya Rp 0.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else {
+                if (autoSetChangeBtn) {
+                    autoSetChangeBtn.classList.remove('hidden');
+                    autoSetChangeBtn.setAttribute('data-target-change', expectedChange);
+                    const spanText = autoSetChangeBtn.querySelector('.btn-change-text');
+                    if (spanText) spanText.innerText = `Auto-Set Pecahan Kembalian (Rp ${expectedChange.toLocaleString('id-ID')})`;
+                }
+
+                const diffChange = custChange - expectedChange;
+                const absDiffChange = Math.abs(diffChange).toLocaleString('id-ID');
+
+                if (custChange === expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN PAS: Rp ${custChange.toLocaleString('id-ID')}</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Kembalian ke customer cocok 100% (Dikasih Rp ${custPaid.toLocaleString('id-ID')} - Tagihan Rp ${nominal.toLocaleString('id-ID')}).</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                    `;
+                } else if (custChange < expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🚨</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN KURANG: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-rose-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, baru diisi Rp ${custChange.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${absDiffChange}</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN LEBIH: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, tapi diisi Rp ${custChange.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${absDiffChange}</span>
+                    `;
+                }
+            }
         }
 
         function applyFuelNetFromCash() {
@@ -5629,6 +6346,7 @@
             const input = document.getElementById('input-parking-amount');
             if (input) {
                 input.value = amount;
+                if (typeof onParkingAmountChange === 'function') onParkingAmountChange();
             }
             document.querySelectorAll('.parking-preset-btn').forEach(btn => {
                 if (btn.innerText.includes(amount.toLocaleString('id-ID'))) {
