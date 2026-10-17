@@ -461,7 +461,11 @@ class OperationalWebController extends Controller
 
             // 1. Sinkronkan Saldo Akun Kas & metadata denominasi
             $cashAcc = Account::where('name', 'Cash')->orWhere('type', AccountType::CASH)->first();
+            $discrepancy = 0;
             if ($cashAcc) {
+                $oldCashBalance = (int) $cashAcc->current_balance;
+                $discrepancy = $totalPhysical - $oldCashBalance;
+
                 $meta = $cashAcc->metadata ?? [];
                 $meta['denominations'] = $denom->toArray();
                 $cashAcc->update([
@@ -481,16 +485,22 @@ class OperationalWebController extends Controller
                 ]);
             }
 
+            $diffNote = $discrepancy === 0
+                ? " (Seimbang Rp 0 selisih)"
+                : ($discrepancy > 0
+                    ? " (Surplus +Rp " . number_format($discrepancy, 0, ',', '.') . " dari catatan buku)"
+                    : " (Selisih kurang -Rp " . number_format(abs($discrepancy), 0, ',', '.') . " dari catatan buku)");
+
             \App\Models\AuditLog::create([
                 'auditable_type' => \App\Models\CashDenomination::class,
                 'auditable_id' => $denom->id,
                 'action' => 'cash_denom_update',
                 'old_values' => $oldValues,
                 'new_values' => $denom->toArray(),
-                'reason' => "Update fisik kas di saku/dompet on-demand: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin)",
+                'reason' => "Update fisik kas di saku/dompet on-demand: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin){$diffNote}",
             ]);
 
-            return redirect()->back()->with('success', "Kas fisik di dompet/saku berhasil diperbarui: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin). Saldo kas dan data checkpoint driver langsung sinkron!");
+            return redirect()->back()->with('success', "Kas fisik di dompet/saku berhasil diperbarui: Rp " . number_format($totalPhysical, 0, ',', '.') . " ({$denom->total_pieces} lembar & koin){$diffNote}. Saldo kas dan data checkpoint driver langsung sinkron!");
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Gagal update pecahan kas: " . $e->getMessage());
             return redirect()->back()->withInput()->with('error', "Gagal memperbarui kas fisik: " . $e->getMessage());

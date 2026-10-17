@@ -2878,19 +2878,50 @@
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
 
-                {{-- Live Counter Saldo Banner --}}
-                <div class="p-3 bg-gradient-to-r from-emerald-950/60 via-slate-950/90 to-slate-900 border border-emerald-500/40 rounded-xl flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Uang Fisik Saku:</span>
-                        <div class="flex items-baseline space-x-2">
-                            <span id="quick-cash-total-display" class="text-xl sm:text-2xl font-black text-emerald-400">Rp 0</span>
-                            <span id="quick-cash-pieces-display" class="text-xs font-semibold text-slate-300">(0 pcs)</span>
+                @php
+                    $systemCashBalance = (int) ($driverCashAcc->current_balance ?? $totalCash ?? 0);
+                @endphp
+
+                {{-- Box Komparasi Saldo Kas Sistem (Pemasukan/Pengeluaran) vs Hitungan Fisik Saku --}}
+                <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-2.5">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚖️</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-200">Perhitungan Saldo Kas & Selisih Fisik</span>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold border border-slate-700">
+                            Live Audit
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        {{-- 1. Saldo Kas Buku (Catatan Pemasukan & Pengeluaran Sistem) --}}
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-indigo-500/30">
+                            <span class="text-[10px] uppercase font-bold text-indigo-300 block">Saldo Catatan Sistem</span>
+                            <span id="quick-cash-system-balance-display" class="text-base sm:text-lg font-black text-white block mt-0.5" data-system-balance="{{ $systemCashBalance }}">
+                                Rp {{ number_format($systemCashBalance, 0, ',', '.') }}
+                            </span>
+                            <span class="text-[9px] text-slate-400 block mt-0.5">Saldo awal + Masuk - Keluar</span>
+                        </div>
+
+                        {{-- 2. Total Fisik di Saku (Hasil Hitung Lembar & Koin) --}}
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-emerald-500/40 relative">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] uppercase font-bold text-emerald-300 block">Total Uang Fisik Saku:</span>
+                                <button type="button" onclick="resetQuickCashDenominations()" class="text-[10px] text-rose-400 hover:underline font-bold" title="Reset ke 0">Reset</button>
+                            </div>
+                            <div class="flex items-baseline space-x-1.5 mt-0.5">
+                                <span id="quick-cash-total-display" class="text-base sm:text-lg font-black text-emerald-400">Rp 0</span>
+                                <span id="quick-cash-pieces-display" class="text-[10px] font-semibold text-slate-400">(0 pcs)</span>
+                            </div>
+                            <span class="text-[9px] text-slate-400 block mt-0.5">Hasil hitungan lembar/koin</span>
                         </div>
                     </div>
-                    <button type="button" onclick="resetQuickCashDenominations()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-bold rounded-lg border border-slate-700 transition flex items-center space-x-1 shrink-0">
-                        <span>🔄</span>
-                        <span>Reset 0</span>
-                    </button>
+
+                    {{-- 3. Banner Evaluasi Selisih (Diupdate Live via JS saat mengetik lembaran/koin) --}}
+                    <div id="quick-cash-diff-banner" class="p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all">
+                        <!-- Konten diisi otomatis oleh JS -->
+                    </div>
                 </div>
 
                 {{-- 1. Uang Kertas (Lembaran) --}}
@@ -5039,6 +5070,53 @@
 
             const piecesEl = document.getElementById('quick-cash-pieces-display');
             if (piecesEl) piecesEl.innerText = `(${pieces} pcs)`;
+
+            // Komparasi live: Saldo Catatan Sistem vs Fisik di Saku & Evaluasi Selisih
+            const sysBalEl = document.getElementById('quick-cash-system-balance-display');
+            const diffBanner = document.getElementById('quick-cash-diff-banner');
+            if (sysBalEl && diffBanner) {
+                const systemBalance = parseInt(sysBalEl.getAttribute('data-system-balance'), 10) || 0;
+                const diff = total - systemBalance;
+                const absDiffFormatted = `Rp ${Math.abs(diff).toLocaleString('id-ID')}`;
+
+                if (diff === 0) {
+                    diffBanner.className = 'p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all bg-emerald-950/80 border border-emerald-500/50 text-emerald-300';
+                    diffBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">Status: SEIMBANG (Rp 0 Selisih)</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Fisik kas di saku cocok 100% dengan catatan sistem.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                    `;
+                } else if (diff > 0) {
+                    diffBanner.className = 'p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all bg-amber-950/80 border border-amber-500/50 text-amber-200';
+                    diffBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">KAS FISIK LEBIH (+${absDiffFormatted})</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Fisik saku lebih banyak dari catatan (kemungkinan ada tip cash/masuk belum dicatat).</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+${absDiffFormatted}</span>
+                    `;
+                } else {
+                    diffBanner.className = 'p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all bg-rose-950/80 border border-rose-500/50 text-rose-200';
+                    diffBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🚨</span>
+                            <div>
+                                <span class="font-bold block">KAS FISIK KURANG (-${absDiffFormatted})</span>
+                                <span class="text-[10px] text-rose-300 font-normal">Fisik saku lebih sedikit dari catatan (kemungkinan ada pengeluaran belum dicatat).</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-${absDiffFormatted}</span>
+                    `;
+                }
+            }
         }
 
         function stepQuickCash(field, step, nom) {

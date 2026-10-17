@@ -227,5 +227,46 @@ class CashDenominationOnDemandTest extends TestCase
         $response->assertSee('Update Kas Fisik di Jalan');
         $response->assertSee('Total Uang Fisik Saku:');
         $response->assertSee('Rincian Pecahan Cash & Kembalian', false);
+        $response->assertSee('quick-cash-system-balance-display');
+        $response->assertSee('quick-cash-diff-banner');
+    }
+
+    public function test_update_cash_denominations_detects_and_logs_discrepancy(): void
+    {
+        // 1. Set saldo kas sistem awal menjadi 100.000
+        $this->cashAccount->update(['current_balance' => 100000]);
+
+        // Kasus A: Fisik lebih banyak (Surplus) misal 120.000 (1x100k + 1x20k)
+        $responseSurplus = $this->post(route('operational.cash-denominations'), [
+            'work_day_id' => $this->workDay->id,
+            'bill_100000' => 1,
+            'bill_20000' => 1,
+        ]);
+
+        $responseSurplus->assertRedirect();
+        $responseSurplus->assertSessionHas('success', function ($msg) {
+            return str_contains($msg, 'Surplus +Rp 20.000');
+        });
+
+        // Audit log mencatat surplus
+        $audit = \App\Models\AuditLog::where('action', 'cash_denom_update')->latest('id')->first();
+        $this->assertNotNull($audit);
+        $this->assertStringContainsString('Surplus +Rp 20.000', $audit->reason);
+
+        // Kasus B: Fisik kurang (Shortage) misal 90.000 (saldo sistem sekarang 120.000 -> fisik 90.000, selisih -30.000)
+        $responseShortage = $this->post(route('operational.cash-denominations'), [
+            'work_day_id' => $this->workDay->id,
+            'bill_50000' => 1,
+            'bill_20000' => 2,
+        ]);
+
+        $responseShortage->assertRedirect();
+        $responseShortage->assertSessionHas('success', function ($msg) {
+            return str_contains($msg, 'Selisih kurang -Rp 30.000');
+        });
+
+        $auditShortage = \App\Models\AuditLog::where('action', 'cash_denom_update')->latest('id')->first();
+        $this->assertNotNull($auditShortage);
+        $this->assertStringContainsString('Selisih kurang -Rp 30.000', $auditShortage->reason);
     }
 }
