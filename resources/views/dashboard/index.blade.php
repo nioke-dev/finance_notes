@@ -3057,7 +3057,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                Pendapatan Bersih / Tarif (Rp) <span class="text-rose-400">*</span>
+                                Pendapatan Hub / Biaya Pengantaran (Rp) <span class="text-rose-400">*</span>
                             </label>
                             <input 
                                 type="number" 
@@ -3069,11 +3069,11 @@
                                 min="0" 
                                 step="1" 
                                 oninput="calculateDigitalReconDiff()" 
-                                placeholder="Contoh: 85000" 
+                                placeholder="Contoh: 76000" 
                                 required
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                             >
-                            <span class="text-[10px] text-slate-400">Ongkir/tarif bersih yang tertera di profil driver</span>
+                            <span class="text-[10px] text-slate-400">Ambil dari baris <strong>Pendapatan Hub</strong> / <strong>Biaya Pengantaran</strong> (Bukan total Rp81.000 atas)</span>
                         </div>
 
                         <div>
