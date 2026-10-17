@@ -1359,7 +1359,10 @@ class OperationalWebController extends Controller
     {
         $validated = $request->validate([
             'work_day_id' => 'nullable|exists:work_days,id',
-            'recorded_at' => 'nullable|date',
+            'is_custom_time' => 'nullable',
+            'custom_recorded_at' => 'nullable|string',
+            'auto_recorded_at' => 'nullable|string',
+            'recorded_at' => 'nullable|string',
             'completed_orders' => 'nullable|integer|min:0',
             'delivery_fee' => 'nullable|integer|min:0',
             'hub_income' => 'nullable|integer|min:0',
@@ -1380,20 +1383,48 @@ class OperationalWebController extends Controller
             return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan. Silakan buka hari kerja terlebih dahulu.');
         }
 
+        // Tentukan waktu checkpoint (Otomatis sekarang vs Custom jika telat)
+        $isCustomTime = $request->boolean('is_custom_time') || !empty($validated['is_custom_time']);
+        if ($isCustomTime && !empty($validated['custom_recorded_at'])) {
+            try {
+                $recordedAt = Carbon::parse($validated['custom_recorded_at'], 'Asia/Jakarta');
+            } catch (\Exception $e) {
+                return redirect()->back()->withInput()->with('error', 'Format tanggal dan jam custom tidak valid.');
+            }
+        } elseif (!empty($validated['recorded_at'])) {
+            $recordedAt = Carbon::parse($validated['recorded_at'], 'Asia/Jakarta');
+        } else {
+            $recordedAt = now();
+        }
+
+        // Validasi Ketat: Waktu checkpoint TIDAK BOLEH mendahului atau sama dengan checkpoint sebelumnya di shift ini
+        $latestPreviousSnapshot = \App\Models\DriverSnapshot::where('work_day_id', $workDay->id)
+            ->latest('recorded_at')
+            ->first();
+
+        if ($latestPreviousSnapshot && $recordedAt->lessThanOrEqualTo($latestPreviousSnapshot->recorded_at)) {
+            $prevTimeStr = $latestPreviousSnapshot->recorded_at->timezone('Asia/Jakarta')->format('d M Y, H:i:s');
+            $attemptedTimeStr = $recordedAt->timezone('Asia/Jakarta')->format('d M Y, H:i:s');
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Waktu checkpoint ({$attemptedTimeStr} WIB) tidak boleh mendahului atau sama dengan checkpoint sebelumnya ({$prevTimeStr} WIB). Waktu harus lebih baru!");
+        }
+
+        if ($recordedAt->isAfter(now()->addMinutes(2))) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Waktu checkpoint tidak boleh melebihi waktu sekarang (masa depan)!");
+        }
+
         $codQrisAmount = (int) ($validated['cod_qris_amount'] ?? 0);
 
         // 1. Eksekusi rekonsiliasi saldo akun melalui DigitalReconciliationService (memisahkan tagihan COD & tip murni)
         $result = $service->reconcileDigitalAccounts($workDay, $validated['balances'], $codQrisAmount);
 
         // 2. Simpan Checkpoint DriverSnapshot
-        $recordedAt = !empty($validated['recorded_at'])
-            ? Carbon::parse($validated['recorded_at'])
-            : now();
-
         $shopeepayBalance = 0;
         $gopayBalance = 0;
         $gopayMerchantBalance = 0;
-        $cashBalance = 0;
 
         foreach ($validated['balances'] as $b) {
             $acc = Account::find($b['account_id']);
@@ -1405,10 +1436,12 @@ class OperationalWebController extends Controller
                 $gopayBalance = $val;
             } elseif ($acc->name === 'GoPay Merchant') {
                 $gopayMerchantBalance = $val;
-            } elseif ($acc->name === 'Cash' || $acc->type === AccountType::CASH) {
-                $cashBalance = $val;
             }
         }
+
+        // Kas dompet otomatis dihitung dari catatan transaksi pembukuan sistem terkini (tidak perlu dihitung manual di jalan)
+        $cashAcc = Account::where('name', 'Cash')->first();
+        $cashBalance = $cashAcc ? (int) $cashAcc->current_balance : 0;
 
         $deliveryFee = (int) ($validated['delivery_fee'] ?? 0);
         $hubIncome = (int) ($validated['hub_income'] ?? 0);
@@ -1433,9 +1466,9 @@ class OperationalWebController extends Controller
 
         $totalShopee = $deliveryFee + $hubIncome + $hubBonus + $customerTips;
         $totalWallets = $shopeepayBalance + $cashBalance + $gopayBalance + $gopayMerchantBalance;
-        $timeStr = $recordedAt->format('H:i');
+        $timeStr = $recordedAt->timezone('Asia/Jakarta')->format('H:i:s');
 
-        $message = "Checkpoint jam {$timeStr} tersimpan! (ShopeeFood: Rp " . number_format($totalShopee, 0, ',', '.') . " vs Posisi Wadah: Rp " . number_format($totalWallets, 0, ',', '.') . "). ";
+        $message = "Checkpoint jam {$timeStr} WIB tersimpan! (ShopeeFood: Rp " . number_format($totalShopee, 0, ',', '.') . " vs Posisi Wadah: Rp " . number_format($totalWallets, 0, ',', '.') . "). ";
 
         if ($result['adjusted_count'] > 0) {
             $parts = [];

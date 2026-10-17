@@ -198,18 +198,15 @@ class DashboardController extends Controller
 
         $safeToSpendData = $goalService->calculateSafeToSpend((int) ($totalDigital + $totalCash));
 
-        // Akun wadah utama driver (Cash & Digital) untuk sinkronisasi saldo di jalan
-        $digitalReconAccounts = Account::where(function ($q) {
-            $q->whereIn('name', ['ShopeePay', 'Cash', 'GoPay Merchant', 'GoPay', 'BCA', 'SeaBank'])
-              ->orWhere('type', AccountType::CASH);
-        })->where('is_active', true)
-        ->orderByRaw("CASE 
-            WHEN name = 'ShopeePay' THEN 1 
-            WHEN name = 'Cash' THEN 2 
-            WHEN name = 'GoPay Merchant' THEN 3 
-            WHEN name = 'GoPay' THEN 4 
-            ELSE 5 END")
-        ->get();
+        // 3 Akun wadah digital wajib untuk checkpoint di jalan (ShopeePay, GoPay, GoPay Merchant)
+        $digitalReconAccounts = Account::whereIn('name', ['ShopeePay', 'GoPay', 'GoPay Merchant'])
+            ->where('is_active', true)
+            ->orderByRaw("CASE 
+                WHEN name = 'ShopeePay' THEN 1 
+                WHEN name = 'GoPay' THEN 2 
+                WHEN name = 'GoPay Merchant' THEN 3 
+                ELSE 4 END")
+            ->get();
 
         // 4 Elemen Saldo Likuid Uang Riil Driver
         $driverCashAcc = $accounts->firstWhere('name', 'Cash') ?? $accounts->where('type', AccountType::CASH)->first();
@@ -336,7 +333,8 @@ class DashboardController extends Controller
             'unpaidSubscriptionsAmount',
             'driverSnapshots',
             'latestSnapshot',
-            'todayCodQrisBillTotal'
+            'todayCodQrisBillTotal',
+            'driverCashAcc'
         ));
     }
 }

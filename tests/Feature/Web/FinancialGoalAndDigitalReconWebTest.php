@@ -297,5 +297,169 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
                 && str_contains($msg, 'Tip QRIS Murni +Rp 5.000');
         });
     }
+
+    public function test_checkpoint_does_not_require_cash_in_balances_and_auto_tracks_system_cash(): void
+    {
+        $cashAcc = Account::where('name', 'Cash')->firstOrFail();
+        $cashAcc->update(['current_balance' => 77500]);
+
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $gopay = Account::where('name', 'GoPay')->firstOrFail();
+        $gopayMerchant = Account::where('name', 'GoPay Merchant')->firstOrFail();
+
+        $shopeePay->update(['current_balance' => 50000]);
+        $gopay->update(['current_balance' => 20000]);
+        $gopayMerchant->update(['current_balance' => 15000]);
+
+        // Input checkpoint HANYA 3 digital wallet (tanpa Cash)
+        $payload = [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 8,
+            'delivery_fee' => 75000,
+            'customer_tips' => 5000,
+            'hub_bonus' => 10000,
+            'hub_income' => 0,
+            'balances' => [
+                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+                ['account_id' => $gopay->id, 'actual_balance' => 20000],
+                ['account_id' => $gopayMerchant->id, 'actual_balance' => 15000],
+            ],
+        ];
+
+        $response = $this->post('/operational/digital-reconciliation', $payload);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Cash dompet otomatis tercatat Rp77.500 dari sistem buku besar kas tanpa diinput manual
+        $this->assertDatabaseHas('driver_snapshots', [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 8,
+            'delivery_fee' => 75000,
+            'cash_balance' => 77500,
+            'shopeepay_balance' => 50000,
+            'gopay_balance' => 20000,
+            'gopay_merchant_balance' => 15000,
+        ]);
+    }
+
+    public function test_cannot_save_checkpoint_with_time_less_than_or_equal_to_previous_checkpoint(): void
+    {
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $shopeePay->update(['current_balance' => 50000]);
+
+        // Checkpoint 1 jam 14:00:00
+        \App\Models\DriverSnapshot::create([
+            'work_day_id' => $this->workDay->id,
+            'recorded_at' => now()->startOfDay()->addHours(14),
+            'completed_orders' => 5,
+            'delivery_fee' => 40000,
+            'hub_income' => 0,
+            'hub_bonus' => 0,
+            'customer_tips' => 0,
+            'shopeepay_balance' => 50000,
+            'gopay_balance' => 0,
+            'gopay_merchant_balance' => 0,
+            'cash_balance' => 10000,
+        ]);
+
+        // Coba input Checkpoint 2 dengan waktu yang MUNDUR (13:59:59)
+        $payloadBackwards = [
+            'work_day_id' => $this->workDay->id,
+            'is_custom_time' => 1,
+            'custom_recorded_at' => now()->startOfDay()->addHours(13)->addMinutes(59)->addSeconds(59)->format('Y-m-d H:i:s'),
+            'completed_orders' => 6,
+            'delivery_fee' => 50000,
+            'balances' => [
+                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+            ],
+        ];
+
+        $responseBackwards = $this->post('/operational/digital-reconciliation', $payloadBackwards);
+        $responseBackwards->assertRedirect();
+        $responseBackwards->assertSessionHas('error');
+        $this->assertTrue(str_contains(session('error'), 'tidak boleh mendahului atau sama dengan checkpoint sebelumnya'));
+
+        // Coba input Checkpoint 2 dengan waktu yang SAMA PERSIS (14:00:00)
+        $payloadEqual = [
+            'work_day_id' => $this->workDay->id,
+            'is_custom_time' => 1,
+            'custom_recorded_at' => now()->startOfDay()->addHours(14)->format('Y-m-d H:i:s'),
+            'completed_orders' => 6,
+            'delivery_fee' => 50000,
+            'balances' => [
+                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+            ],
+        ];
+
+        $responseEqual = $this->post('/operational/digital-reconciliation', $payloadEqual);
+        $responseEqual->assertRedirect();
+        $responseEqual->assertSessionHas('error');
+        $this->assertTrue(str_contains(session('error'), 'tidak boleh mendahului atau sama dengan checkpoint sebelumnya'));
+    }
+
+    public function test_can_save_checkpoint_with_custom_time_strictly_greater_than_previous_checkpoint(): void
+    {
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $shopeePay->update(['current_balance' => 50000]);
+
+        // Checkpoint 1 jam 14:00:00
+        \App\Models\DriverSnapshot::create([
+            'work_day_id' => $this->workDay->id,
+            'recorded_at' => now()->startOfDay()->addHours(14),
+            'completed_orders' => 5,
+            'delivery_fee' => 40000,
+            'hub_income' => 0,
+            'hub_bonus' => 0,
+            'customer_tips' => 0,
+            'shopeepay_balance' => 50000,
+            'gopay_balance' => 0,
+            'gopay_merchant_balance' => 0,
+            'cash_balance' => 10000,
+        ]);
+
+        // Checkpoint 2 jam 14:00:01 (Beda 1 detik lebih baru)
+        $payloadValid = [
+            'work_day_id' => $this->workDay->id,
+            'is_custom_time' => 1,
+            'custom_recorded_at' => now()->startOfDay()->addHours(14)->addSecond()->format('Y-m-d H:i:s'),
+            'completed_orders' => 6,
+            'delivery_fee' => 50000,
+            'balances' => [
+                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+            ],
+        ];
+
+        $responseValid = $this->post('/operational/digital-reconciliation', $payloadValid);
+        $responseValid->assertRedirect();
+        $responseValid->assertSessionHas('success');
+
+        $this->assertDatabaseHas('driver_snapshots', [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 6,
+            'delivery_fee' => 50000,
+        ]);
+    }
+
+    public function test_cannot_save_checkpoint_with_time_in_the_future(): void
+    {
+        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+        $shopeePay->update(['current_balance' => 50000]);
+
+        $payloadFuture = [
+            'work_day_id' => $this->workDay->id,
+            'is_custom_time' => 1,
+            'custom_recorded_at' => now()->addHours(2)->format('Y-m-d H:i:s'),
+            'completed_orders' => 5,
+            'delivery_fee' => 50000,
+            'balances' => [
+                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+            ],
+        ];
+
+        $responseFuture = $this->post('/operational/digital-reconciliation', $payloadFuture);
+        $responseFuture->assertRedirect();
+        $responseFuture->assertSessionHas('error');
+        $this->assertTrue(str_contains(session('error'), 'tidak boleh melebihi waktu sekarang (masa depan)'));
+    }
 }
 

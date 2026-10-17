@@ -427,15 +427,15 @@
                         <div class="divide-y divide-slate-700/50">
                             @foreach($driverSnapshots as $snap)
                                 @php
-                                    $shopeeTotal = $snap->hub_income + $snap->hub_bonus + $snap->customer_tips;
+                                    $shopeeTotal = ($snap->delivery_fee ?? 0) + $snap->hub_income + $snap->hub_bonus + $snap->customer_tips;
                                     $walletTotal = $snap->shopeepay_balance + $snap->gopay_balance + $snap->gopay_merchant_balance + $snap->cash_balance;
                                     $diff = $walletTotal - $shopeeTotal;
                                 @endphp
                                 <div class="py-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 text-xs">
                                     <div class="space-y-1">
                                         <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-                                            <span class="px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black text-xs">
-                                                🕒 Jam {{ $snap->recorded_at->format('H:i') }} WIB
+                                            <span class="px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black text-xs font-mono">
+                                                🕒 Jam {{ $snap->recorded_at->timezone('Asia/Jakarta')->format('H:i:s') }} WIB
                                             </span>
                                             <span class="text-white font-bold">
                                                 {{ $snap->completed_orders }} Pesanan Selesai
@@ -447,7 +447,7 @@
                                         <div class="flex items-center space-x-3 text-[11px] text-slate-300 flex-wrap gap-y-1">
                                             <span>🛵 ShopeeFood: <strong class="text-orange-400">Rp {{ number_format($shopeeTotal, 0, ',', '.') }}</strong></span>
                                             <span>💼 Total Wadah: <strong class="text-emerald-400">Rp {{ number_format($walletTotal, 0, ',', '.') }}</strong></span>
-                                            <span class="text-[10px] text-slate-400">(ShopeePay: {{ number_format($snap->shopeepay_balance, 0, ',', '.') }} &bull; Kas: {{ number_format($snap->cash_balance, 0, ',', '.') }} &bull; QRIS: {{ number_format($snap->gopay_merchant_balance, 0, ',', '.') }})</span>
+                                            <span class="text-[10px] text-slate-400">(ShopeePay: {{ number_format($snap->shopeepay_balance, 0, ',', '.') }} &bull; Kas: {{ number_format($snap->cash_balance, 0, ',', '.') }} &bull; GoPay: {{ number_format($snap->gopay_balance, 0, ',', '.') }} &bull; QRIS: {{ number_format($snap->gopay_merchant_balance, 0, ',', '.') }})</span>
                                         </div>
                                     </div>
                                     <div>
@@ -3021,25 +3021,69 @@
                 💡 <strong>Konsep Snapshot & Rekonsiliasi di Jalan:</strong> Intip layar aplikasi ShopeeFood Driver Anda (berapa pendapatan & orderan saat ini), lalu cek saldo di wadah uang Anda (ShopeePay, Kas dompet saku, QRIS). Sistem langsung menghitung perbandingan (<em>Compare</em>) secara live apakah Anda surplus tip bersih dari pelanggan!
             </div>
 
-            <form method="POST" action="/operational/digital-reconciliation" class="space-y-4">
+            <form id="form-digital-recon" method="POST" action="/operational/digital-reconciliation" class="space-y-4" onsubmit="return validateReconTimeSubmit(event)">
                 @csrf
                 @if($currentWorkDay)
                     <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
                 @endif
 
-                {{-- Waktu Checkpoint (100% Otomatis Jam & Tanggal Sekarang) --}}
-                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-base text-purple-400">⏱️</span>
-                        <div>
-                            <span class="block text-xs font-bold text-slate-200">Waktu Checkpoint (Otomatis)</span>
-                            <span class="text-[10px] text-slate-400">Tercatat realtime saat tombol simpan ditekan</span>
+                {{-- Waktu Checkpoint (Otomatis Realtime + Opsi Custom Jika Telat) --}}
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base text-purple-400">⏱️</span>
+                            <div>
+                                <span class="block text-xs font-bold text-slate-200">Waktu Checkpoint (Live Otomatis)</span>
+                                <span class="text-[10px] text-slate-400">Tercatat realtime hingga detik saat tombol simpan ditekan</span>
+                            </div>
+                        </div>
+                        <span id="recon-live-clock" class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black text-xs font-mono">
+                            {{ now()->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') }} WIB
+                        </span>
+                        <input type="hidden" name="recorded_at" id="recon-recorded-at" value="{{ now()->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') }}">
+                    </div>
+
+                    {{-- Opsi Custom Tanggal & Jam Jika Telat Checkpoint --}}
+                    <div class="border-t border-slate-800/80 pt-2">
+                        <label class="flex items-center space-x-2 cursor-pointer select-none">
+                            <input 
+                                type="checkbox" 
+                                id="toggle-custom-checkpoint-time" 
+                                name="is_custom_time" 
+                                value="1" 
+                                onchange="toggleCheckpointTime(this.checked)" 
+                                class="rounded border-purple-500 bg-slate-900 text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
+                            >
+                            <span class="text-xs font-bold text-purple-300">
+                                Ubah Tanggal & Jam Manual (Opsi Jika Telat Catat)
+                            </span>
+                        </label>
+
+                        <div id="box-custom-checkpoint-time" class="hidden mt-2 p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="custom-recorded-at" class="text-[11px] font-bold text-purple-200">
+                                    Pilih Waktu Checkpoint Sesuai Saat Cek HP Driver:
+                                </label>
+                                @if($latestSnapshot)
+                                    <span class="text-[10px] text-purple-300 font-mono">
+                                        Prev: {{ $latestSnapshot->recorded_at->timezone('Asia/Jakarta')->format('H:i:s') }}
+                                    </span>
+                                @endif
+                            </div>
+                            <input 
+                                type="datetime-local" 
+                                step="1" 
+                                name="custom_recorded_at" 
+                                id="custom-recorded-at" 
+                                min="{{ $latestSnapshot ? $latestSnapshot->recorded_at->timezone('Asia/Jakarta')->addSecond()->format('Y-m-d\TH:i:s') : '' }}"
+                                max="{{ now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i:s') }}"
+                                class="w-full bg-slate-950 border border-purple-500/50 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none font-mono"
+                            >
+                            <p class="text-[10px] text-purple-300/80 leading-relaxed">
+                                ⚠️ <strong>Aturan Urutan Waktu:</strong> Jam checkpoint baru wajib lebih baru (di atas) dari checkpoint sebelumnya ({{ $latestSnapshot ? $latestSnapshot->recorded_at->timezone('Asia/Jakarta')->format('d M Y, H:i:s') . ' WIB' : 'Belum ada checkpoint sebelumnya' }}) dan tidak boleh melebihi jam saat ini.
+                            </p>
                         </div>
                     </div>
-                    <span id="recon-live-clock" class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black text-xs">
-                        {{ now()->translatedFormat('d M Y, H:i') }} WIB
-                    </span>
-                    <input type="hidden" name="recorded_at" id="recon-recorded-at" value="{{ now()->format('Y-m-d H:i:s') }}">
                 </div>
 
                 {{-- BAGIAN 1: RINCIAN PENDAPATAN YANG DITERIMA (PERSIS 1:1 DENGAN APLIKASI SHOPEEFOOD DRIVER) --}}
@@ -3183,13 +3227,36 @@
                     </div>
 
                     <div class="space-y-3">
+                        {{-- Uang Cash Dompet (Tercatat Otomatis dari Pembukuan Kas Sistem) --}}
+                        <div class="bg-slate-950/90 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="text-xl">💵</span>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs font-extrabold text-white">Cash Dompet</span>
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-black">
+                                            Otomatis Sistem
+                                        </span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400">
+                                        Tercatat otomatis dari transaksi pembukuan kas & kembalian COD (tidak perlu dihitung manual di jalan)
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <strong id="disp-recorded-cash" class="text-white font-black text-sm" data-cash="{{ $driverCashAcc?->current_balance ?? ($driverWalletElements['cash']['balance'] ?? 0) }}">
+                                    Rp {{ number_format($driverCashAcc?->current_balance ?? ($driverWalletElements['cash']['balance'] ?? 0), 0, ',', '.') }}
+                                </strong>
+                            </div>
+                        </div>
+
+                        {{-- 3 Wadah Digital Wajib Diisi (ShopeePay, GoPay, GoPay Merchant) --}}
                         @foreach($digitalReconAccounts as $idx => $dAcc)
                             <div class="bg-slate-950/90 border border-slate-700 rounded-xl p-3 space-y-2">
                                 <div class="flex justify-between items-center">
                                     <span class="text-xs font-extrabold text-white flex items-center space-x-1.5">
                                         <span>
-                                            @if($dAcc->name === 'Cash' || $dAcc->type->value === 'cash') 💵
-                                            @elseif(str_contains(strtolower($dAcc->name), 'merchant')) 🏪
+                                            @if(str_contains(strtolower($dAcc->name), 'merchant')) 🏪
                                             @elseif(str_contains(strtolower($dAcc->name), 'gopay')) 🟢
                                             @elseif(str_contains(strtolower($dAcc->name), 'shopeepay')) 🟠
                                             @else 🏦
@@ -3226,64 +3293,8 @@
                     </div>
 
                     <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
-                        <span class="text-slate-300 font-bold">Total Uang di Wadah Narik:</span>
+                        <span class="text-slate-300 font-bold">Total Uang di Wadah Narik (Termasuk Kas Dompet):</span>
                         <strong id="disp-wallets-total" class="text-emerald-400 font-extrabold text-sm">Rp 0</strong>
-                    </div>
-                </div>
-
-                {{-- PEMISAH POKOK COD VIA QRIS (PENGEMBALIAN MODAL MAKANAN vs TIP MURNI) --}}
-                <div class="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 space-y-3">
-                    <div class="flex justify-between items-start">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xl">🍜</span>
-                            <div>
-                                <label for="recon-cod-qris-amount" class="text-xs font-black text-amber-300 block">
-                                    Tagihan Pokok COD Dibayar Customer via QRIS (Rp)
-                                </label>
-                                <p class="text-[11px] text-slate-300 leading-snug">
-                                    Pernah antar pesanan COD tapi customer membayar tagihan makanannya transfer lewat QRIS GoPay/Merchant?
-                                </p>
-                            </div>
-                        </div>
-                        <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 shrink-0">
-                            Pengurang Modal Makanan
-                        </span>
-                    </div>
-
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-amber-400 font-bold">Rp</span>
-                        <input 
-                            type="number" 
-                            inputmode="numeric" 
-                            pattern="[0-9]*" 
-                            name="cod_qris_amount" 
-                            id="recon-cod-qris-amount" 
-                            value="0" 
-                            min="0" 
-                            step="1" 
-                            oninput="calculateDigitalReconDiff()" 
-                            placeholder="0 jika tidak ada customer COD bayar QRIS"
-                            class="w-full bg-slate-950 border border-amber-500/50 rounded-xl pl-9 pr-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                        >
-                    </div>
-
-                    @if(!empty($todayCodQrisBillTotal) && $todayCodQrisBillTotal > 0)
-                        <div class="flex items-center justify-between bg-amber-900/30 border border-amber-500/30 rounded-xl px-3 py-1.5">
-                            <span class="text-[11px] text-amber-200">
-                                💡 Terdeteksi tagihan order COD hari ini: <strong>Rp {{ number_format($todayCodQrisBillTotal, 0, ',', '.') }}</strong>
-                            </span>
-                            <button 
-                                type="button" 
-                                onclick="document.getElementById('recon-cod-qris-amount').value = {{ $todayCodQrisBillTotal }}; calculateDigitalReconDiff();"
-                                class="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-black transition"
-                            >
-                                Pakai Angka Ini
-                            </button>
-                        </div>
-                    @endif
-
-                    <div class="text-[10px] text-amber-200/90 leading-relaxed bg-slate-950/60 p-2.5 rounded-xl border border-amber-500/20">
-                        🛡️ <strong>Prinsip Anti Ambil Mentah-Mentah:</strong> Uang masuk QRIS tidak akan dianggap 100% tip. Sebesar nominal pokok makanan ini dialokasikan ke <em>Talangan Pesanan COD</em> (menggantikan modal ShopeePay yang terpotong resto). Hanya sisa kelebihannya yang diakui sebagai <strong>Tip QRIS Murni</strong> untuk diadu dengan biaya parkir.
                     </div>
                 </div>
 
@@ -3821,6 +3832,87 @@
 
     {{-- Script Modal Handling, Tabs, & Interactive Tour --}}
     <script>
+        let reconClockInterval = null;
+
+        function updateReconLiveClock() {
+            const now = new Date();
+            const liveClock = document.getElementById('recon-live-clock');
+            const recordedInput = document.getElementById('recon-recorded-at');
+            const customInput = document.getElementById('custom-recorded-at');
+
+            const day = String(now.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const monthName = months[now.getMonth()];
+            const year = now.getFullYear();
+            const monthNum = String(now.getMonth() + 1).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            if (liveClock) {
+                liveClock.innerText = `${day} ${monthName} ${year}, ${hours}:${minutes}:${seconds} WIB`;
+            }
+            if (recordedInput) {
+                recordedInput.value = `${year}-${monthNum}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+            if (customInput) {
+                customInput.max = `${year}-${monthNum}-${day}T${hours}:${minutes}:${seconds}`;
+            }
+        }
+
+        function toggleCheckpointTime(checked) {
+            const box = document.getElementById('box-custom-checkpoint-time');
+            const customInput = document.getElementById('custom-recorded-at');
+            if (box) {
+                if (checked) {
+                    box.classList.remove('hidden');
+                    if (customInput && !customInput.value) {
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        const seconds = String(now.getSeconds()).padStart(2, '0');
+                        customInput.value = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+                    }
+                } else {
+                    box.classList.add('hidden');
+                }
+            }
+        }
+
+        function validateReconTimeSubmit(event) {
+            const toggleCustom = document.getElementById('toggle-custom-checkpoint-time');
+            if (toggleCustom && toggleCustom.checked) {
+                const customInput = document.getElementById('custom-recorded-at');
+                if (!customInput || !customInput.value) {
+                    alert('Silakan pilih tanggal dan jam custom untuk checkpoint ini.');
+                    if (customInput) customInput.focus();
+                    if (event) event.preventDefault();
+                    return false;
+                }
+                const selectedTime = new Date(customInput.value);
+                const now = new Date();
+                if (selectedTime > now) {
+                    alert('Waktu checkpoint tidak boleh melebihi jam saat ini (masa depan)!');
+                    if (customInput) customInput.focus();
+                    if (event) event.preventDefault();
+                    return false;
+                }
+                if (customInput.min) {
+                    const minTime = new Date(customInput.min);
+                    if (selectedTime < minTime) {
+                        alert('Waktu checkpoint baru tidak boleh mendahului atau sama dengan checkpoint sebelumnya! Waktu harus lebih baru.');
+                        if (customInput) customInput.focus();
+                        if (event) event.preventDefault();
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         function openModal(id) {
             const el = document.getElementById(id);
             if (el) {
@@ -3831,27 +3923,9 @@
                     checkShopeePayCashback(sourceSelect, cashbackWrap.id);
                 }
                 if (id === 'modal-reconcile-digital') {
-                    const now = new Date();
-                    const liveClock = document.getElementById('recon-live-clock');
-                    const recordedInput = document.getElementById('recon-recorded-at');
-                    if (liveClock) {
-                        const day = String(now.getDate()).padStart(2, '0');
-                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-                        const month = months[now.getMonth()];
-                        const year = now.getFullYear();
-                        const hours = String(now.getHours()).padStart(2, '0');
-                        const minutes = String(now.getMinutes()).padStart(2, '0');
-                        liveClock.innerText = `${day} ${month} ${year}, ${hours}:${minutes} WIB`;
-                    }
-                    if (recordedInput) {
-                        const year = now.getFullYear();
-                        const month = String(now.getMonth() + 1).padStart(2, '0');
-                        const day = String(now.getDate()).padStart(2, '0');
-                        const hours = String(now.getHours()).padStart(2, '0');
-                        const minutes = String(now.getMinutes()).padStart(2, '0');
-                        const seconds = String(now.getSeconds()).padStart(2, '0');
-                        recordedInput.value = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-                    }
+                    updateReconLiveClock();
+                    if (reconClockInterval) clearInterval(reconClockInterval);
+                    reconClockInterval = setInterval(updateReconLiveClock, 1000);
                     calculateDigitalReconDiff();
                 }
                 if (id === 'modal-parking') {
@@ -3860,7 +3934,12 @@
             }
         }
         function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+            if (id === 'modal-reconcile-digital' && reconClockInterval) {
+                clearInterval(reconClockInterval);
+                reconClockInterval = null;
+            }
         }
 
         function toggleCustomPlatform(selectEl, targetId) {
@@ -4572,31 +4651,43 @@
             if (compareShopee) compareShopee.innerText = 'Rp ' + totalShopee.toLocaleString('id-ID');
 
             // 2. Hitung Saldo Wadah & Selisih vs Sistem
-            let totalActualWallets = 0;
-            let totalRecordedWallets = 0;
+            const cashEl = document.getElementById('disp-recorded-cash');
+            const recordedCash = cashEl ? (parseInt(cashEl.getAttribute('data-cash')) || 0) : 0;
+            let totalActualWallets = recordedCash;
+            let totalRecordedWallets = recordedCash;
             let totalSurplus = 0;
             let totalShortage = 0;
+
+            let gopayInflow = 0;
+            let gopayMerchantInflow = 0;
 
             document.querySelectorAll('.recon-digital-input').forEach(input => {
                 const recorded = parseInt(input.getAttribute('data-recorded')) || 0;
                 const actual = parseInt(input.value) || 0;
                 const diff = actual - recorded;
                 const accId = input.id.replace('recon-input-', '');
+                const accName = input.getAttribute('data-account-name') || '';
                 const msgEl = document.getElementById('recon-diff-msg-' + accId);
 
                 totalActualWallets += actual;
                 totalRecordedWallets += recorded;
 
-                if (msgEl) {
-                    if (diff > 0) {
+                if (diff > 0) {
+                    if (accName === 'GoPay') gopayInflow += diff;
+                    if (accName === 'GoPay Merchant') gopayMerchantInflow += diff;
+                    if (msgEl) {
                         msgEl.innerText = '🎉 Surplus / Inflow Lebih: +Rp ' + diff.toLocaleString('id-ID');
                         msgEl.className = 'text-[11px] font-bold mt-1 text-emerald-400';
-                        totalSurplus += diff;
-                    } else if (diff < 0) {
+                    }
+                    totalSurplus += diff;
+                } else if (diff < 0) {
+                    if (msgEl) {
                         msgEl.innerText = '⚠️ Selisih Kurang / Biaya: -Rp ' + Math.abs(diff).toLocaleString('id-ID');
                         msgEl.className = 'text-[11px] font-bold mt-1 text-rose-400';
-                        totalShortage += Math.abs(diff);
-                    } else {
+                    }
+                    totalShortage += Math.abs(diff);
+                } else {
+                    if (msgEl) {
                         msgEl.innerText = '✓ Status: Saldo Cocok Sempurna (Rp 0)';
                         msgEl.className = 'text-[11px] font-semibold mt-1 text-slate-300';
                     }
@@ -4631,15 +4722,15 @@
                 if (netWalletAdjustment > 0) {
                     evalBanner.className = 'p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium';
                     evalBanner.innerHTML = `<strong>🎉 Terdeteksi Surplus Fisik/Digital: +Rp ${netWalletAdjustment.toLocaleString('id-ID')}</strong><br>` +
-                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Di wadah Anda ada kelebihan uang Rp ${netWalletAdjustment.toLocaleString('id-ID')} dibanding pembukuan (kemungkinan tip tunai langsung dari pelanggan di lapangan atau QRIS lebih). Saat disimpan, sistem akan menyimpan snapshot ini dan menyesuaikan saldo wadah Anda secara akurat.`;
+                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Di wadah Anda ada kelebihan uang Rp ${netWalletAdjustment.toLocaleString('id-ID')} dibanding pembukuan (tip masuk ShopeePay/GoPay/Merchant). Saat disimpan, sistem akan menyimpan snapshot ini dan menyesuaikan saldo wadah Anda secara akurat.`;
                 } else if (netWalletAdjustment < 0) {
                     evalBanner.className = 'p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl text-xs text-rose-200 leading-relaxed font-medium';
                     evalBanner.innerHTML = `<strong>⚠️ Terdeteksi Selisih Kurang: -Rp ${Math.abs(netWalletAdjustment).toLocaleString('id-ID')}</strong><br>` +
-                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Saldo wadah fisik/digital Anda lebih sedikit Rp ${Math.abs(netWalletAdjustment).toLocaleString('id-ID')} dibanding pembukuan sistem (kemungkinan ada pengeluaran operasional kecil di jalan seperti parkir tunai/makan yang belum sempat dicatat). Saat disimpan, saldo akan otomatis disejajarkan dengan posisi riil.`;
+                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Saldo wadah fisik/digital Anda lebih sedikit Rp ${Math.abs(netWalletAdjustment).toLocaleString('id-ID')} dibanding pembukuan sistem (kemungkinan ada pengeluaran operasional di jalan yang belum dicatat). Saat disimpan, saldo akan diselaraskan dengan posisi riil.`;
                 } else {
                     evalBanner.className = 'p-3 bg-slate-900 border border-purple-500/30 rounded-xl text-xs text-purple-200 leading-relaxed font-medium';
                     evalBanner.innerHTML = `<strong>✓ Posisi Wadah & Pembukuan Cocok Sempurna!</strong><br>` +
-                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Total di wadah narik Anda <strong>Rp ${totalActualWallets.toLocaleString('id-ID')}</strong>. Tidak ada selisih uang unaccounted. Checkpoint ini akan disimpan ke histori snapshot perjalanan hari ini.`;
+                        `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Total di wadah narik Anda <strong>Rp ${totalActualWallets.toLocaleString('id-ID')}</strong> (termasuk kas dompet). Checkpoint ini akan disimpan ke histori snapshot perjalanan hari ini.`;
                 }
             }
 
@@ -4648,41 +4739,11 @@
             if (parkingBox) {
                 const parkingExpense = parseInt(parkingBox.getAttribute('data-parking-expense')) || 0;
                 const parkingPaidCount = parseInt(parkingBox.getAttribute('data-parking-paid-count')) || 0;
-                const parkingRestoCount = parseInt(parkingBox.getAttribute('data-parking-resto-count')) || 0;
 
                 // Ambil Tip ShopeeFood
                 const shopeeTip = parseInt(document.getElementById('recon-customer-tips')?.value) || 0;
-
-                // Ambil Inflow/Surplus pada Akun Digital (GoPay, GoPay Merchant, Cash)
-                let gopayInflow = 0;
-                let gopayMerchantInflow = 0;
-                let cashInflow = 0;
-
-                document.querySelectorAll('.recon-digital-input').forEach(input => {
-                    const accName = input.getAttribute('data-account-name') || '';
-                    const recorded = parseInt(input.getAttribute('data-recorded')) || 0;
-                    const actual = parseInt(input.value) || 0;
-                    const diff = actual - recorded;
-
-                    if (diff > 0) {
-                        if (accName === 'GoPay') {
-                            gopayInflow += diff;
-                        } else if (accName === 'GoPay Merchant') {
-                            gopayMerchantInflow += diff;
-                        } else if (accName === 'Cash') {
-                            cashInflow += diff;
-                        }
-                    }
-                });
-
-                // PERHITUNGAN TELITI COD VIA QRIS:
-                // Jangan ambil mentah-mentah inflow QRIS sebagai tip!
-                const codQrisBill = parseInt(document.getElementById('recon-cod-qris-amount')?.value) || 0;
-                const grossQrisInflow = gopayInflow + gopayMerchantInflow;
-                const codReimbursed = Math.min(grossQrisInflow, codQrisBill);
-                const netQrisTip = Math.max(0, grossQrisInflow - codQrisBill);
-
-                const totalTipsAndInflow = shopeeTip + netQrisTip + cashInflow;
+                const qrisInflow = gopayInflow + gopayMerchantInflow;
+                const totalTipsAndInflow = shopeeTip + qrisInflow;
                 const netParkingResult = totalTipsAndInflow - parkingExpense;
 
                 const expenseDisp = document.getElementById('parking-compare-expense-disp');
@@ -4707,25 +4768,23 @@
                 }
 
                 if (statusBanner) {
-                    let codNoticeHtml = '';
-                    if (codReimbursed > 0) {
-                        codNoticeHtml = `<div class="mt-2 p-2 rounded-lg bg-amber-950/60 border border-amber-500/40 text-[11px] text-amber-200 leading-snug">` +
-                            `🛡️ <strong>Alokasi COD Presisi:</strong> Dari total inflow QRIS Rp ${grossQrisInflow.toLocaleString('id-ID')}, sebesar <strong>Rp ${codReimbursed.toLocaleString('id-ID')}</strong> diperhitungkan sebagai pembayaran tagihan pokok makanan COD (pengembalian modal ShopeePay, bukan tip). Hanya sisa <strong>Rp ${netQrisTip.toLocaleString('id-ID')}</strong> yang diakui sebagai Tip Murni untuk diadu dengan biaya parkir.` +
-                            `</div>`;
+                    let qrisNotice = '';
+                    if (qrisInflow > 0) {
+                        qrisNotice = ` (Termasuk inflow GoPay/Merchant +Rp ${qrisInflow.toLocaleString('id-ID')})`;
                     }
 
                     if (netParkingResult > 0) {
                         statusBanner.className = 'p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium';
                         statusBanner.innerHTML = `<strong>🎉 SURPLUS PARKIR (UNTUNG): +Rp ${netParkingResult.toLocaleString('id-ID')}</strong><br>` +
-                            `Total tip riil & QRIS murni (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) <strong>MENUTUP 100%</strong> biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')}) dengan sisa untung Rp ${netParkingResult.toLocaleString('id-ID')}. Narik hari ini tidak boncos di parkiran!` + codNoticeHtml;
+                            `Total tip Shopee & uang masuk GoPay/QRIS (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}${qrisNotice}) <strong>MENUTUP 100%</strong> beban parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')}) dengan sisa untung Rp ${netParkingResult.toLocaleString('id-ID')}. Narik hari ini tidak boncos di parkiran!`;
                     } else if (netParkingResult < 0) {
                         statusBanner.className = 'p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl text-xs text-rose-200 leading-relaxed font-medium';
                         statusBanner.innerHTML = `<strong>⚠️ MINUS / BONCOS PARKIR: -Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}</strong><br>` +
-                            `Biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')} dari ${parkingPaidCount} spot bayar) <strong>LEBIH BESAR</strong> daripada total tip riil & QRIS murni yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}). Biaya parkir Anda minus Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}.` + codNoticeHtml;
+                            `Beban parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')} dari ${parkingPaidCount} spot bayar) <strong>LEBIH BESAR</strong> daripada total tip & uang masuk GoPay/QRIS (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}${qrisNotice}). Beban parkir Anda minus Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}.`;
                     } else {
                         statusBanner.className = 'p-3 bg-indigo-950/40 border border-indigo-500/40 rounded-xl text-xs text-indigo-200 leading-relaxed font-medium';
                         statusBanner.innerHTML = `<strong>✓ PARKIR IMPAS SEMPURNA (Rp 0)</strong><br>` +
-                            `Total tip riil & QRIS murni yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) pas persis menutup pengeluaran parkir (Rp ${parkingExpense.toLocaleString('id-ID')}). Beban parkir tertutup tanpa minus.` + codNoticeHtml;
+                            `Total tip & uang masuk GoPay/QRIS (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}${qrisNotice}) pas persis menutup pengeluaran parkir (Rp ${parkingExpense.toLocaleString('id-ID')}). Beban parkir tertutup tanpa minus.`;
                     }
                 }
             }
