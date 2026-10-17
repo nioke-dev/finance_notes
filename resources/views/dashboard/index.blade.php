@@ -601,10 +601,10 @@
                             <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                                 💳
                             </div>
-                            <div>
-                                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                                     <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">4 Elemen Saldo Uang Narik Driver</h3>
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg sm:rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 w-fit max-w-full">
                                         Saldo Likuid Riil
                                     </span>
                                 </div>
@@ -666,10 +666,10 @@
                             <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                                 🛵
                             </div>
-                            <div>
-                                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                                     <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat ShopeeFood Driver Hari Ini</h3>
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30 shrink-0">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg sm:rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30 w-fit max-w-full">
                                         Data Riwayat Performa (Bukan Dompet)
                                     </span>
                                 </div>
@@ -729,9 +729,9 @@
                                     ⏱️
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                                         <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat Checkpoint Jam Narik & Komparasi Saldo</h3>
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-lg sm:rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 w-fit max-w-full">
                                             {{ $driverSnapshots->count() }} Checkpoint Tercatat
                                         </span>
                                     </div>
@@ -1287,9 +1287,9 @@
                         🎯
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                             <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Target Belanja Survival & Wishlist Prioritas</h3>
-                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full shrink-0">5 Level Skala Prioritas</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg sm:rounded-full w-fit max-w-full">5 Level Skala Prioritas</span>
                         </div>
                         <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">Pisahkan kebutuhan primer hidup (Pangan, Mandi, Ganti Oli, Holder HP) dari keinginan santai.</p>
                     </div>
@@ -1426,36 +1426,38 @@
         </div>
 
         {{-- ================= MISI BEBAS HUTANG 31 OKTOBER (CLOSING BULAN INI LUNAS!) ================= --}}
-        <div id="tour-debt-freedom" class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/50 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
+        <div id="tour-debt-freedom" class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/50 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5 overflow-hidden">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/80 pb-4">
-                <div class="flex items-start sm:items-center space-x-3.5">
-                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
+                <div class="flex items-start sm:items-center space-x-3 w-full sm:w-auto min-w-0">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl sm:text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                         🎯
                     </div>
-                    <div>
-                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
-                            <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Misi Bebas Hutang 31 Oktober</h3>
-                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full shrink-0">
-                                Target Lunas: {{ $debtFreedomData['target_label'] }} (Sisa {{ $debtFreedomData['days_remaining'] }} Hari)
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wider text-white">Misi Bebas Hutang 31 Oktober</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg sm:rounded-full w-fit max-w-full break-words">
+                                Target Lunas: {{ $debtFreedomData['target_label'] }} (Sisa {{ (int) $debtFreedomData['days_remaining'] }} Hari)
                             </span>
                         </div>
-                        <p class="text-xs text-slate-300 mt-0.5">
+                        <p class="text-xs text-slate-300 mt-1 leading-snug">
                             Kendalikan dan lunasi seluruh beban PayLater & Pinjaman online tanpa merusak kebutuhan pokok hidup.
                         </p>
                     </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" onclick="openModal('modal-existing-debt')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center space-x-1.5">
+                <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <button type="button" onclick="openModal('modal-existing-debt')" class="w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center space-x-1.5 active:scale-95">
                         <span>➕</span>
                         <span>Catat Tagihan Berjalan</span>
                     </button>
-                    <button type="button" onclick="openModal('modal-pay-installment')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs rounded-xl shadow transition flex items-center space-x-1.5">
-                        <span>💳</span>
-                        <span>Bayar Cicilan</span>
-                    </button>
-                    <a href="/debts" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-purple-500/40 font-bold text-xs rounded-xl transition">
-                        Kelola Portofolio &rarr;
-                    </a>
+                    <div class="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                        <button type="button" onclick="openModal('modal-pay-installment')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs rounded-xl shadow transition flex items-center justify-center space-x-1.5 active:scale-95">
+                            <span>💳</span>
+                            <span>Bayar Cicilan</span>
+                        </button>
+                        <a href="/debts" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-purple-500/40 font-bold text-xs rounded-xl transition text-center flex items-center justify-center active:scale-95">
+                            Kelola &rarr;
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -1526,26 +1528,26 @@
         </div>
 
         {{-- ================= TAGIHAN RUTIN & LANGGANAN BULANAN (SUBSCRIPTIONS) ================= --}}
-        <div id="tour-subscriptions" class="bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-900 border border-indigo-500/50 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
+        <div id="tour-subscriptions" class="bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-900 border border-indigo-500/50 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5 overflow-hidden">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/80 pb-4">
-                <div class="flex items-start sm:items-center space-x-3.5">
-                    <div class="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
+                <div class="flex items-start sm:items-center space-x-3 w-full sm:w-auto min-w-0">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xl sm:text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                         📅
                     </div>
-                    <div>
-                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
-                            <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Tagihan Rutin & Langganan Bulanan</h3>
-                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full shrink-0">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <h3 class="text-sm sm:text-base font-extrabold uppercase tracking-wider text-white">Tagihan Rutin & Langganan Bulanan</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg sm:rounded-full w-fit max-w-full">
                                 Fixed Recurring Expenses
                             </span>
                         </div>
-                        <p class="text-xs text-slate-300 mt-0.5">
+                        <p class="text-xs text-slate-300 mt-1 leading-snug">
                             Beban berkala (Paket kuota internet narik, sewa kamar kos, wifi, listrik) yang mengunci Safe-to-Spend agar tidak terpakai jajan.
                         </p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <button type="button" onclick="openModal('modal-add-subscription')" class="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center space-x-1.5">
+                <div class="w-full sm:w-auto flex items-center">
+                    <button type="button" onclick="openModal('modal-add-subscription')" class="w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center space-x-1.5 active:scale-95">
                         <span>➕</span>
                         <span>Tambah Tagihan Rutin</span>
                     </button>

@@ -349,5 +349,20 @@
         };
     }
 
+    // 5. MOBILE TAP-TO-READ-FULL (PENGGANTI HOVER TOOLTIP DI LAYAR SENTUH HP)
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('a, button, input, select, textarea, label')) return;
+
+        const el = e.target.closest('.truncate, [data-full-text], [title]');
+        if (!el) return;
+
+        const isTruncated = el.scrollWidth > (el.clientWidth + 2);
+        const fullText = el.getAttribute('data-full-text') || el.getAttribute('title') || (isTruncated ? el.innerText.trim() : null);
+
+        if (fullText && (isTruncated || el.hasAttribute('data-full-text'))) {
+            window.showGlobalToast(fullText, false, 4000);
+        }
+    });
+
     window.refreshLiveValidation = initLiveValidation;
 })();

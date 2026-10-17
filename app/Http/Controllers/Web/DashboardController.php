@@ -212,7 +212,7 @@ class DashboardController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
         $thisMonthDebtDue = (int) $thisMonthInstallments->sum('amount_due');
-        $daysRemainingInMonth = max(1, now()->diffInDays($monthEnd, false) + 1);
+        $daysRemainingInMonth = max(1, (int) round(now()->startOfDay()->diffInDays($monthEnd->copy()->startOfDay(), false) + 1));
         $dailyDebtQuota = (int) ceil($thisMonthDebtDue / $daysRemainingInMonth);
 
         $debtFreedomData = [
