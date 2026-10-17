@@ -461,5 +461,145 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
         $responseFuture->assertSessionHas('error');
         $this->assertTrue(str_contains(session('error'), 'tidak boleh melebihi waktu sekarang (masa depan)'));
     }
+
+    public function test_can_record_direct_quick_tip_via_cash_and_qris(): void
+    {
+        $cashAcc = Account::where('name', 'Cash')->firstOrFail();
+        $gopayMerchant = Account::where('name', 'GoPay Merchant')->firstOrFail();
+
+        // 1. Tip Cash Rp 5.000
+        $responseCash = $this->post('/operational/quick-tip', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 5000,
+            'account_id' => $cashAcc->id,
+            'notes' => 'Customer ramah antar geprek Suhat',
+        ]);
+        $responseCash->assertRedirect();
+        $responseCash->assertSessionHas('success');
+
+        $tipCashAccount = Account::where('name', 'Tip Cash / Surplus COD')->firstOrFail();
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $tipCashAccount->id,
+            'entry_type' => 'credit',
+            'amount' => 5000,
+        ]);
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'description' => 'Tip Langsung Pelanggan via Cash: Rp 5.000 (Customer ramah antar geprek Suhat)',
+        ]);
+
+        // 2. Tip QRIS via GoPay Merchant Rp 10.000
+        $responseQris = $this->post('/operational/quick-tip', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 10000,
+            'account_id' => $gopayMerchant->id,
+            'notes' => 'Tip via QRIS meja 4',
+        ]);
+        $responseQris->assertRedirect();
+        $responseQris->assertSessionHas('success', function ($msg) {
+            return str_contains($msg, 'GoPay Merchant otomatis dicairkan ke GoPay reguler setiap 1 jam jika saldo ≥ Rp10.000');
+        });
+
+        $qrisTipAccount = Account::where('name', 'Pendapatan QRIS / Tip Non-Tunai')->firstOrFail();
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $qrisTipAccount->id,
+            'entry_type' => 'credit',
+            'amount' => 10000,
+        ]);
+    }
+
+    public function test_dashboard_daily_financial_summary_mode_driver_vs_overall_and_parking_evaluation(): void
+    {
+        $cashAcc = Account::where('name', 'Cash')->firstOrFail();
+
+        // 1. Pengeluaran Bensin (15.000) & Parkir (4.000)
+        $fuelResponse = $this->post('/operational/fuel', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 15000,
+            'source_account_id' => $cashAcc->id,
+            'vendor_type' => 'spbu',
+        ]);
+        $fuelResponse->assertRedirect();
+        $fuelResponse->assertSessionHas('success');
+
+        $parkResponse = $this->post('/operational/parking', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 4000,
+            'source_account_id' => $cashAcc->id,
+            'vehicle_type' => 'motor',
+        ]);
+        $parkResponse->assertRedirect();
+        $parkResponse->assertSessionHas('success');
+
+        // 2. Pengeluaran Kebutuhan Pribadi / Non-operasional (25.000)
+        $personalExpAccount = Account::firstOrCreate(
+            ['name' => 'Biaya Hidup / Jajan'],
+            ['type' => AccountType::EXPENSE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+        );
+        $ledgerService = app(\App\Services\LedgerService::class);
+        $ledgerService->recordTransaction(
+            workDay: $this->workDay,
+            type: 'expense',
+            description: 'Makan siang & es teh',
+            transactionTime: now(),
+            entries: [
+                ['account_id' => $cashAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 25000],
+                ['account_id' => $personalExpAccount->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 25000],
+            ],
+            isEstimatedTime: false,
+            metadata: ['type' => 'personal_lifestyle_expense']
+        );
+
+        // 3. Tip Langsung (5.000)
+        $this->post('/operational/quick-tip', [
+            'work_day_id' => $this->workDay->id,
+            'amount' => 5000,
+            'account_id' => $cashAcc->id,
+            'notes' => 'Tip tunai',
+        ]);
+
+        // 4. Driver Snapshot dari ShopeeFood Driver App
+        \App\Models\DriverSnapshot::create([
+            'work_day_id' => $this->workDay->id,
+            'recorded_at' => now(),
+            'completed_orders' => 8,
+            'delivery_fee' => 60000,
+            'hub_income' => 0,
+            'hub_bonus' => 0,
+            'customer_tips' => 2000, // Tip aplikasi Shopee
+            'shopeepay_balance' => 50000,
+            'gopay_balance' => 0,
+            'gopay_merchant_balance' => 0,
+            'cash_balance' => 10000,
+        ]);
+
+        // 5. Akses Dashboard
+        $response = $this->get('/dashboard');
+        $response->assertOk();
+        $response->assertViewHas('dailySummaryData');
+
+        $dailySummary = $response->viewData('dailySummaryData');
+
+        // Mode Driver: Outcome HANYA Bensin (15.000) + Parkir (4.000) = 19.000. Dilarang masuk 25.000 jajan!
+        $this->assertEquals(19000, $dailySummary['mode_driver']['outcome']);
+        $this->assertEquals(15000, $dailySummary['mode_driver']['breakdown_outcome']['fuel']);
+        $this->assertEquals(4000, $dailySummary['mode_driver']['breakdown_outcome']['parking']);
+
+        // Tip Presisi Driver: 2.000 (Shopee app) + 5.000 (Direct Cash) = 7.000
+        $this->assertEquals(7000, $dailySummary['mode_driver']['breakdown_income']['total_tips']);
+
+        // Pendapatan Driver: 60.000 (Delivery fee) + 7.000 (Total tip) = 67.000
+        $this->assertEquals(67000, $dailySummary['mode_driver']['income']);
+        $this->assertEquals(67000 - 19000, $dailySummary['mode_driver']['net']);
+
+        // Evaluasi Parkir: Total Tip (7.000) - Parkir (4.000) = +3.000 (TIDAK NOMBOK / COVERED)
+        $this->assertTrue($dailySummary['mode_driver']['parking_eval']['is_covered']);
+        $this->assertEquals(3000, $dailySummary['mode_driver']['parking_eval']['net']);
+
+        // Mode Overall: Outcome = Driver (19.000) + Personal (25.000) = 44.000
+        $this->assertEquals(44000, $dailySummary['mode_overall']['outcome']);
+        $this->assertEquals(25000, $dailySummary['mode_overall']['breakdown_outcome']['personal_expense']);
+        $this->assertEquals(67000 - 44000, $dailySummary['mode_overall']['net']);
+    }
 }
 

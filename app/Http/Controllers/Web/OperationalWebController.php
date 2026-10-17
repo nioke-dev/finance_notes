@@ -1492,6 +1492,73 @@ class OperationalWebController extends Controller
     }
 
     /**
+     * Catat Tip Langsung Pelanggan (Ikhlas / Sukarela di Lapangan via Cash / QRIS / Transfer)
+     */
+    public function storeQuickTip(Request $request, LedgerService $ledgerService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'amount' => 'required|integer|min:1000',
+            'account_id' => 'required|exists:accounts,id',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $workDay = !empty($validated['work_day_id'])
+            ? WorkDay::findOrFail($validated['work_day_id'])
+            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
+
+        if (!$workDay) {
+            return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan. Silakan buka hari kerja terlebih dahulu.');
+        }
+
+        $account = Account::findOrFail($validated['account_id']);
+        $amount = (int) $validated['amount'];
+        $notes = $validated['notes'] ?? null;
+
+        $isCash = ($account->name === 'Cash' || $account->type === AccountType::CASH);
+        $method = $isCash ? 'cash' : ($account->name === 'GoPay Merchant' ? 'qris' : strtolower($account->name));
+
+        $tipIncomeAccount = $isCash
+            ? Account::firstOrCreate(
+                ['name' => 'Tip Cash / Surplus COD'],
+                ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+            )
+            : Account::firstOrCreate(
+                ['name' => 'Pendapatan QRIS / Tip Non-Tunai'],
+                ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+            );
+
+        $desc = "Tip Langsung Pelanggan via {$account->name}: Rp " . number_format($amount, 0, ',', '.') . ($notes ? " ({$notes})" : "");
+
+        $ledgerService->recordTransaction(
+            workDay: $workDay,
+            type: 'income',
+            description: $desc,
+            transactionTime: now(),
+            entries: [
+                ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $amount],
+                ['account_id' => $tipIncomeAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $amount],
+            ],
+            isEstimatedTime: false,
+            metadata: [
+                'type' => 'direct_customer_tip',
+                'tip_amount' => $amount,
+                'payment_method' => $method,
+                'account_id' => $account->id,
+                'account_name' => $account->name,
+                'notes' => $notes,
+            ]
+        );
+
+        $msg = "Alhamdulillah! Tip Rp " . number_format($amount, 0, ',', '.') . " berhasil dicatat masuk ke {$account->name}.";
+        if ($account->name === 'GoPay Merchant') {
+            $msg .= " (Dana di GoPay Merchant otomatis dicairkan ke GoPay reguler setiap 1 jam jika saldo ≥ Rp10.000).";
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
+
+    /**
      * Tambah Target Belanja Survival / Wishlist Baru
      */
     public function storeGoal(Request $request, FinancialGoalService $service): RedirectResponse

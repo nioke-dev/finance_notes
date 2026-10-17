@@ -64,6 +64,13 @@ class DashboardController extends Controller
         $dayPersonalIncome = 0;
         $dayDebtRepayment = 0;
 
+        // Rincian Elemen Tip Presisi
+        $dayCodQrisTip = 0;
+        $dayCodCashTip = 0;
+        $dayDirectCashTip = 0;
+        $dayDirectDigitalTip = 0;
+        $dayReconSurplusTip = 0;
+
         if ($currentWorkDay) {
             $dayTransactions = Transaction::where('work_day_id', $currentWorkDay->id)
                 ->with('ledgerEntries.account')
@@ -77,7 +84,23 @@ class DashboardController extends Controller
                 if ($type === 'cod_order' || $type === 'cod_order_completed') {
                     $dayOrdersCount++;
                     $dayRegularIncome += (int) ($meta['bill_amount'] ?? 0);
-                    $dayTipIncome += (int) ($meta['tip_amount'] ?? $meta['surplus_amount'] ?? 0);
+                    $tip = (int) ($meta['tip_amount'] ?? $meta['surplus_amount'] ?? 0);
+                    $method = strtolower($meta['payment_method'] ?? 'cash');
+                    if ($method === 'qris') {
+                        $dayCodQrisTip += $tip;
+                    } else {
+                        $dayCodCashTip += $tip;
+                    }
+                    $dayTipIncome += $tip;
+                } elseif ($type === 'direct_customer_tip') {
+                    $tip = (int) ($meta['tip_amount'] ?? $tx->amount);
+                    $method = strtolower($meta['payment_method'] ?? 'cash');
+                    if ($method === 'cash') {
+                        $dayDirectCashTip += $tip;
+                    } else {
+                        $dayDirectDigitalTip += $tip;
+                    }
+                    $dayTipIncome += $tip;
                 } elseif ($type === 'quick_fuel') {
                     $dayFuelExpense += $tx->amount;
                 } elseif ($type === 'quick_parking') {
@@ -96,12 +119,13 @@ class DashboardController extends Controller
                     if ($acc && $acc->name === 'ShopeePay') {
                         $dayRegularIncome += $diffAmount;
                     } else {
+                        $dayReconSurplusTip += $diffAmount;
                         $dayTipIncome += $diffAmount;
                     }
                 }
 
                 // Kebutuhan Sehari-hari & Pribadi
-                elseif ($type === 'personal_lifestyle_expense' || $type === 'personal_on_beat_expense' || $type === 'spaylater_purchase') {
+                elseif ($type === 'personal_lifestyle_expense' || $type === 'personal_on_beat_expense' || $type === 'spaylater_purchase' || $type === 'field_incidental_expense') {
                     $dayPersonalExpense += $tx->amount;
                 } elseif ($type === 'personal_external_income') {
                     $dayPersonalIncome += $tx->amount;
@@ -288,6 +312,94 @@ class DashboardController extends Controller
                 ->sum('bill_amount')
             : 0;
 
+        // 5. Metrik Finansial Harian (Mode Driver vs Mode Overall) & Komparasi Parkir vs Tip Presisi
+        $shopeeAppTip = (int) ($latestSnapshot?->customer_tips ?? 0);
+        $totalDriverTip = $shopeeAppTip + $dayCodQrisTip + $dayCodCashTip + $dayDirectCashTip + $dayDirectDigitalTip + $dayReconSurplusTip;
+        if ($totalDriverTip === 0 && $dayTipIncome > 0) {
+            $totalDriverTip = $dayTipIncome;
+        }
+
+        $driverDeliveryFee = (int) ($latestSnapshot?->delivery_fee ?? 0);
+        $driverHubIncome = (int) ($latestSnapshot?->hub_income ?? $dayRegularIncome);
+        $driverHubBonus = (int) ($latestSnapshot?->hub_bonus ?? $dayBonusIncome);
+        $driverShopeeNetIncome = $driverDeliveryFee + $driverHubIncome + $driverHubBonus;
+
+        if ($latestSnapshot === null && $driverShopeeNetIncome === 0) {
+            $driverShopeeNetIncome = $dayRegularIncome + $dayBonusIncome;
+        }
+
+        $driverTotalIncome = $driverShopeeNetIncome + $totalDriverTip;
+        $driverTotalOutcome = $dayFuelExpense + $dayParkingExpense;
+        $driverNetProfit = $driverTotalIncome - $driverTotalOutcome;
+
+        $parkingNet = $totalDriverTip - $dayParkingExpense;
+        $isParkingCovered = ($parkingNet >= 0);
+
+        // Mode Overall (Finansial Keseluruhan)
+        $overallTotalIncome = $driverTotalIncome + $dayPersonalIncome;
+        $overallTotalOutcome = $driverTotalOutcome + $dayPersonalExpense + $dayDebtRepayment;
+        $overallNetCashflow = $overallTotalIncome - $overallTotalOutcome;
+
+        $dailySummaryData = [
+            'mode_driver' => [
+                'income' => $driverTotalIncome,
+                'outcome' => $driverTotalOutcome,
+                'net' => $driverNetProfit,
+                'breakdown_income' => [
+                    'delivery_fee' => $driverDeliveryFee,
+                    'hub_income' => $driverHubIncome,
+                    'hub_bonus' => $driverHubBonus,
+                    'shopee_total' => $driverShopeeNetIncome,
+                    'total_tips' => $totalDriverTip,
+                ],
+                'breakdown_outcome' => [
+                    'fuel' => $dayFuelExpense,
+                    'parking' => $dayParkingExpense,
+                ],
+                'tip_details' => [
+                    'shopee_app_tip' => $shopeeAppTip,
+                    'cod_qris_tip' => $dayCodQrisTip,
+                    'cod_cash_tip' => $dayCodCashTip,
+                    'direct_cash_tip' => $dayDirectCashTip,
+                    'direct_digital_tip' => $dayDirectDigitalTip,
+                    'recon_surplus_tip' => $dayReconSurplusTip,
+                    'total' => $totalDriverTip,
+                ],
+                'parking_eval' => [
+                    'expense' => $dayParkingExpense,
+                    'total_tips' => $totalDriverTip,
+                    'net' => $parkingNet,
+                    'is_covered' => $isParkingCovered,
+                ],
+            ],
+            'mode_overall' => [
+                'income' => $overallTotalIncome,
+                'outcome' => $overallTotalOutcome,
+                'net' => $overallNetCashflow,
+                'breakdown_income' => [
+                    'driver_income' => $driverTotalIncome,
+                    'personal_income' => $dayPersonalIncome,
+                ],
+                'breakdown_outcome' => [
+                    'driver_operational' => $driverTotalOutcome,
+                    'personal_expense' => $dayPersonalExpense,
+                    'debt_repayment' => $dayDebtRepayment,
+                ],
+            ],
+        ];
+
+        // Akun-akun penerima uang tip langsung di lapangan
+        $tipAccounts = Account::whereIn('name', ['Cash', 'GoPay Merchant', 'ShopeePay', 'GoPay', 'BCA', 'SeaBank'])
+            ->where('is_active', true)
+            ->orderByRaw("CASE 
+                WHEN name = 'Cash' THEN 1 
+                WHEN name = 'GoPay Merchant' THEN 2 
+                WHEN name = 'ShopeePay' THEN 3 
+                WHEN name = 'GoPay' THEN 4 
+                WHEN name = 'BCA' THEN 5 
+                ELSE 6 END")
+            ->get();
+
         return view('dashboard.index', compact(
             'accounts',
             'paylaterProviders',
@@ -334,7 +446,9 @@ class DashboardController extends Controller
             'driverSnapshots',
             'latestSnapshot',
             'todayCodQrisBillTotal',
-            'driverCashAcc'
+            'driverCashAcc',
+            'dailySummaryData',
+            'tipAccounts'
         ));
     }
 }

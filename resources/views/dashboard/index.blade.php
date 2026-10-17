@@ -279,6 +279,240 @@
                     </div>
                 </div>
 
+                {{-- WIDGET REKAP FINANSIAL HARI INI: INCOME VS OUTCOME (MODE DRIVER & MODE OVERALL) --}}
+                <div id="card-daily-financial-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-purple-500/40 rounded-2xl p-6 shadow-2xl space-y-5">
+                    {{-- Header & Mode Selector Pill Toggle --}}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl">
+                                ⚖️
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Arus Kas & Rekap Hari Ini (Income vs Outcome)</h3>
+                                <p class="text-xs text-slate-300 mt-0.5">
+                                    Pilih mode tinjauan: fokus operasional narik driver vs arus kas finansial menyeluruh.
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Mode Selector Toggle --}}
+                        <div class="flex items-center p-1 bg-slate-950/80 border border-slate-700 rounded-xl space-x-1 shrink-0">
+                            <button 
+                                type="button" 
+                                id="btn-mode-driver" 
+                                onclick="switchDailyFinancialMode('driver')" 
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-black transition flex items-center space-x-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 shadow"
+                            >
+                                <span>🛵</span>
+                                <span>Mode Driver (Narik)</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                id="btn-mode-overall" 
+                                onclick="switchDailyFinancialMode('overall')" 
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5"
+                            >
+                                <span>🌐</span>
+                                <span>Mode Overall (Semua)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- KONTEN MODE DRIVER --}}
+                    <div id="content-mode-driver" class="space-y-4">
+                        {{-- Banner Penjelasan Mode Driver --}}
+                        <div class="bg-orange-950/30 border border-orange-500/30 rounded-xl px-3.5 py-2 text-xs text-orange-200 flex items-center justify-between">
+                            <span>🛵 <strong>Fokus Operasional Narik:</strong> Outcome hanya menghitung <strong>Bensin & Parkir</strong>. Kebutuhan makan/jajan dialokasikan di mode overall.</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 font-bold border border-orange-500/30">Narik Bersih</span>
+                        </div>
+
+                        {{-- 3 Kartu KPI Mode Driver --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                            {{-- Income Driver --}}
+                            <div class="bg-slate-950/80 border border-emerald-500/40 rounded-xl p-4 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Income Narik (Hari Ini)</span>
+                                    <span class="text-2xl font-black text-emerald-400 block mt-1">
+                                        Rp {{ number_format($dailySummaryData['mode_driver']['income'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-300 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span>ShopeeFood (Tarif/Hub/Bonus):</span>
+                                        <strong class="text-white">Rp {{ number_format($dailySummaryData['mode_driver']['breakdown_income']['shopee_total'], 0, ',', '.') }}</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Total Tip Pelanggan:</span>
+                                        <strong class="text-emerald-300">+Rp {{ number_format($dailySummaryData['mode_driver']['breakdown_income']['total_tips'], 0, ',', '.') }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Outcome Driver --}}
+                            <div class="bg-slate-950/80 border border-rose-500/40 rounded-xl p-4 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Outcome Narik (Operasional)</span>
+                                    <span class="text-2xl font-black text-rose-400 block mt-1">
+                                        Rp {{ number_format($dailySummaryData['mode_driver']['outcome'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-300 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span>⛽ Bensin Motor:</span>
+                                        <strong class="text-white">Rp {{ number_format($dailySummaryData['mode_driver']['breakdown_outcome']['fuel'], 0, ',', '.') }}</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>🅿️ Biaya Parkir Motor:</span>
+                                        <strong class="text-white">Rp {{ number_format($dailySummaryData['mode_driver']['breakdown_outcome']['parking'], 0, ',', '.') }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Net Profit Driver --}}
+                            <div class="bg-slate-950/80 border border-purple-500/40 rounded-xl p-4 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Sisa Bersih Hasil Narik (Net)</span>
+                                    <span class="text-2xl font-black {{ $dailySummaryData['mode_driver']['net'] >= 0 ? 'text-purple-300' : 'text-rose-400' }} block mt-1">
+                                        Rp {{ number_format($dailySummaryData['mode_driver']['net'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-300">
+                                    <span class="block text-[10px] text-slate-400">Formula:</span>
+                                    <span>Income Narik &minus; (Bensin + Parkir)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- SUB-CARD: RINCIAN TOTAL TIP & EVALUASI PARKIR NOMBOK --}}
+                        <div class="bg-slate-950/90 border border-amber-500/40 rounded-xl p-4 space-y-3">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-lg">🎁</span>
+                                    <h4 class="text-xs font-black uppercase tracking-wider text-amber-300">Rincian Elemen Tip & Evaluasi Parkir Nombok</h4>
+                                </div>
+                                <button type="button" onclick="openModal('modal-quick-tip')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-black transition flex items-center space-x-1">
+                                    <span>+</span>
+                                    <span>Catat Tip Pelanggan</span>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-[10px] text-slate-400 block">Tip ShopeeFood App:</span>
+                                    <strong class="text-white font-black text-xs">Rp {{ number_format($dailySummaryData['mode_driver']['tip_details']['shopee_app_tip'], 0, ',', '.') }}</strong>
+                                    <span class="text-[9px] text-slate-500 block">Layar apk (masuk SPay)</span>
+                                </div>
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-[10px] text-slate-400 block">Tip COD via QRIS:</span>
+                                    <strong class="text-emerald-400 font-black text-xs">+Rp {{ number_format($dailySummaryData['mode_driver']['tip_details']['cod_qris_tip'], 0, ',', '.') }}</strong>
+                                    <span class="text-[9px] text-slate-500 block">Kelebihan pokok COD</span>
+                                </div>
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-[10px] text-slate-400 block">Tip COD via Cash:</span>
+                                    <strong class="text-amber-400 font-black text-xs">+Rp {{ number_format($dailySummaryData['mode_driver']['tip_details']['cod_cash_tip'], 0, ',', '.') }}</strong>
+                                    <span class="text-[9px] text-slate-500 block">Kembalian tidak diambil</span>
+                                </div>
+                                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-[10px] text-slate-400 block">Tip Langsung Spontan:</span>
+                                    <strong class="text-purple-300 font-black text-xs">+Rp {{ number_format($dailySummaryData['mode_driver']['tip_details']['direct_cash_tip'] + $dailySummaryData['mode_driver']['tip_details']['direct_digital_tip'], 0, ',', '.') }}</strong>
+                                    <span class="text-[9px] text-slate-500 block">Cash / QRIS / Transfer</span>
+                                </div>
+                            </div>
+
+                            {{-- Banner Status Parkir Nombok vs Tidak --}}
+                            <div class="p-3 rounded-xl text-xs leading-relaxed {{ $dailySummaryData['mode_driver']['parking_eval']['is_covered'] ? 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-200' : 'bg-rose-950/40 border border-rose-500/40 text-rose-200' }}">
+                                <div>
+                                    @if($dailySummaryData['mode_driver']['parking_eval']['is_covered'])
+                                        <strong>🎉 BEBAN PARKIR AMAN (TIDAK NOMBOK): Surplus +Rp {{ number_format($dailySummaryData['mode_driver']['parking_eval']['net'], 0, ',', '.') }}</strong>
+                                        <p class="text-[11px] text-emerald-300/90 mt-0.5">
+                                            Total tip yang terkumpul (Rp {{ number_format($dailySummaryData['mode_driver']['parking_eval']['total_tips'], 0, ',', '.') }}) berhasil <strong>menutup 100%</strong> beban parkir hari ini (Rp {{ number_format($dailySummaryData['mode_driver']['parking_eval']['expense'], 0, ',', '.') }}). Sisa tip jadi keuntungan murni Anda!
+                                        </p>
+                                    @else
+                                        <strong>⚠️ PARKIR NOMBOK: -Rp {{ number_format(abs($dailySummaryData['mode_driver']['parking_eval']['net']), 0, ',', '.') }}</strong>
+                                        <p class="text-[11px] text-rose-300/90 mt-0.5">
+                                            Beban parkir hari ini (Rp {{ number_format($dailySummaryData['mode_driver']['parking_eval']['expense'], 0, ',', '.') }}) <strong>lebih besar</strong> dibanding total uang tip yang terkumpul (Rp {{ number_format($dailySummaryData['mode_driver']['parking_eval']['total_tips'], 0, ',', '.') }}). Anda nombok parkir sebesar Rp {{ number_format(abs($dailySummaryData['mode_driver']['parking_eval']['net']), 0, ',', '.') }}.
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- KONTEN MODE OVERALL --}}
+                    <div id="content-mode-overall" class="space-y-4 hidden">
+                        {{-- Banner Penjelasan Mode Overall --}}
+                        <div class="bg-indigo-950/30 border border-indigo-500/30 rounded-xl px-3.5 py-2 text-xs text-indigo-200 flex items-center justify-between">
+                            <span>🌐 <strong>Fokus Finansial Keseluruhan:</strong> Menghitung total income (narik + luar) vs total outcome (narik + makan/rokok/belanja + bayar hutang).</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">Arus Kas Lengkap</span>
+                        </div>
+
+                        {{-- 3 Kartu KPI Mode Overall --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                            {{-- Income Overall --}}
+                            <div class="bg-slate-950/80 border border-emerald-500/40 rounded-xl p-4 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Income Keseluruhan</span>
+                                    <span class="text-2xl font-black text-emerald-400 block mt-1">
+                                        Rp {{ number_format($dailySummaryData['mode_overall']['income'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-300 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span>🛵 Dari Narik ShopeeFood:</span>
+                                        <strong class="text-white">Rp {{ number_format($dailySummaryData['mode_overall']['breakdown_income']['driver_income'], 0, ',', '.') }}</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>💵 Pemasukan Lain/Pribadi:</span>
+                                        <strong class="text-emerald-300">+Rp {{ number_format($dailySummaryData['mode_overall']['breakdown_income']['personal_income'], 0, ',', '.') }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Outcome Overall --}}
+                            <div class="bg-slate-950/80 border border-rose-500/40 rounded-xl p-4 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Outcome Keseluruhan</span>
+                                    <span class="text-2xl font-black text-rose-400 block mt-1">
+                                        Rp {{ number_format($dailySummaryData['mode_overall']['outcome'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-300 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span>🛵 Bensin & Parkir:</span>
+                                        <strong class="text-white">Rp {{ number_format($dailySummaryData['mode_overall']['breakdown_outcome']['driver_operational'], 0, ',', '.') }}</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>🛒 Kebutuhan Makan/Pribadi:</span>
+                                        <strong class="text-white">Rp {{ number_format($dailySummaryData['mode_overall']['breakdown_outcome']['personal_expense'], 0, ',', '.') }}</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>💳 Bayar Cicilan/Hutang:</span>
+                                        <strong class="text-white">Rp {{ number_format($dailySummaryData['mode_overall']['breakdown_outcome']['debt_repayment'], 0, ',', '.') }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Net Cashflow Overall --}}
+                            <div class="bg-slate-950/80 border border-indigo-500/40 rounded-xl p-4 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Sisa Uang / Arus Kas Hari Ini</span>
+                                    <span class="text-2xl font-black {{ $dailySummaryData['mode_overall']['net'] >= 0 ? 'text-indigo-300' : 'text-rose-400' }} block mt-1">
+                                        Rp {{ number_format($dailySummaryData['mode_overall']['net'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-300">
+                                    <span class="block text-[10px] text-slate-400">Status Keuangan:</span>
+                                    @if($dailySummaryData['mode_overall']['net'] >= 0)
+                                        <span class="text-emerald-300 font-bold">🎉 Surplus Kas Hari Ini (+Rp {{ number_format($dailySummaryData['mode_overall']['net'], 0, ',', '.') }})</span>
+                                    @else
+                                        <span class="text-rose-400 font-bold">⚠️ Defisit Kas Hari Ini (-Rp {{ number_format(abs($dailySummaryData['mode_overall']['net']), 0, ',', '.') }})</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- WIDGET 1: 4 ELEMEN SALDO UANG NARIK DRIVER (LIKUID RIIL) --}}
                 <div id="tour-driver-wallet" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-amber-500/40 rounded-2xl p-6 shadow-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
@@ -658,7 +892,7 @@
                         <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Aksi Operasional Narik</h4>
                         <span class="text-[11px] text-slate-300 font-medium">Aksi cepat saat sedang di jalan</span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3.5">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-9 gap-3.5">
                         <button type="button" onclick="openModal('modal-open-day')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
                             <span class="text-2xl block mb-1">🌅</span>
                             <div>
@@ -688,6 +922,14 @@
                             <div>
                                 <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Kendaraan</span>
                                 <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Motor / Mobil</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-quick-tip')" class="p-3.5 bg-gradient-to-br from-amber-950/50 to-slate-900 hover:from-amber-900/70 hover:to-slate-800 border border-amber-500/60 hover:border-amber-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🎁</span>
+                            <div>
+                                <span class="text-xs font-bold text-amber-300 block group-hover:text-amber-200">Tip Pelanggan</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Cash / QRIS / SPay</span>
                             </div>
                         </button>
 
@@ -1726,6 +1968,121 @@
                     <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow flex items-center space-x-1.5">
                         <span>🅿️</span>
                         <span>Simpan Parkir</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- 3B. MODAL TERIMA TIP LANGSUNG DARI PELANGGAN --}}
+    <div id="modal-quick-tip" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-900 border border-amber-500/40 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-xl">
+                        🎁
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Terima Tip Langsung dari Pelanggan</h3>
+                        <p class="text-xs text-slate-400">Customer memberikan tip tunai, transfer e-wallet, atau scan QRIS Anda.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-quick-tip')" class="text-slate-400 hover:text-white font-bold text-xl leading-none">&times;</button>
+            </div>
+
+            <form method="POST" action="/operational/quick-tip" class="space-y-4">
+                @csrf
+                @if($currentWorkDay)
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                @endif
+
+                {{-- Nominal Tip --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Tip (Rp)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-sm text-slate-400 font-bold">Rp</span>
+                        <input 
+                            type="number" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*" 
+                            name="amount" 
+                            id="quick-tip-amount" 
+                            required 
+                            min="1000" 
+                            step="1000" 
+                            placeholder="Contoh: 5.000" 
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-3 py-2.5 text-white text-base font-black focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        >
+                    </div>
+                    {{-- Quick Buttons --}}
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 2000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+2.000</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 5000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+5.000</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 10000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+10.000</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 20000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+20.000</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+50.000</button>
+                    </div>
+                </div>
+
+                {{-- Pilihan Wadah Uang Masuk --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Masuk ke Wadah / Rekening Mana?</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        @foreach($tipAccounts as $tAcc)
+                            <label class="p-2.5 bg-slate-950/80 border border-slate-700 hover:border-amber-500/50 rounded-xl flex items-center justify-between cursor-pointer transition select-none group">
+                                <div class="flex items-center space-x-2">
+                                    <input 
+                                        type="radio" 
+                                        name="account_id" 
+                                        value="{{ $tAcc->id }}" 
+                                        {{ $tAcc->name === 'Cash' ? 'checked' : '' }} 
+                                        class="text-amber-500 focus:ring-amber-500 bg-slate-900 border-slate-700"
+                                    >
+                                    <span class="text-xs font-bold text-white group-hover:text-amber-300 flex items-center space-x-1">
+                                        <span>
+                                            @if($tAcc->name === 'Cash') 💵
+                                            @elseif($tAcc->name === 'GoPay Merchant') 🏪
+                                            @elseif($tAcc->name === 'ShopeePay') 🟠
+                                            @elseif($tAcc->name === 'GoPay') 🟢
+                                            @else 🏦
+                                            @endif
+                                        </span>
+                                        <span>{{ $tAcc->name }}</span>
+                                    </span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">Rp {{ number_format($tAcc->current_balance, 0, ',', '.') }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Banner Khusus GoPay Merchant / QRIS --}}
+                <div class="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl text-xs text-amber-200 leading-relaxed space-y-1">
+                    <div class="flex items-center space-x-1.5 font-bold">
+                        <span>💡</span>
+                        <span>Aturan Otomatis Pencairan QRIS (GoPay Merchant):</span>
+                    </div>
+                    <p class="text-[11px] text-amber-300/90">
+                        Jika customer scan QRIS GoPay Merchant, dana akan tertampung di <strong>GoPay Merchant</strong>. Sistem GoPay otomatis mentransfer (settle) saldo GoPay Merchant ke rekening <strong>GoPay reguler Anda setiap 1 jam sekali</strong> ketika saldo mencapai minimal <strong>Rp 10.000</strong>.
+                    </p>
+                </div>
+
+                {{-- Catatan Opsional --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Catatan / Detail Pesanan (Opsional)</label>
+                    <input 
+                        type="text" 
+                        name="notes" 
+                        placeholder="Misal: Tip ramah antar geprek di Suhat, dll" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    >
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-quick-tip')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs rounded-xl shadow flex items-center space-x-1.5">
+                        <span>💾</span>
+                        <span>Simpan Tip Pelanggan</span>
                     </button>
                 </div>
             </form>
@@ -3832,6 +4189,45 @@
 
     {{-- Script Modal Handling, Tabs, & Interactive Tour --}}
     <script>
+        function switchDailyFinancialMode(mode) {
+            const driverContent = document.getElementById('content-mode-driver');
+            const overallContent = document.getElementById('content-mode-overall');
+            const btnDriver = document.getElementById('btn-mode-driver');
+            const btnOverall = document.getElementById('btn-mode-overall');
+
+            if (mode === 'driver') {
+                if (driverContent) driverContent.classList.remove('hidden');
+                if (overallContent) overallContent.classList.add('hidden');
+                if (btnDriver) {
+                    btnDriver.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition flex items-center space-x-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 shadow';
+                }
+                if (btnOverall) {
+                    btnOverall.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5';
+                }
+            } else {
+                if (driverContent) driverContent.classList.add('hidden');
+                if (overallContent) overallContent.classList.remove('hidden');
+                if (btnOverall) {
+                    btnOverall.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition flex items-center space-x-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow';
+                }
+                if (btnDriver) {
+                    btnDriver.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5';
+                }
+            }
+            try {
+                localStorage.setItem('dashboard_daily_financial_mode', mode);
+            } catch (e) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const savedMode = localStorage.getItem('dashboard_daily_financial_mode');
+                if (savedMode === 'overall') {
+                    switchDailyFinancialMode('overall');
+                }
+            } catch (e) {}
+        });
+
         let reconClockInterval = null;
 
         function updateReconLiveClock() {
