@@ -29,6 +29,14 @@
         .live-error-msg {
             animation: fadeIn 0.2s ease-out;
         }
+        .no-spin::-webkit-inner-spin-button,
+        .no-spin::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .no-spin {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
