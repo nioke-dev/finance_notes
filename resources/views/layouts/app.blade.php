@@ -210,7 +210,7 @@
     @endif
 
     {{-- Floating Back to Top Button --}}
-    <button id="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hidden fixed bottom-16 right-3 md:bottom-8 md:right-8 z-30 p-2.5 rounded-full bg-slate-800/90 text-emerald-400 border border-slate-700 shadow-xl backdrop-blur transition hover:bg-slate-700 active:scale-90" title="Kembali ke Atas">
+    <button id="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hidden fixed bottom-20 right-4 md:bottom-8 md:right-8 z-30 p-2.5 rounded-full bg-slate-800/95 text-emerald-400 border border-slate-700/80 shadow-2xl backdrop-blur transition hover:bg-slate-700 active:scale-90" title="Kembali ke Atas">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
         </svg>

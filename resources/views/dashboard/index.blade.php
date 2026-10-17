@@ -240,11 +240,11 @@
                 {{-- Shift Bar & Status Narik --}}
                 <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
                     <div class="flex items-center space-x-3.5">
-                        <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl shrink-0 aspect-square">
                             🛵
                         </div>
                         <div>
-                            <div class="flex items-center space-x-2.5">
+                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
                                 <span class="text-xs font-bold uppercase tracking-wider text-slate-200">Status Shift Hari Ini</span>
                                 @if($currentWorkDay)
                                     <x-status-badge :status="$currentWorkDay->status" />
@@ -361,11 +361,11 @@
                 @endif
 
                 {{-- WIDGET REKAP FINANSIAL HARI INI: INCOME VS OUTCOME (MODE DRIVER & MODE OVERALL) --}}
-                <div id="card-daily-financial-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-purple-500/40 rounded-2xl p-6 shadow-2xl space-y-5">
+                <div id="card-daily-financial-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-purple-500/40 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
                     {{-- Header & Mode Selector Pill Toggle --}}
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl">
+                        <div class="flex items-start sm:items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                                 ⚖️
                             </div>
                             <div>
@@ -595,16 +595,16 @@
                 </div>
 
                 {{-- WIDGET 1: 4 ELEMEN SALDO UANG NARIK DRIVER (LIKUID RIIL) --}}
-                <div id="tour-driver-wallet" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-amber-500/40 rounded-2xl p-6 shadow-2xl space-y-4">
+                <div id="tour-driver-wallet" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-amber-500/40 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl">
+                        <div class="flex items-start sm:items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                                 💳
                             </div>
                             <div>
-                                <div class="flex items-center space-x-2">
+                                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                                     <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">4 Elemen Saldo Uang Narik Driver</h3>
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
                                         Saldo Likuid Riil
                                     </span>
                                 </div>
@@ -660,16 +660,16 @@
                 </div>
 
                 {{-- WIDGET 2: REKAPITULASI RIWAYAT SHOPEEFOOD DRIVER HARI INI (BUKAN DOMPET UANG) --}}
-                <div class="bg-gradient-to-br from-slate-900 via-orange-950/20 to-slate-900 border border-orange-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="bg-gradient-to-br from-slate-900 via-orange-950/20 to-slate-900 border border-orange-500/40 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-xl">
+                        <div class="flex items-start sm:items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                                 🛵
                             </div>
                             <div>
-                                <div class="flex items-center space-x-2">
+                                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                                     <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat ShopeeFood Driver Hari Ini</h3>
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30 shrink-0">
                                         Data Riwayat Performa (Bukan Dompet)
                                     </span>
                                 </div>
@@ -722,33 +722,33 @@
 
                 {{-- WIDGET CHECKPOINT JAM NARIK & KOMPARASI SALDO HARI INI --}}
                 @if(isset($driverSnapshots) && $driverSnapshots->isNotEmpty())
-                    <div class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+                    <div class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/40 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl">
+                            <div class="flex items-start sm:items-center space-x-3 w-full sm:w-auto">
+                                <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                                     ⏱️
                                 </div>
-                                <div>
-                                    <div class="flex items-center space-x-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                                         <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat Checkpoint Jam Narik & Komparasi Saldo</h3>
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">
                                             {{ $driverSnapshots->count() }} Checkpoint Tercatat
                                         </span>
                                     </div>
-                                    <p class="text-xs text-slate-300 mt-0.5">
+                                    <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
                                         Rekam jejak komparasi pendapatan ShopeeFood Driver vs isi kantong & wadah di jalan.
                                     </p>
                                 </div>
                             </div>
 
-                            <div class="flex items-center space-x-2">
-                                <button type="button" onclick="openModal('modal-update-hub-bonus')" class="px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0" title="Hitung Bonus Hub pesanan jam 10-20 & cek online >= 9 jam">
+                            <div class="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center shrink-0">
+                                <button type="button" onclick="openModal('modal-update-hub-bonus')" class="w-full sm:w-auto px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center justify-center space-x-1.5" title="Hitung Bonus Hub pesanan jam 10-20 & cek online >= 9 jam">
                                     <span>⭐</span>
-                                    <span>Bonus Hub (20:00+)</span>
+                                    <span class="truncate">Bonus Hub (20:00+)</span>
                                 </button>
-                                <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0">
+                                <button type="button" onclick="openModal('modal-reconcile-digital')" class="w-full sm:w-auto px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl transition shadow flex items-center justify-center space-x-1.5">
                                     <span>⚡</span>
-                                    <span>Update Jam Sekarang</span>
+                                    <span class="truncate">Update Jam Sekarang</span>
                                 </button>
                             </div>
                         </div>
@@ -828,13 +828,13 @@
                                 };
                             @endphp
                             <div class="p-4 rounded-2xl border text-xs flex items-start space-x-3 shadow-lg {{ $cardClass }}">
-                                <span class="text-2xl mt-0.5">{{ $icon }}</span>
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-2 mb-0.5">
+                                <span class="text-2xl mt-0.5 shrink-0">{{ $icon }}</span>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-1.5 mb-0.5">
                                         <span class="font-extrabold uppercase tracking-wider text-[11px]">
                                             {{ $title }}
                                         </span>
-                                        <span class="px-2 py-0.2 rounded-full text-[10px] font-bold bg-slate-900/60 border border-slate-700 text-slate-300">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900/60 border border-slate-700 text-slate-300 shrink-0">
                                             {{ $rec['count'] }} pcs
                                         </span>
                                     </div>
@@ -1280,21 +1280,21 @@
         </div>
 
         {{-- TARGET BELANJA SURVIVAL & WISHLIST PRIORITAS (NEEDS VS WANTS) --}}
-        <div id="tour-financial-goals" class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-5">
+        <div id="tour-financial-goals" class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-4">
-                <div class="flex items-center space-x-3">
-                    <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl">
+                <div class="flex items-start sm:items-center space-x-3 w-full sm:w-auto">
+                    <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                         🎯
                     </div>
-                    <div>
-                        <div class="flex items-center space-x-2">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                             <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Target Belanja Survival & Wishlist Prioritas</h3>
-                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full">5 Level Skala Prioritas</span>
+                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full shrink-0">5 Level Skala Prioritas</span>
                         </div>
-                        <p class="text-xs text-slate-300 mt-0.5">Pisahkan kebutuhan primer hidup (Pangan, Mandi, Ganti Oli, Holder HP) dari keinginan santai.</p>
+                        <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">Pisahkan kebutuhan primer hidup (Pangan, Mandi, Ganti Oli, Holder HP) dari keinginan santai.</p>
                     </div>
                 </div>
-                <button type="button" onclick="openModal('modal-add-goal')" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center space-x-2 shrink-0">
+                <button type="button" onclick="openModal('modal-add-goal')" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center justify-center space-x-2 shrink-0">
                     <span class="w-5 h-5 rounded-full bg-white shadow-md flex items-center justify-center text-xs text-slate-950 font-black shrink-0 border border-white">➕</span>
                     <span>Tambah Target Belanja</span>
                 </button>
@@ -1426,16 +1426,16 @@
         </div>
 
         {{-- ================= MISI BEBAS HUTANG 31 OKTOBER (CLOSING BULAN INI LUNAS!) ================= --}}
-        <div id="tour-debt-freedom" class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/50 rounded-2xl p-6 shadow-2xl space-y-5">
+        <div id="tour-debt-freedom" class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/50 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/80 pb-4">
-                <div class="flex items-center space-x-3.5">
-                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-2xl">
+                <div class="flex items-start sm:items-center space-x-3.5">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                         🎯
                     </div>
                     <div>
-                        <div class="flex items-center space-x-2.5">
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
                             <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Misi Bebas Hutang 31 Oktober</h3>
-                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full shrink-0">
                                 Target Lunas: {{ $debtFreedomData['target_label'] }} (Sisa {{ $debtFreedomData['days_remaining'] }} Hari)
                             </span>
                         </div>
@@ -1526,16 +1526,16 @@
         </div>
 
         {{-- ================= TAGIHAN RUTIN & LANGGANAN BULANAN (SUBSCRIPTIONS) ================= --}}
-        <div id="tour-subscriptions" class="bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-900 border border-indigo-500/50 rounded-2xl p-6 shadow-2xl space-y-5">
+        <div id="tour-subscriptions" class="bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-900 border border-indigo-500/50 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/80 pb-4">
-                <div class="flex items-center space-x-3.5">
-                    <div class="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-2xl">
+                <div class="flex items-start sm:items-center space-x-3.5">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
                         📅
                     </div>
                     <div>
-                        <div class="flex items-center space-x-2.5">
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
                             <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Tagihan Rutin & Langganan Bulanan</h3>
-                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
+                            <span class="px-2.5 py-0.5 text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full shrink-0">
                                 Fixed Recurring Expenses
                             </span>
                         </div>
@@ -4742,8 +4742,8 @@
         </div>
     </div>
 
-    {{-- FLOATING ACTION BUTTON VOICE RECORDER (DESKTOP & MOBILE HIGH VISIBILITY) --}}
-    <div class="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-40">
+    {{-- FLOATING ACTION BUTTON VOICE RECORDER (DESKTOP ONLY - MOBILE USES CENTER BOTTOM NAV) --}}
+    <div class="hidden md:flex fixed bottom-8 right-8 z-40">
         <button 
             type="button" 
             onclick="openVoiceRecorderModal()" 
@@ -4755,7 +4755,7 @@
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
             </svg>
-            <span class="text-xs tracking-wider uppercase font-black hidden sm:inline">Intercom Helm</span>
+            <span class="text-xs tracking-wider uppercase font-black">Intercom Helm</span>
         </button>
     </div>
 
