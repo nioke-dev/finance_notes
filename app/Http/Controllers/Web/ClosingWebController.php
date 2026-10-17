@@ -35,13 +35,89 @@ class ClosingWebController extends Controller
             ->orderBy('transaction_time', 'desc')
             ->get();
 
+        // 1. Data Pengeluaran Parkir Shift Ini
+        $parkingTransactions = \App\Models\Transaction::where('work_day_id', $workDay->id)
+            ->where('metadata->type', 'quick_parking')
+            ->get();
+
+        $dayParkingExpense = 0;
+        $dayRestoPaidParkingCount = 0;
+        $dayPaidParkingCount = 0;
+
+        foreach ($parkingTransactions as $pTx) {
+            $pMeta = $pTx->metadata ?? [];
+            if (!empty($pMeta['is_covered_by_resto'])) {
+                $dayRestoPaidParkingCount++;
+            } else {
+                $dayParkingExpense += $pTx->amount;
+                $dayPaidParkingCount++;
+            }
+        }
+
+        // 2. Snapshot Checkpoint ShopeeFood Driver Terakhir
+        $latestSnapshot = \App\Models\DriverSnapshot::where('work_day_id', $workDay->id)
+            ->latest('recorded_at')
+            ->first();
+
+        // 3. Akumulasi Tip, QRIS Inflow, & Surplus Shift Ini
+        $dayTransactions = \App\Models\Transaction::where('work_day_id', $workDay->id)->get();
+        $gopaySurplus = 0;
+        $gopayMerchantSurplus = 0;
+        $cashSurplus = 0;
+
+        foreach ($dayTransactions as $tx) {
+            $type = $tx->metadata['type'] ?? $tx->type;
+            $meta = $tx->metadata ?? [];
+            if ($type === 'digital_reconciliation_surplus') {
+                $accId = (int) ($meta['account_id'] ?? 0);
+                $acc = $accounts->firstWhere('id', $accId);
+                $diffAmount = (int) ($meta['diff'] ?? $tx->amount);
+                if ($acc) {
+                    if ($acc->name === 'GoPay') {
+                        $gopaySurplus += $diffAmount;
+                    } elseif ($acc->name === 'GoPay Merchant') {
+                        $gopayMerchantSurplus += $diffAmount;
+                    } elseif ($acc->name === 'Cash' || $acc->type === \App\Enums\AccountType::CASH) {
+                        $cashSurplus += $diffAmount;
+                    }
+                }
+            }
+        }
+
+        $shopeeFoodTip = (int) ($latestSnapshot?->customer_tips ?? 0);
+        $totalTipsAndQris = $shopeeFoodTip + $gopaySurplus + $gopayMerchantSurplus + $cashSurplus;
+        $parkingNetResult = $totalTipsAndQris - $dayParkingExpense;
+
+        // 4. Daftar Akun Wadah untuk Sinkronisasi di Closing
+        $digitalReconAccounts = Account::whereIn('type', [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])
+            ->active()
+            ->orderByRaw("CASE 
+                WHEN name = 'ShopeePay' THEN 1 
+                WHEN name = 'Cash' THEN 2 
+                WHEN name = 'GoPay' THEN 3 
+                WHEN name = 'GoPay Merchant' THEN 4 
+                ELSE 5 END")
+            ->get();
+
         return view('closing.show', compact(
             'workDay',
             'accounts',
             'cashAccount',
             'denominations',
             'reconciliationReport',
-            'cashTransactions'
+            'cashTransactions',
+            'parkingTransactions',
+            'dayParkingExpense',
+            'dayRestoPaidParkingCount',
+            'dayPaidParkingCount',
+            'latestSnapshot',
+            'shopeeFoodTip',
+            'gopaySurplus',
+            'gopayMerchantSurplus',
+            'cashSurplus',
+            'totalTipsAndQris',
+            'parkingNetResult',
+            'digitalReconAccounts'
         ));
     }
 
@@ -82,14 +158,21 @@ class ClosingWebController extends Controller
     public function finalize(
         Request $request,
         int $id,
-        ClosingDayService $closingService
+        ClosingDayService $closingService,
+        \App\Services\DigitalReconciliationService $digitalReconciliationService
     ): RedirectResponse {
         $workDay = WorkDay::findOrFail($id);
 
         $validated = $request->validate([
             'closing_notes' => 'nullable|string',
             'digital_balances' => 'nullable|array',
+            'digital_balances.*.account_id' => 'required_with:digital_balances|exists:accounts,id',
+            'digital_balances.*.actual_balance' => 'required_with:digital_balances|integer|min:0',
         ]);
+
+        if (!empty($validated['digital_balances'])) {
+            $digitalReconciliationService->reconcileDigitalAccounts($workDay, $validated['digital_balances']);
+        }
 
         try {
             $closingService->finalizeWorkDay(

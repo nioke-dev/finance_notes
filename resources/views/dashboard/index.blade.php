@@ -3230,6 +3230,41 @@
                     </div>
                 </div>
 
+                {{-- BAGIAN 3B: EVALUASI PARKIR VS TIP & PENDAPATAN QRIS --}}
+                <div id="recon-parking-eval-box" class="bg-gradient-to-br from-slate-950 to-indigo-950/40 border border-indigo-500/50 rounded-2xl p-4 space-y-3" data-parking-expense="{{ $dayParkingExpense ?? 0 }}" data-parking-paid-count="{{ $dayPaidParkingCount ?? 0 }}" data-parking-resto-count="{{ $dayRestoPaidParkingCount ?? 0 }}">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🅿️</span>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-indigo-300">Komparasi Parkir vs Tip & Pendapatan QRIS</h4>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                            {{ $dayPaidParkingCount ?? 0 }}x Parkir Bayar &bull; {{ $dayRestoPaidParkingCount ?? 0 }}x Gratis Resto
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Total Beban Parkir:</span>
+                            <strong id="parking-compare-expense-disp" class="text-rose-400 font-black text-xs">Rp {{ number_format($dayParkingExpense ?? 0, 0, ',', '.') }}</strong>
+                            <span class="text-[9px] text-slate-500 block">Biaya riil motor di spot</span>
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Total Tip & Inflow QRIS:</span>
+                            <strong id="parking-compare-tips-disp" class="text-emerald-400 font-black text-xs">Rp 0</strong>
+                            <span class="text-[9px] text-slate-500 block">Tip Shopee + Inflow GoPay/QRIS</span>
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Evaluasi Bersih Parkir:</span>
+                            <strong id="parking-compare-net-disp" class="text-slate-300 font-black text-xs">-</strong>
+                            <span class="text-[9px] text-slate-500 block">Tip - Parkir</span>
+                        </div>
+                    </div>
+
+                    <div id="parking-compare-status-banner" class="p-3 rounded-xl text-xs leading-relaxed font-medium">
+                        <!-- Live status updated via JS -->
+                    </div>
+                </div>
+
                 {{-- Catatan Checkpoint --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Catatan Checkpoint (Opsional)</label>
@@ -4517,6 +4552,79 @@
                     evalBanner.className = 'p-3 bg-slate-900 border border-purple-500/30 rounded-xl text-xs text-purple-200 leading-relaxed font-medium';
                     evalBanner.innerHTML = `<strong>✓ Posisi Wadah & Pembukuan Cocok Sempurna!</strong><br>` +
                         `ShopeeFood mencatat omzet <strong>Rp ${totalShopee.toLocaleString('id-ID')}</strong> (${completedOrders} trip). Total di wadah narik Anda <strong>Rp ${totalActualWallets.toLocaleString('id-ID')}</strong>. Tidak ada selisih uang unaccounted. Checkpoint ini akan disimpan ke histori snapshot perjalanan hari ini.`;
+                }
+            }
+
+            // 4. Komparasi Evaluasi Parkir vs Tip & Pendapatan QRIS
+            const parkingBox = document.getElementById('recon-parking-eval-box');
+            if (parkingBox) {
+                const parkingExpense = parseInt(parkingBox.getAttribute('data-parking-expense')) || 0;
+                const parkingPaidCount = parseInt(parkingBox.getAttribute('data-parking-paid-count')) || 0;
+                const parkingRestoCount = parseInt(parkingBox.getAttribute('data-parking-resto-count')) || 0;
+
+                // Ambil Tip ShopeeFood
+                const shopeeTip = parseInt(document.getElementById('recon-customer-tips')?.value) || 0;
+
+                // Ambil Inflow/Surplus pada Akun Digital (GoPay, GoPay Merchant, Cash)
+                let gopayInflow = 0;
+                let gopayMerchantInflow = 0;
+                let cashInflow = 0;
+
+                document.querySelectorAll('.recon-digital-input').forEach(input => {
+                    const accName = input.getAttribute('data-account-name') || '';
+                    const recorded = parseInt(input.getAttribute('data-recorded')) || 0;
+                    const actual = parseInt(input.value) || 0;
+                    const diff = actual - recorded;
+
+                    if (diff > 0) {
+                        if (accName === 'GoPay') {
+                            gopayInflow += diff;
+                        } else if (accName === 'GoPay Merchant') {
+                            gopayMerchantInflow += diff;
+                        } else if (accName === 'Cash') {
+                            cashInflow += diff;
+                        }
+                    }
+                });
+
+                const totalTipsAndInflow = shopeeTip + gopayInflow + gopayMerchantInflow + cashInflow;
+                const netParkingResult = totalTipsAndInflow - parkingExpense;
+
+                const expenseDisp = document.getElementById('parking-compare-expense-disp');
+                const tipsDisp = document.getElementById('parking-compare-tips-disp');
+                const netDisp = document.getElementById('parking-compare-net-disp');
+                const statusBanner = document.getElementById('parking-compare-status-banner');
+
+                if (expenseDisp) expenseDisp.innerText = 'Rp ' + parkingExpense.toLocaleString('id-ID');
+                if (tipsDisp) tipsDisp.innerText = 'Rp ' + totalTipsAndInflow.toLocaleString('id-ID');
+
+                if (netDisp) {
+                    if (netParkingResult > 0) {
+                        netDisp.innerText = '🎉 Surplus +Rp ' + netParkingResult.toLocaleString('id-ID');
+                        netDisp.className = 'text-emerald-400 font-black text-xs';
+                    } else if (netParkingResult < 0) {
+                        netDisp.innerText = '⚠️ Minus -Rp ' + Math.abs(netParkingResult).toLocaleString('id-ID');
+                        netDisp.className = 'text-rose-400 font-black text-xs';
+                    } else {
+                        netDisp.innerText = '✓ Impas (Rp 0)';
+                        netDisp.className = 'text-emerald-300 font-black text-xs';
+                    }
+                }
+
+                if (statusBanner) {
+                    if (netParkingResult > 0) {
+                        statusBanner.className = 'p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium';
+                        statusBanner.innerHTML = `<strong>🎉 SURPLUS PARKIR (UNTUNG): +Rp ${netParkingResult.toLocaleString('id-ID')}</strong><br>` +
+                            `Total tip & QRIS yang Anda peroleh (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) <strong>MENUTUP 100%</strong> biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')}) dengan sisa untung Rp ${netParkingResult.toLocaleString('id-ID')}. Narik hari ini tidak boncos di parkiran!`;
+                    } else if (netParkingResult < 0) {
+                        statusBanner.className = 'p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl text-xs text-rose-200 leading-relaxed font-medium';
+                        statusBanner.innerHTML = `<strong>⚠️ MINUS / BONCOS PARKIR: -Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}</strong><br>` +
+                            `Biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')} dari ${parkingPaidCount} spot bayar) <strong>LEBIH BESAR</strong> daripada total tip & QRIS yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}). Biaya parkir Anda minus Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}.`;
+                    } else {
+                        statusBanner.className = 'p-3 bg-indigo-950/40 border border-indigo-500/40 rounded-xl text-xs text-indigo-200 leading-relaxed font-medium';
+                        statusBanner.innerHTML = `<strong>✓ PARKIR IMPAS SEMPURNA (Rp 0)</strong><br>` +
+                            `Total tip & QRIS yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) pas persis menutup pengeluaran parkir (Rp ${parkingExpense.toLocaleString('id-ID')}). Beban parkir tertutup tanpa minus.`;
+                    }
                 }
             }
         }

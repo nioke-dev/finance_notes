@@ -29,6 +29,235 @@
             </div>
         </div>
 
+        {{-- SEKSI EVALUASI SHOPEEFOOD & KOMPARASI PARKIR VS TIP --}}
+        <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-purple-500/40 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-3">
+                    <span class="text-3xl">🛵</span>
+                    <div>
+                        <h3 class="text-base font-black text-white">Evaluasi ShopeeFood Driver & Komparasi Parkir vs Tip</h3>
+                        <p class="text-xs text-slate-300">Bandingkan beban parkir vs tip, serta selaraskan omzet ShopeeFood ke saldo rekening sebelum closing.</p>
+                    </div>
+                </div>
+                <span class="px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold">
+                    Audit Pra-Closing
+                </span>
+            </div>
+
+            <form method="POST" action="/operational/digital-reconciliation" class="space-y-5">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $workDay->id }}">
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    {{-- Kolom Kiri: Input Data Aplikasi ShopeeFood Driver --}}
+                    <div class="lg:col-span-6 bg-slate-950/80 border border-orange-500/40 rounded-xl p-4 space-y-3">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-base">📱</span>
+                                <h4 class="text-xs font-black uppercase tracking-wider text-orange-400">1. Data di Layar Aplikasi ShopeeFood Driver</h4>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 font-bold border border-orange-500/30">
+                                Layar Driver
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                    Pendapatan Bersih / Tarif (Rp) <span class="text-rose-400">*</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    inputmode="numeric" 
+                                    pattern="[0-9]*" 
+                                    name="hub_income" 
+                                    id="closing-hub-income" 
+                                    value="{{ old('hub_income', $latestSnapshot?->hub_income ?? 0) }}" 
+                                    min="0" 
+                                    step="1" 
+                                    oninput="calculateClosingReconDiff()" 
+                                    placeholder="Contoh: 76000" 
+                                    required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                >
+                                <span class="text-[10px] text-slate-400">Ongkir/tarif bersih yang masuk rekening</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                    Bonus / Insentif Poin (Rp)
+                                </label>
+                                <input 
+                                    type="number" 
+                                    inputmode="numeric" 
+                                    pattern="[0-9]*" 
+                                    name="hub_bonus" 
+                                    id="closing-hub-bonus" 
+                                    value="{{ old('hub_bonus', $latestSnapshot?->hub_bonus ?? 0) }}" 
+                                    min="0" 
+                                    step="1" 
+                                    oninput="calculateClosingReconDiff()" 
+                                    placeholder="0" 
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                >
+                                <span class="text-[10px] text-slate-400">Bonus misi harian target poin</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                    Tip Pelanggan di Aplikasi (Rp)
+                                </label>
+                                <input 
+                                    type="number" 
+                                    inputmode="numeric" 
+                                    pattern="[0-9]*" 
+                                    name="customer_tips" 
+                                    id="closing-customer-tips" 
+                                    value="{{ old('customer_tips', $latestSnapshot?->customer_tips ?? 0) }}" 
+                                    min="0" 
+                                    step="1" 
+                                    oninput="calculateClosingReconDiff()" 
+                                    placeholder="Contoh: 5000" 
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                >
+                                <span class="text-[10px] text-slate-400">Tip resmi pelanggan di aplikasi</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                    Pesanan Selesai (Trip)
+                                </label>
+                                <input 
+                                    type="number" 
+                                    inputmode="numeric" 
+                                    pattern="[0-9]*" 
+                                    name="completed_orders" 
+                                    id="closing-completed-orders" 
+                                    value="{{ old('completed_orders', $latestSnapshot?->completed_orders ?? 0) }}" 
+                                    min="0" 
+                                    step="1" 
+                                    placeholder="Contoh: 12" 
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                >
+                                <span class="text-[10px] text-slate-400">Jumlah trip yang terselesaikan</span>
+                            </div>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-900/90 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-bold">Total Tertera di ShopeeFood:</span>
+                            <strong id="closing-disp-shopee-total" class="text-orange-400 font-extrabold text-sm">Rp 0</strong>
+                        </div>
+                    </div>
+
+                    {{-- Kolom Kanan: Posisi Saldo Terkini di Wadah Digital & Kas --}}
+                    <div class="lg:col-span-6 bg-slate-950/80 border border-emerald-500/40 rounded-xl p-4 space-y-3">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-base">💼</span>
+                                <h4 class="text-xs font-black uppercase tracking-wider text-emerald-400">2. Posisi Saldo Terkini di Wadah Narik</h4>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                                Wadah Riil
+                            </span>
+                        </div>
+
+                        <div class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                            @foreach($digitalReconAccounts as $idx => $dAcc)
+                                <div class="bg-slate-900/90 border border-slate-700/70 rounded-xl p-2.5 space-y-1.5">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-extrabold text-white flex items-center space-x-1.5">
+                                            <span>
+                                                @if($dAcc->name === 'Cash' || $dAcc->type->value === 'cash') 💵
+                                                @elseif(str_contains(strtolower($dAcc->name), 'merchant')) 🏪
+                                                @elseif(str_contains(strtolower($dAcc->name), 'gopay')) 🟢
+                                                @elseif(str_contains(strtolower($dAcc->name), 'shopeepay')) 🟠
+                                                @else 🏦
+                                                @endif
+                                            </span>
+                                            <span>{{ $dAcc->name }}</span>
+                                        </span>
+                                        <span class="text-[11px] text-slate-300">
+                                            Buku: <strong class="text-white font-black">Rp {{ number_format($dAcc->current_balance, 0, ',', '.') }}</strong>
+                                        </span>
+                                    </div>
+
+                                    <input type="hidden" name="balances[{{ $idx }}][account_id]" value="{{ $dAcc->id }}">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-300 font-bold">Rp</span>
+                                        <input 
+                                            type="number" 
+                                            inputmode="numeric" 
+                                            pattern="[0-9]*" 
+                                            name="balances[{{ $idx }}][actual_balance]" 
+                                            id="closing-recon-input-{{ $dAcc->id }}"
+                                            value="{{ $dAcc->name === 'Cash' && ($denominations->total_physical_amount ?? 0) > 0 ? $denominations->total_physical_amount : $dAcc->current_balance }}"
+                                            data-recorded="{{ $dAcc->current_balance }}"
+                                            data-account-name="{{ $dAcc->name }}"
+                                            oninput="calculateClosingReconDiff()"
+                                            class="closing-recon-digital-input w-full bg-slate-950 border border-slate-600 rounded-xl pl-8 pr-3 py-1.5 text-white text-xs font-black focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                        >
+                                    </div>
+                                    <div id="closing-recon-diff-msg-{{ $dAcc->id }}" class="text-[10px] font-semibold text-slate-300">
+                                        Status: Cocok Sempurna (Rp 0)
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="p-2 bg-slate-900/90 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-bold">Total Uang Wadah:</span>
+                            <strong id="closing-disp-wallets-total" class="text-emerald-400 font-extrabold text-sm">Rp 0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- BOX KOMPARASI EVALUASI PARKIR VS TIP & QRIS INFLOW --}}
+                <div id="closing-parking-eval-box" class="bg-gradient-to-br from-slate-950 to-indigo-950/40 border border-indigo-500/50 rounded-2xl p-4 space-y-3" data-parking-expense="{{ $dayParkingExpense }}" data-parking-paid-count="{{ $dayPaidParkingCount }}" data-parking-resto-count="{{ $dayRestoPaidParkingCount }}">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🅿️</span>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-indigo-300">Komparasi Parkir vs Tip & Pendapatan QRIS</h4>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                            {{ $dayPaidParkingCount }}x Parkir Bayar &bull; {{ $dayRestoPaidParkingCount }}x Gratis Resto
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Total Beban Parkir:</span>
+                            <strong id="closing-parking-expense-disp" class="text-rose-400 font-black text-xs">Rp {{ number_format($dayParkingExpense, 0, ',', '.') }}</strong>
+                            <span class="text-[9px] text-slate-500 block">Biaya riil motor di spot</span>
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Total Tip & Inflow QRIS:</span>
+                            <strong id="closing-parking-tips-disp" class="text-emerald-400 font-black text-xs">Rp 0</strong>
+                            <span class="text-[9px] text-slate-500 block">Tip Shopee + Inflow GoPay/QRIS</span>
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Evaluasi Bersih Parkir:</span>
+                            <strong id="closing-parking-net-disp" class="text-slate-300 font-black text-xs">-</strong>
+                            <span class="text-[9px] text-slate-500 block">Tip - Parkir</span>
+                        </div>
+                    </div>
+
+                    <div id="closing-parking-status-banner" class="p-3 rounded-xl text-xs leading-relaxed font-medium">
+                        <!-- Status diupdate live via JS -->
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2">
+                    <span class="text-xs text-slate-400">
+                        Setelah tombol ditekan, omzet ShopeeFood & tip QRIS akan otomatis dicatat ke jurnal, dan saldo rekening siap seimbang (Rp0).
+                    </span>
+                    <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+                        <span>💾</span>
+                        <span>Simpan & Selaraskan Saldo Shift Ini</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {{-- Sisi Kiri: Form Hitung Fisik Kas Dompet --}}
             <form method="POST" action="/closing/{{ $workDay->id }}/denominations" class="lg:col-span-7 bg-slate-800/70 border border-slate-700/60 rounded-2xl p-6 shadow space-y-5">
@@ -395,7 +624,119 @@
             const piecesEl = document.getElementById('closing-total-pieces');
             if (totalEl) totalEl.innerText = 'Rp ' + total.toLocaleString('id-ID');
             if (piecesEl) piecesEl.innerText = pieces + ' lembar & koin';
+
+            // Sinkronkan ke input kas di seksi rekonsiliasi jika ada
+            const cashReconInput = document.getElementById('closing-recon-input-{{ $cashAccount?->id }}');
+            if (cashReconInput && total > 0) {
+                cashReconInput.value = total;
+                calculateClosingReconDiff();
+            }
         }
+
+        function calculateClosingReconDiff() {
+            // 1. Hitung Total ShopeeFood
+            const hubIncome = parseInt(document.getElementById('closing-hub-income')?.value) || 0;
+            const hubBonus = parseInt(document.getElementById('closing-hub-bonus')?.value) || 0;
+            const customerTips = parseInt(document.getElementById('closing-customer-tips')?.value) || 0;
+            const totalShopee = hubIncome + hubBonus + customerTips;
+
+            const dispShopee = document.getElementById('closing-disp-shopee-total');
+            if (dispShopee) dispShopee.innerText = 'Rp ' + totalShopee.toLocaleString('id-ID');
+
+            // 2. Hitung Saldo Wadah & Inflow QRIS / GoPay
+            let totalActualWallets = 0;
+            let gopayInflow = 0;
+            let gopayMerchantInflow = 0;
+            let cashInflow = 0;
+
+            document.querySelectorAll('.closing-recon-digital-input').forEach(input => {
+                const accName = input.getAttribute('data-account-name') || '';
+                const recorded = parseInt(input.getAttribute('data-recorded')) || 0;
+                const actual = parseInt(input.value) || 0;
+                const diff = actual - recorded;
+                const accId = input.id.replace('closing-recon-input-', '');
+                const msgEl = document.getElementById('closing-recon-diff-msg-' + accId);
+
+                totalActualWallets += actual;
+
+                if (diff > 0) {
+                    if (accName === 'GoPay') {
+                        gopayInflow += diff;
+                    } else if (accName === 'GoPay Merchant') {
+                        gopayMerchantInflow += diff;
+                    } else if (accName === 'Cash') {
+                        cashInflow += diff;
+                    }
+                }
+
+                if (msgEl) {
+                    if (diff > 0) {
+                        msgEl.innerText = '🎉 Surplus / Inflow: +Rp ' + diff.toLocaleString('id-ID');
+                        msgEl.className = 'text-[10px] font-bold mt-1 text-emerald-400';
+                    } else if (diff < 0) {
+                        msgEl.innerText = '⚠️ Selisih Kurang: -Rp ' + Math.abs(diff).toLocaleString('id-ID');
+                        msgEl.className = 'text-[10px] font-bold mt-1 text-rose-400';
+                    } else {
+                        msgEl.innerText = '✓ Status: Saldo Cocok (Rp 0)';
+                        msgEl.className = 'text-[10px] font-semibold mt-1 text-slate-300';
+                    }
+                }
+            });
+
+            const dispWallets = document.getElementById('closing-disp-wallets-total');
+            if (dispWallets) dispWallets.innerText = 'Rp ' + totalActualWallets.toLocaleString('id-ID');
+
+            // 3. Komparasi Evaluasi Parkir vs Tip & Pendapatan QRIS
+            const parkingBox = document.getElementById('closing-parking-eval-box');
+            if (parkingBox) {
+                const parkingExpense = parseInt(parkingBox.getAttribute('data-parking-expense')) || 0;
+                const parkingPaidCount = parseInt(parkingBox.getAttribute('data-parking-paid-count')) || 0;
+
+                const totalTipsAndInflow = customerTips + gopayInflow + gopayMerchantInflow + cashInflow;
+                const netParkingResult = totalTipsAndInflow - parkingExpense;
+
+                const expenseDisp = document.getElementById('closing-parking-expense-disp');
+                const tipsDisp = document.getElementById('closing-parking-tips-disp');
+                const netDisp = document.getElementById('closing-parking-net-disp');
+                const statusBanner = document.getElementById('closing-parking-status-banner');
+
+                if (expenseDisp) expenseDisp.innerText = 'Rp ' + parkingExpense.toLocaleString('id-ID');
+                if (tipsDisp) tipsDisp.innerText = 'Rp ' + totalTipsAndInflow.toLocaleString('id-ID');
+
+                if (netDisp) {
+                    if (netParkingResult > 0) {
+                        netDisp.innerText = '🎉 Surplus +Rp ' + netParkingResult.toLocaleString('id-ID');
+                        netDisp.className = 'text-emerald-400 font-black text-xs';
+                    } else if (netParkingResult < 0) {
+                        netDisp.innerText = '⚠️ Minus -Rp ' + Math.abs(netParkingResult).toLocaleString('id-ID');
+                        netDisp.className = 'text-rose-400 font-black text-xs';
+                    } else {
+                        netDisp.innerText = '✓ Impas (Rp 0)';
+                        netDisp.className = 'text-emerald-300 font-black text-xs';
+                    }
+                }
+
+                if (statusBanner) {
+                    if (netParkingResult > 0) {
+                        statusBanner.className = 'p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium';
+                        statusBanner.innerHTML = `<strong>🎉 SURPLUS PARKIR (UNTUNG): +Rp ${netParkingResult.toLocaleString('id-ID')}</strong><br>` +
+                            `Total tip Shopee & QRIS yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) <strong>MENUTUP 100%</strong> biaya parkir shift ini (Rp ${parkingExpense.toLocaleString('id-ID')}) dengan sisa untung Rp ${netParkingResult.toLocaleString('id-ID')}. Narik hari ini tidak boncos di parkiran!`;
+                    } else if (netParkingResult < 0) {
+                        statusBanner.className = 'p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl text-xs text-rose-200 leading-relaxed font-medium';
+                        statusBanner.innerHTML = `<strong>⚠️ MINUS / BONCOS PARKIR: -Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}</strong><br>` +
+                            `Biaya parkir hari ini (Rp ${parkingExpense.toLocaleString('id-ID')} dari ${parkingPaidCount} spot bayar) <strong>LEBIH BESAR</strong> daripada total tip & QRIS yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}). Biaya parkir Anda minus Rp ${Math.abs(netParkingResult).toLocaleString('id-ID')}.`;
+                    } else {
+                        statusBanner.className = 'p-3 bg-indigo-950/40 border border-indigo-500/40 rounded-xl text-xs text-indigo-200 leading-relaxed font-medium';
+                        statusBanner.innerHTML = `<strong>✓ PARKIR IMPAS SEMPURNA (Rp 0)</strong><br>` +
+                            `Total tip & QRIS yang terkumpul (Rp ${totalTipsAndInflow.toLocaleString('id-ID')}) pas persis menutup biaya parkir (Rp ${parkingExpense.toLocaleString('id-ID')}). Beban parkir tertutup tanpa sisa minus.`;
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateClosingReconDiff();
+        });
 
         document.querySelectorAll('input[name^="bill_"], input[name^="coin_"]').forEach(input => {
             input.addEventListener('input', calculateClosingTotal);

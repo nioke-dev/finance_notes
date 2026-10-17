@@ -114,4 +114,112 @@ class ClosingWebPageTest extends TestCase
         $cash = Account::where('name', 'Cash')->first();
         $this->assertEquals(148000, $cash->current_balance);
     }
+
+    public function test_closing_renders_shopeefood_and_parking_vs_tip_evaluation(): void
+    {
+        // Setup akun ShopeePay, GoPay, dan parkir
+        $shopeePay = Account::create([
+            'name' => 'ShopeePay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+        ]);
+
+        $gopay = Account::create([
+            'name' => 'GoPay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+        ]);
+
+        $parkingExpenseAccount = Account::create([
+            'name' => 'Beban Parkir',
+            'type' => AccountType::EXPENSE,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+        ]);
+
+        // Catat pengeluaran parkir
+        $parkingService = app(\App\Services\QuickParkingService::class);
+        $parkingService->recordParking(
+            workDay: $this->workDay,
+            amount: 2000,
+            restaurantName: 'Geprek Bensu'
+        );
+
+        $response = $this->get('/closing/' . $this->workDay->id);
+
+        $response->assertStatus(200);
+        $response->assertSee('Evaluasi ShopeeFood Driver & Komparasi Parkir vs Tip', false);
+        $response->assertSee('Komparasi Parkir vs Tip & Pendapatan QRIS', false);
+        $response->assertSee('Total Beban Parkir');
+        $response->assertSee('Rp 2.000');
+        $response->assertSee('Simpan & Selaraskan Saldo Shift Ini', false);
+    }
+
+    public function test_closing_workflow_with_shopeefood_reconciliation_and_finalization(): void
+    {
+        $shopeePay = Account::create([
+            'name' => 'ShopeePay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+        ]);
+
+        $gopay = Account::create([
+            'name' => 'GoPay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 0,
+            'initial_balance' => 0,
+        ]);
+
+        // Fisik uang di dompet cocok dengan saldo Cash (150.000)
+        CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_100000' => 1,
+            'bill_50000' => 1,
+            'total_physical_amount' => 150000,
+        ]);
+
+        // Simpan rekonsiliasi ShopeeFood dari closing page: Hub Rp 76.000, Tip Rp 5.000
+        $payload = [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 12,
+            'hub_income' => 76000,
+            'hub_bonus' => 0,
+            'customer_tips' => 5000,
+            'balances' => [
+                [
+                    'account_id' => $shopeePay->id,
+                    'actual_balance' => 76000, // Surplus +Rp76.000 masuk ShopeePay
+                ],
+                [
+                    'account_id' => $gopay->id,
+                    'actual_balance' => 5000,  // Surplus +Rp5.000 masuk GoPay
+                ],
+            ],
+        ];
+
+        $reconResponse = $this->post('/operational/digital-reconciliation', $payload);
+        $reconResponse->assertRedirect();
+        $reconResponse->assertSessionHas('success');
+
+        // ShopeePay sekarang 76.000, GoPay 5.000
+        $this->assertEquals(76000, $shopeePay->fresh()->current_balance);
+        $this->assertEquals(5000, $gopay->fresh()->current_balance);
+
+        // Akses closing page kembali: Saldo sekarang seimbang sempurna!
+        $closingResponse = $this->get('/closing/' . $this->workDay->id);
+        $closingResponse->assertStatus(200);
+        $closingResponse->assertSee('Saldo Seimbang Sempurna');
+        $closingResponse->assertDontSee('cursor-not-allowed');
+
+        // Finalisasi shift berhasil!
+        $finalizeResponse = $this->post('/closing/' . $this->workDay->id . '/finalize', [
+            'closing_notes' => 'Shift 16 Oktober sukses ditutup dengan 12 pesanan selesai.',
+        ]);
+
+        $finalizeResponse->assertRedirect('/dashboard');
+        $this->assertEquals(WorkDay::STATUS_FINAL, $this->workDay->fresh()->status);
+    }
 }

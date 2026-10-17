@@ -57,6 +57,7 @@ class DashboardController extends Controller
         $dayFuelExpense = 0;
         $dayParkingExpense = 0;
         $dayRestoPaidParkingCount = 0;
+        $dayPaidParkingCount = 0;
 
         // 2. Metrik Kebutuhan Hidup & Finansial Pribadi
         $dayPersonalExpense = 0;
@@ -84,6 +85,7 @@ class DashboardController extends Controller
                         $dayRestoPaidParkingCount++;
                     } else {
                         $dayParkingExpense += $tx->amount;
+                        $dayPaidParkingCount++;
                     }
                 } elseif ($type === 'shopeepay_bonus_disbursement') {
                     $dayBonusIncome += (int) ($meta['amount'] ?? 0);
@@ -298,6 +300,7 @@ class DashboardController extends Controller
             'dayFuelExpense',
             'dayParkingExpense',
             'dayRestoPaidParkingCount',
+            'dayPaidParkingCount',
             'dayNetProfit',
             'dayPersonalExpense',
             'dayPersonalIncome',
