@@ -3010,8 +3010,8 @@
                 <div class="flex items-center space-x-3">
                     <span class="text-3xl">📲</span>
                     <div>
-                        <h3 class="text-base font-extrabold text-white">Update Saldo & Compare ShopeeFood Driver</h3>
-                        <p class="text-xs text-slate-300">Bisa dilakukan kapan saja di menit keberapa jam keberapa pun saat Anda narik.</p>
+                        <h3 class="text-base font-extrabold text-white">Rangkuman Pendapatan & Checkpoint Saldo</h3>
+                        <p class="text-xs text-slate-300">Sesuai layar aplikasi ShopeeFood Driver Anda saat narik atau istirahat.</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeModal('modal-reconcile-digital')" class="text-slate-400 hover:text-white font-bold text-xl leading-none">&times;</button>
@@ -3042,63 +3042,55 @@
                     <input type="hidden" name="recorded_at" id="recon-recorded-at" value="{{ now()->format('Y-m-d H:i:s') }}">
                 </div>
 
-                {{-- BAGIAN 1: DATA DARI APLIKASI SHOPEEFOOD DRIVER --}}
+                {{-- BAGIAN 1: RINCIAN PENDAPATAN YANG DITERIMA (PERSIS 1:1 DENGAN APLIKASI SHOPEEFOOD DRIVER) --}}
                 <div class="bg-slate-800/90 border border-orange-500/40 rounded-2xl p-4 space-y-3">
                     <div class="flex justify-between items-center border-b border-slate-700/80 pb-2">
                         <div class="flex items-center space-x-2">
                             <span class="text-lg">🛵</span>
-                            <h4 class="text-xs font-black uppercase tracking-wider text-orange-400">1. Data di Layar Aplikasi ShopeeFood Driver</h4>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-orange-400">Rincian Pendapatan yang Diterima</h4>
                         </div>
                         <span class="text-[10px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 font-bold border border-orange-500/30">
-                            Layar App Driver
+                            ShopeeFood Driver
                         </span>
+                    </div>
+
+                    {{-- Total Pendapatan yang Diterima (Mirip Tampilan Atas Layar HP Driver) --}}
+                    <div class="p-3 bg-slate-950/90 border border-orange-500/30 rounded-xl flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 block">Total Pendapatan yang Diterima</span>
+                            <span id="disp-shopee-total" class="text-xl font-black text-orange-400">Rp 0</span>
+                        </div>
+                        <div class="text-right">
+                            <span id="disp-completed-orders" class="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 font-black text-xs border border-orange-500/30 inline-block">
+                                {{ $latestSnapshot?->completed_orders ?? $dayOrdersCount ?? 0 }} Pesanan Selesai
+                            </span>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                Pendapatan Hub / Biaya Pengantaran (Rp) <span class="text-rose-400">*</span>
+                                Biaya Pengantaran (Rp)
                             </label>
                             <input 
                                 type="number" 
                                 inputmode="numeric" 
                                 pattern="[0-9]*" 
-                                name="hub_income" 
-                                id="recon-hub-income" 
-                                value="{{ $latestSnapshot?->hub_income ?? $dayRegularIncome ?? 0 }}" 
-                                min="0" 
-                                step="1" 
-                                oninput="calculateDigitalReconDiff()" 
-                                placeholder="Contoh: 76000" 
-                                required
-                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                            >
-                            <span class="text-[10px] text-slate-400">Ambil dari baris <strong>Pendapatan Hub</strong> / <strong>Biaya Pengantaran</strong> (Bukan total Rp81.000 atas)</span>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                Bonus / Insentif Poin (Rp)
-                            </label>
-                            <input 
-                                type="number" 
-                                inputmode="numeric" 
-                                pattern="[0-9]*" 
-                                name="hub_bonus" 
-                                id="recon-hub-bonus" 
-                                value="{{ $latestSnapshot?->hub_bonus ?? $dayBonusIncome ?? 0 }}" 
+                                name="delivery_fee" 
+                                id="recon-delivery-fee" 
+                                value="{{ $latestSnapshot?->delivery_fee ?? 0 }}" 
                                 min="0" 
                                 step="1" 
                                 oninput="calculateDigitalReconDiff()" 
                                 placeholder="0" 
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                             >
-                            <span class="text-[10px] text-slate-400">Bonus misi harian (bisa Rp0 jika belum tembus target)</span>
+                            <span class="text-[10px] text-slate-400">Sesuai baris <strong>Biaya Pengantaran</strong></span>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                Tip Pelanggan di Aplikasi (Rp)
+                                Tip dari Pelanggan (Rp)
                             </label>
                             <input 
                                 type="number" 
@@ -3113,12 +3105,52 @@
                                 placeholder="0" 
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                             >
-                            <span class="text-[10px] text-slate-400">Tip resmi yang masuk lewat sistem Shopee</span>
+                            <span class="text-[10px] text-slate-400">Sesuai baris <strong>Tip dari Pelanggan</strong></span>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                Jumlah Pesanan Selesai (Trip)
+                                Bonus Insentif (Rp)
+                            </label>
+                            <input 
+                                type="number" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                name="hub_bonus" 
+                                id="recon-hub-bonus" 
+                                value="{{ $latestSnapshot?->hub_bonus ?? $dayBonusIncome ?? 0 }}" 
+                                min="0" 
+                                step="1" 
+                                oninput="calculateDigitalReconDiff()" 
+                                placeholder="0" 
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                            >
+                            <span class="text-[10px] text-slate-400">Sesuai baris <strong>Bonus Insentif</strong></span>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                Pendapatan Hub (Rp)
+                            </label>
+                            <input 
+                                type="number" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                name="hub_income" 
+                                id="recon-hub-income" 
+                                value="{{ $latestSnapshot?->hub_income ?? $dayRegularIncome ?? 0 }}" 
+                                min="0" 
+                                step="1" 
+                                oninput="calculateDigitalReconDiff()" 
+                                placeholder="0" 
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                            >
+                            <span class="text-[10px] text-slate-400">Sesuai baris <strong>Pendapatan Hub</strong></span>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                Pesanan Selesai
                             </label>
                             <input 
                                 type="number" 
@@ -3129,16 +3161,12 @@
                                 value="{{ $latestSnapshot?->completed_orders ?? $dayOrdersCount ?? 0 }}" 
                                 min="0" 
                                 step="1" 
-                                placeholder="Contoh: 8" 
+                                oninput="calculateDigitalReconDiff()" 
+                                placeholder="Contoh: 12" 
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                             >
-                            <span class="text-[10px] text-slate-400">Berapa order yang sudah terselesaikan saat jam ini</span>
+                            <span class="text-[10px] text-slate-400">Sesuai tulisan <strong>... Pesanan Selesai</strong></span>
                         </div>
-                    </div>
-
-                    <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
-                        <span class="text-slate-300 font-bold">Total Tercatat di Aplikasi Shopee:</span>
-                        <strong id="disp-shopee-total" class="text-orange-400 font-extrabold text-sm">Rp 0</strong>
                     </div>
                 </div>
 
@@ -4527,14 +4555,18 @@
         // ================= JAVASCRIPT LOGIKA DIGITAL REKONSILIASI & SURVIVAL GOALS =================
         function calculateDigitalReconDiff() {
             // 1. Hitung Total ShopeeFood Driver
+            const deliveryFee = parseInt(document.getElementById('recon-delivery-fee')?.value) || 0;
             const hubIncome = parseInt(document.getElementById('recon-hub-income')?.value) || 0;
             const hubBonus = parseInt(document.getElementById('recon-hub-bonus')?.value) || 0;
             const customerTips = parseInt(document.getElementById('recon-customer-tips')?.value) || 0;
             const completedOrders = parseInt(document.getElementById('recon-completed-orders')?.value) || 0;
-            const totalShopee = hubIncome + hubBonus + customerTips;
+            const totalShopee = deliveryFee + hubIncome + hubBonus + customerTips;
 
             const dispShopee = document.getElementById('disp-shopee-total');
             if (dispShopee) dispShopee.innerText = 'Rp ' + totalShopee.toLocaleString('id-ID');
+
+            const dispOrders = document.getElementById('disp-completed-orders');
+            if (dispOrders) dispOrders.innerText = completedOrders + ' Pesanan Selesai';
 
             const compareShopee = document.getElementById('compare-shopee-display');
             if (compareShopee) compareShopee.innerText = 'Rp ' + totalShopee.toLocaleString('id-ID');

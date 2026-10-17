@@ -1361,6 +1361,7 @@ class OperationalWebController extends Controller
             'work_day_id' => 'nullable|exists:work_days,id',
             'recorded_at' => 'nullable|date',
             'completed_orders' => 'nullable|integer|min:0',
+            'delivery_fee' => 'nullable|integer|min:0',
             'hub_income' => 'nullable|integer|min:0',
             'hub_bonus' => 'nullable|integer|min:0',
             'customer_tips' => 'nullable|integer|min:0',
@@ -1409,6 +1410,7 @@ class OperationalWebController extends Controller
             }
         }
 
+        $deliveryFee = (int) ($validated['delivery_fee'] ?? 0);
         $hubIncome = (int) ($validated['hub_income'] ?? 0);
         $hubBonus = (int) ($validated['hub_bonus'] ?? 0);
         $customerTips = (int) ($validated['customer_tips'] ?? 0);
@@ -1418,6 +1420,7 @@ class OperationalWebController extends Controller
             'work_day_id' => $workDay->id,
             'recorded_at' => $recordedAt,
             'completed_orders' => $completedOrders,
+            'delivery_fee' => $deliveryFee,
             'hub_income' => $hubIncome,
             'hub_bonus' => $hubBonus,
             'customer_tips' => $customerTips,
@@ -1428,7 +1431,7 @@ class OperationalWebController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        $totalShopee = $hubIncome + $hubBonus + $customerTips;
+        $totalShopee = $deliveryFee + $hubIncome + $hubBonus + $customerTips;
         $totalWallets = $shopeepayBalance + $cashBalance + $gopayBalance + $gopayMerchantBalance;
         $timeStr = $recordedAt->format('H:i');
 

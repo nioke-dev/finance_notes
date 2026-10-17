@@ -50,42 +50,75 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
                     {{-- Kolom Kiri: Input Data Aplikasi ShopeeFood Driver --}}
+                    {{-- Kolom Kiri: Rincian Pendapatan yang Diterima (Layar ShopeeFood Driver) --}}
                     <div class="lg:col-span-6 bg-slate-950/80 border border-orange-500/40 rounded-xl p-4 space-y-3">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                             <div class="flex items-center space-x-2">
                                 <span class="text-base">📱</span>
-                                <h4 class="text-xs font-black uppercase tracking-wider text-orange-400">1. Data di Layar Aplikasi ShopeeFood Driver</h4>
+                                <h4 class="text-xs font-black uppercase tracking-wider text-orange-400">Rincian Pendapatan yang Diterima</h4>
                             </div>
                             <span class="text-[10px] px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 font-bold border border-orange-500/30">
-                                Layar Driver
+                                ShopeeFood Driver
                             </span>
+                        </div>
+
+                        {{-- Total Pendapatan yang Diterima (Tampilan Atas Layar HP Driver) --}}
+                        <div class="p-3 bg-slate-900/90 border border-orange-500/30 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold text-slate-400 block">Total Pendapatan yang Diterima</span>
+                                <span id="closing-disp-shopee-total" class="text-xl font-black text-orange-400">Rp 0</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="closing-disp-completed-orders" class="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 font-black text-xs border border-orange-500/30 inline-block">
+                                    {{ old('completed_orders', $latestSnapshot?->completed_orders ?? 0) }} Pesanan Selesai
+                                </span>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                    Pendapatan Hub / Biaya Pengantaran (Rp) <span class="text-rose-400">*</span>
+                                    Biaya Pengantaran (Rp)
                                 </label>
                                 <input 
                                     type="number" 
                                     inputmode="numeric" 
                                     pattern="[0-9]*" 
-                                    name="hub_income" 
-                                    id="closing-hub-income" 
-                                    value="{{ old('hub_income', $latestSnapshot?->hub_income ?? 0) }}" 
+                                    name="delivery_fee" 
+                                    id="closing-delivery-fee" 
+                                    value="{{ old('delivery_fee', $latestSnapshot?->delivery_fee ?? 0) }}" 
                                     min="0" 
                                     step="1" 
                                     oninput="calculateClosingReconDiff()" 
-                                    placeholder="Contoh: 76000" 
-                                    required
+                                    placeholder="0" 
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                                 >
-                                <span class="text-[10px] text-slate-400">Ambil dari baris <strong>Pendapatan Hub</strong> / <strong>Biaya Pengantaran</strong> (Bukan total Rp81.000 atas)</span>
+                                <span class="text-[10px] text-slate-400">Sesuai baris <strong>Biaya Pengantaran</strong></span>
                             </div>
 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                    Bonus / Insentif Poin (Rp)
+                                    Tip dari Pelanggan (Rp)
+                                </label>
+                                <input 
+                                    type="number" 
+                                    inputmode="numeric" 
+                                    pattern="[0-9]*" 
+                                    name="customer_tips" 
+                                    id="closing-customer-tips" 
+                                    value="{{ old('customer_tips', $latestSnapshot?->customer_tips ?? 0) }}" 
+                                    min="0" 
+                                    step="1" 
+                                    oninput="calculateClosingReconDiff()" 
+                                    placeholder="0" 
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                >
+                                <span class="text-[10px] text-slate-400">Sesuai baris <strong>Tip dari Pelanggan</strong></span>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                                    Bonus Insentif (Rp)
                                 </label>
                                 <input 
                                     type="number" 
@@ -100,32 +133,32 @@
                                     placeholder="0" 
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                                 >
-                                <span class="text-[10px] text-slate-400">Bonus misi harian target poin</span>
+                                <span class="text-[10px] text-slate-400">Sesuai baris <strong>Bonus Insentif</strong></span>
                             </div>
 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                    Tip Pelanggan di Aplikasi (Rp)
+                                    Pendapatan Hub (Rp)
                                 </label>
                                 <input 
                                     type="number" 
                                     inputmode="numeric" 
                                     pattern="[0-9]*" 
-                                    name="customer_tips" 
-                                    id="closing-customer-tips" 
-                                    value="{{ old('customer_tips', $latestSnapshot?->customer_tips ?? 0) }}" 
+                                    name="hub_income" 
+                                    id="closing-hub-income" 
+                                    value="{{ old('hub_income', $latestSnapshot?->hub_income ?? 0) }}" 
                                     min="0" 
                                     step="1" 
                                     oninput="calculateClosingReconDiff()" 
-                                    placeholder="Contoh: 5000" 
+                                    placeholder="0" 
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                                 >
-                                <span class="text-[10px] text-slate-400">Tip resmi pelanggan di aplikasi</span>
+                                <span class="text-[10px] text-slate-400">Sesuai baris <strong>Pendapatan Hub</strong></span>
                             </div>
 
-                            <div>
+                            <div class="sm:col-span-2">
                                 <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                    Pesanan Selesai (Trip)
+                                    Pesanan Selesai
                                 </label>
                                 <input 
                                     type="number" 
@@ -136,16 +169,12 @@
                                     value="{{ old('completed_orders', $latestSnapshot?->completed_orders ?? 0) }}" 
                                     min="0" 
                                     step="1" 
+                                    oninput="calculateClosingReconDiff()" 
                                     placeholder="Contoh: 12" 
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                                 >
-                                <span class="text-[10px] text-slate-400">Jumlah trip yang terselesaikan</span>
+                                <span class="text-[10px] text-slate-400">Sesuai tulisan <strong>... Pesanan Selesai</strong></span>
                             </div>
-                        </div>
-
-                        <div class="p-2.5 bg-slate-900/90 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
-                            <span class="text-slate-300 font-bold">Total Tertera di ShopeeFood:</span>
-                            <strong id="closing-disp-shopee-total" class="text-orange-400 font-extrabold text-sm">Rp 0</strong>
                         </div>
                     </div>
 
@@ -691,13 +720,18 @@
 
         function calculateClosingReconDiff() {
             // 1. Hitung Total ShopeeFood
+            const deliveryFee = parseInt(document.getElementById('closing-delivery-fee')?.value) || 0;
             const hubIncome = parseInt(document.getElementById('closing-hub-income')?.value) || 0;
             const hubBonus = parseInt(document.getElementById('closing-hub-bonus')?.value) || 0;
             const customerTips = parseInt(document.getElementById('closing-customer-tips')?.value) || 0;
-            const totalShopee = hubIncome + hubBonus + customerTips;
+            const completedOrders = parseInt(document.getElementById('closing-completed-orders')?.value) || 0;
+            const totalShopee = deliveryFee + hubIncome + hubBonus + customerTips;
 
             const dispShopee = document.getElementById('closing-disp-shopee-total');
             if (dispShopee) dispShopee.innerText = 'Rp ' + totalShopee.toLocaleString('id-ID');
+
+            const dispOrders = document.getElementById('closing-disp-completed-orders');
+            if (dispOrders) dispOrders.innerText = completedOrders + ' Pesanan Selesai';
 
             // 2. Hitung Saldo Wadah & Inflow QRIS / GoPay
             let totalActualWallets = 0;

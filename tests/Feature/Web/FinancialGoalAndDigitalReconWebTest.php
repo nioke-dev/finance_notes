@@ -196,6 +196,7 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
             'work_day_id' => $this->workDay->id,
             'recorded_at' => now()->format('Y-m-d H:i:s'),
             'completed_orders' => 10,
+            'delivery_fee' => 12000,
             'hub_income' => 95000,
             'hub_bonus' => 15000,
             'customer_tips' => 6000,
@@ -220,6 +221,7 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
         $this->assertDatabaseHas('driver_snapshots', [
             'work_day_id' => $this->workDay->id,
             'completed_orders' => 10,
+            'delivery_fee' => 12000,
             'hub_income' => 95000,
             'hub_bonus' => 15000,
             'customer_tips' => 6000,

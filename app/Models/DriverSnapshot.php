@@ -15,6 +15,7 @@ class DriverSnapshot extends Model
         'work_day_id',
         'recorded_at',
         'completed_orders',
+        'delivery_fee',
         'hub_income',
         'hub_bonus',
         'customer_tips',
@@ -28,6 +29,7 @@ class DriverSnapshot extends Model
     protected $casts = [
         'recorded_at' => 'datetime',
         'completed_orders' => 'integer',
+        'delivery_fee' => 'integer',
         'hub_income' => 'integer',
         'hub_bonus' => 'integer',
         'customer_tips' => 'integer',
@@ -45,7 +47,7 @@ class DriverSnapshot extends Model
     public function totalDriverIncome(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->hub_income + $this->hub_bonus + $this->customer_tips
+            get: fn () => (int) ($this->delivery_fee ?? 0) + (int) ($this->hub_income ?? 0) + (int) ($this->hub_bonus ?? 0) + (int) ($this->customer_tips ?? 0)
         );
     }
 
