@@ -1781,6 +1781,9 @@ class OperationalWebController extends Controller
 
         if ($result['adjusted_count'] > 0) {
             $parts = [];
+            if (!empty($result['merchant_settled']) && $result['merchant_settled'] > 0) {
+                $parts[] = "Pencairan GoPay Merchant Rp " . number_format($result['merchant_settled'], 0, ',', '.') . " otomatis disettle ke GoPay";
+            }
             if (!empty($result['cod_reimbursed']) && $result['cod_reimbursed'] > 0) {
                 $parts[] = "Modal COD via QRIS Rp " . number_format($result['cod_reimbursed'], 0, ',', '.') . " dialokasikan ke Talangan";
             }

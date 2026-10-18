@@ -36,6 +36,116 @@ class DigitalReconciliationService
             $totalCodReimbursed = 0;
             $totalNetQrisTip = 0;
 
+            $totalMerchantSettled = 0;
+
+            // 0. Deteksi Otomatis Auto-Settlement & Penyelarasan Transit GoPay Merchant -> GoPay
+            // GoPay Merchant adalah wadah penampung transit QRIS sementara yang otomatis mencair (settle) ke GoPay reguler.
+            $merchantAccount = Account::where('name', 'GoPay Merchant')->first();
+            $gopayAccount = Account::where('name', 'GoPay')->first();
+
+            $merchantItem = null;
+            $gopayItem = null;
+
+            if ($merchantAccount && $gopayAccount) {
+                foreach ($accountBalances as $item) {
+                    if ((int)$item['account_id'] === $merchantAccount->id) {
+                        $merchantItem = $item;
+                    }
+                    if ((int)$item['account_id'] === $gopayAccount->id) {
+                        $gopayItem = $item;
+                    }
+                }
+
+                if ($merchantItem) {
+                    $merchantActual = (int)$merchantItem['actual_balance'];
+                    $merchantDiff = $merchantActual - (int)$merchantAccount->current_balance;
+
+                    // Jika saldo GoPay Merchant berkurang (misal dari 4.000 menjadi 3.000 karena auto-settle):
+                    if ($merchantDiff < 0) {
+                        $settleDrop = abs($merchantDiff);
+
+                        if ($gopayItem) {
+                            $gopayActual = (int)$gopayItem['actual_balance'];
+                            $gopayDiff = $gopayActual - (int)$gopayAccount->current_balance;
+
+                            if ($gopayDiff > 0) {
+                                // Sebagian atau seluruh kenaikan di GoPay berasal dari pencairan GoPay Merchant!
+                                $settlementTransfer = min($settleDrop, $gopayDiff);
+
+                                if ($settlementTransfer > 0) {
+                                    $this->ledgerService->recordTransaction(
+                                        workDay: $workDay,
+                                        type: 'transfer',
+                                        description: "Auto-Settlement GoPay Merchant ke GoPay: Rp " . number_format($settlementTransfer, 0, ',', '.') . " (Pencairan Saldo Transit QRIS)",
+                                        transactionTime: now(),
+                                        entries: [
+                                            ['account_id' => $merchantAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $settlementTransfer],
+                                            ['account_id' => $gopayAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $settlementTransfer],
+                                        ],
+                                        isEstimatedTime: false,
+                                        metadata: [
+                                            'type' => 'merchant_auto_settlement',
+                                            'amount' => $settlementTransfer,
+                                        ]
+                                    );
+
+                                    AuditLog::create([
+                                        'auditable_type' => Account::class,
+                                        'auditable_id' => $merchantAccount->id,
+                                        'action' => 'merchant_auto_settlement',
+                                        'old_values' => ['balance' => $merchantAccount->current_balance + $settlementTransfer],
+                                        'new_values' => ['balance' => $merchantAccount->current_balance, 'settled_to_gopay' => $settlementTransfer],
+                                        'reason' => "Pencairan otomatis (auto-settlement) saldo transit QRIS GoPay Merchant ke rekening GoPay reguler Rp " . number_format($settlementTransfer, 0, ',', '.'),
+                                    ]);
+
+                                    $adjustedCount++;
+                                    $totalMerchantSettled += $settlementTransfer;
+                                    $settleDrop -= $settlementTransfer;
+                                }
+                            }
+                        }
+
+                        // Jika masih ada sisa penurunan saldo pada GoPay Merchant (misal GoPay sudah lebih dulu diselaraskan ke saldo akhir):
+                        // Karena GoPay Merchant HANYA wadah transit penampung sementara QRIS,
+                        // sisa saldo ini diselaraskan ke Pendapatan QRIS (karena dana QRIS sudah masuk ke GoPay sebelumnya)
+                        if ($settleDrop > 0) {
+                            $surplusAccount = Account::firstOrCreate(
+                                ['name' => 'Pendapatan QRIS / Tip Non-Tunai'],
+                                ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                            );
+
+                            $this->ledgerService->recordTransaction(
+                                workDay: $workDay,
+                                type: 'income',
+                                description: "Penyesuaian Saldo Transit QRIS GoPay Merchant: -Rp " . number_format($settleDrop, 0, ',', '.') . " (Pencairan ke GoPay)",
+                                transactionTime: now(),
+                                entries: [
+                                    ['account_id' => $merchantAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $settleDrop],
+                                    ['account_id' => $surplusAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $settleDrop],
+                                ],
+                                isEstimatedTime: false,
+                                metadata: [
+                                    'type' => 'merchant_transit_adjustment',
+                                    'amount' => $settleDrop,
+                                ]
+                            );
+
+                            AuditLog::create([
+                                'auditable_type' => Account::class,
+                                'auditable_id' => $merchantAccount->id,
+                                'action' => 'merchant_transit_adjustment',
+                                'old_values' => ['balance' => $merchantAccount->current_balance + $settleDrop],
+                                'new_values' => ['balance' => $merchantAccount->current_balance, 'adjusted_amount' => $settleDrop],
+                                'reason' => "Penyelarasan saldo transit GoPay Merchant: -Rp " . number_format($settleDrop, 0, ',', '.') . " telah otomatis cair ke GoPay reguler.",
+                            ]);
+
+                            $adjustedCount++;
+                            $totalMerchantSettled += $settleDrop;
+                        }
+                    }
+                }
+            }
+
             foreach ($accountBalances as $item) {
                 $accountId = (int) $item['account_id'];
                 $actualBalance = (int) $item['actual_balance'];
@@ -257,6 +367,7 @@ class DigitalReconciliationService
                 'total_shortage' => $totalShortage,
                 'cod_reimbursed' => $totalCodReimbursed,
                 'net_qris_tip' => $totalNetQrisTip,
+                'merchant_settled' => $totalMerchantSettled,
             ];
         });
     }

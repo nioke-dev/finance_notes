@@ -4523,6 +4523,12 @@
                                     </span>
                                 </div>
 
+                                @if(str_contains(strtolower($dAcc->name), 'merchant'))
+                                    <div class="text-[10px] text-amber-300/90 bg-amber-950/40 px-2.5 py-1.5 rounded-lg border border-amber-500/30 leading-snug">
+                                        💡 <strong>Wadah Transit QRIS Sementara:</strong> Uang tip/COD QRIS masuk ke sini & otomatis cair (settle) ke GoPay reguler jika saldo mencapai minimal Rp 10.000.
+                                    </div>
+                                @endif
+
                                 <input type="hidden" name="balances[{{ $idx }}][account_id]" value="{{ $dAcc->id }}">
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs text-slate-300 font-bold">Rp</span>
@@ -6724,8 +6730,21 @@
             let totalSurplus = 0;
             let totalShortage = 0;
 
-            let gopayInflow = 0;
-            let gopayMerchantInflow = 0;
+            let gopayInput = null;
+            let merchantInput = null;
+            document.querySelectorAll('.recon-digital-input').forEach(input => {
+                const accName = input.getAttribute('data-account-name') || '';
+                if (accName === 'GoPay') gopayInput = input;
+                if (accName === 'GoPay Merchant') merchantInput = input;
+            });
+
+            const gopayRecorded = gopayInput ? (parseInt(gopayInput.getAttribute('data-recorded')) || 0) : 0;
+            const gopayActual = gopayInput ? (parseInt(gopayInput.value) || 0) : 0;
+            const gopayDiff = gopayActual - gopayRecorded;
+
+            const merchantRecorded = merchantInput ? (parseInt(merchantInput.getAttribute('data-recorded')) || 0) : 0;
+            const merchantActual = merchantInput ? (parseInt(merchantInput.value) || 0) : 0;
+            const merchantDiff = merchantActual - merchantRecorded;
 
             document.querySelectorAll('.recon-digital-input').forEach(input => {
                 const recorded = parseInt(input.getAttribute('data-recorded')) || 0;
@@ -6738,9 +6757,28 @@
                 totalActualWallets += actual;
                 totalRecordedWallets += recorded;
 
-                if (diff > 0) {
-                    if (accName === 'GoPay') gopayInflow += diff;
-                    if (accName === 'GoPay Merchant') gopayMerchantInflow += diff;
+                if (accName === 'GoPay Merchant' && diff < 0) {
+                    const settleAmount = Math.abs(diff);
+                    const transferAmount = gopayDiff > 0 ? Math.min(settleAmount, gopayDiff) : settleAmount;
+                    if (msgEl) {
+                        msgEl.innerText = `🔄 Auto-Settled: Rp ${transferAmount.toLocaleString('id-ID')} otomatis cair ke GoPay (Sisa transit: Rp ${actual.toLocaleString('id-ID')})`;
+                        msgEl.className = 'text-[11px] font-bold mt-1 text-sky-400';
+                    }
+                } else if (accName === 'GoPay' && diff > 0) {
+                    if (merchantDiff < 0) {
+                        const fromMerchant = Math.min(Math.abs(merchantDiff), diff);
+                        if (msgEl) {
+                            msgEl.innerText = `🎉 Surplus Masuk: +Rp ${diff.toLocaleString('id-ID')} (termasuk Rp ${fromMerchant.toLocaleString('id-ID')} cair dari Merchant)`;
+                            msgEl.className = 'text-[11px] font-bold mt-1 text-emerald-400';
+                        }
+                    } else {
+                        if (msgEl) {
+                            msgEl.innerText = '🎉 Surplus / Inflow Lebih: +Rp ' + diff.toLocaleString('id-ID');
+                            msgEl.className = 'text-[11px] font-bold mt-1 text-emerald-400';
+                        }
+                    }
+                    totalSurplus += diff;
+                } else if (diff > 0) {
                     if (msgEl) {
                         msgEl.innerText = '🎉 Surplus / Inflow Lebih: +Rp ' + diff.toLocaleString('id-ID');
                         msgEl.className = 'text-[11px] font-bold mt-1 text-emerald-400';
@@ -6808,7 +6846,7 @@
 
                 // Ambil Tip ShopeeFood
                 const shopeeTip = parseInt(document.getElementById('recon-customer-tips')?.value) || 0;
-                const qrisInflow = gopayInflow + gopayMerchantInflow;
+                const qrisInflow = Math.max(0, gopayDiff + merchantDiff);
                 const totalTipsAndInflow = shopeeTip + qrisInflow;
                 const netParkingResult = totalTipsAndInflow - parkingExpense;
 

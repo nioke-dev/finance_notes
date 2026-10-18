@@ -210,6 +210,12 @@
                                         </span>
                                     </div>
 
+                                    @if(str_contains(strtolower($dAcc->name), 'merchant'))
+                                        <div class="text-[10px] text-amber-300/90 bg-amber-950/40 px-2 py-1 rounded-lg border border-amber-500/30 leading-snug">
+                                            💡 <strong>Wadah Transit QRIS Sementara:</strong> Uang tip/COD QRIS masuk ke sini & otomatis cair (settle) ke rekening GoPay jika saldo mencapai minimal Rp 10.000.
+                                        </div>
+                                    @endif
+
                                     <input type="hidden" name="balances[{{ $idx }}][account_id]" value="{{ $dAcc->id }}">
                                     <div class="relative">
                                         <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-300 font-bold">Rp</span>
@@ -762,9 +768,23 @@
 
             // 2. Hitung Saldo Wadah & Inflow QRIS / GoPay
             let totalActualWallets = 0;
-            let gopayInflow = 0;
-            let gopayMerchantInflow = 0;
             let cashInflow = 0;
+
+            let gopayInput = null;
+            let merchantInput = null;
+            document.querySelectorAll('.closing-recon-digital-input').forEach(input => {
+                const accName = input.getAttribute('data-account-name') || '';
+                if (accName === 'GoPay') gopayInput = input;
+                if (accName === 'GoPay Merchant') merchantInput = input;
+            });
+
+            const gopayRecorded = gopayInput ? (parseInt(gopayInput.getAttribute('data-recorded')) || 0) : 0;
+            const gopayActual = gopayInput ? (parseInt(gopayInput.value) || 0) : 0;
+            const gopayDiff = gopayActual - gopayRecorded;
+
+            const merchantRecorded = merchantInput ? (parseInt(merchantInput.getAttribute('data-recorded')) || 0) : 0;
+            const merchantActual = merchantInput ? (parseInt(merchantInput.value) || 0) : 0;
+            const merchantDiff = merchantActual - merchantRecorded;
 
             document.querySelectorAll('.closing-recon-digital-input').forEach(input => {
                 const accName = input.getAttribute('data-account-name') || '';
@@ -776,18 +796,25 @@
 
                 totalActualWallets += actual;
 
-                if (diff > 0) {
-                    if (accName === 'GoPay') {
-                        gopayInflow += diff;
-                    } else if (accName === 'GoPay Merchant') {
-                        gopayMerchantInflow += diff;
-                    } else if (accName === 'Cash') {
-                        cashInflow += diff;
-                    }
+                if (diff > 0 && accName === 'Cash') {
+                    cashInflow += diff;
                 }
 
                 if (msgEl) {
-                    if (diff > 0) {
+                    if (accName === 'GoPay Merchant' && diff < 0) {
+                        const settleAmount = Math.abs(diff);
+                        const transferAmount = gopayDiff > 0 ? Math.min(settleAmount, gopayDiff) : settleAmount;
+                        msgEl.innerText = `🔄 Auto-Settled: Rp ${transferAmount.toLocaleString('id-ID')} otomatis cair ke GoPay (Sisa transit: Rp ${actual.toLocaleString('id-ID')})`;
+                        msgEl.className = 'text-[10px] font-bold mt-1 text-sky-400';
+                    } else if (accName === 'GoPay' && diff > 0) {
+                        if (merchantDiff < 0) {
+                            const fromMerchant = Math.min(Math.abs(merchantDiff), diff);
+                            msgEl.innerText = `🎉 Surplus Masuk: +Rp ${diff.toLocaleString('id-ID')} (termasuk Rp ${fromMerchant.toLocaleString('id-ID')} cair dari Merchant)`;
+                        } else {
+                            msgEl.innerText = '🎉 Surplus / Inflow: +Rp ' + diff.toLocaleString('id-ID');
+                        }
+                        msgEl.className = 'text-[10px] font-bold mt-1 text-emerald-400';
+                    } else if (diff > 0) {
                         msgEl.innerText = '🎉 Surplus / Inflow: +Rp ' + diff.toLocaleString('id-ID');
                         msgEl.className = 'text-[10px] font-bold mt-1 text-emerald-400';
                     } else if (diff < 0) {
@@ -812,7 +839,7 @@
                 // PERHITUNGAN TELITI COD VIA QRIS:
                 // Jangan ambil mentah-mentah inflow QRIS sebagai tip!
                 const codQrisBill = parseInt(document.getElementById('closing-cod-qris-amount')?.value) || 0;
-                const grossQrisInflow = gopayInflow + gopayMerchantInflow;
+                const grossQrisInflow = Math.max(0, gopayDiff + merchantDiff);
                 const codReimbursed = Math.min(grossQrisInflow, codQrisBill);
                 const netQrisTip = Math.max(0, grossQrisInflow - codQrisBill);
 
