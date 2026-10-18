@@ -24,6 +24,17 @@ class DeployWebhookController extends Controller
             ], 403);
         }
 
+        if ($request->query('action') === 'inspect_closing') {
+            return response()->json([
+                'success' => true,
+                'work_days' => \App\Models\WorkDay::latest('id')->take(3)->get(),
+                'accounts' => \App\Models\Account::all(['id', 'name', 'type', 'current_balance', 'initial_balance']),
+                'latest_snapshots' => \App\Models\DriverSnapshot::latest('id')->take(5)->get(),
+                'latest_transactions' => \App\Models\Transaction::latest('id')->take(10)->get(),
+                'latest_audit_logs' => \App\Models\AuditLog::latest('id')->take(10)->get(),
+            ]);
+        }
+
         if (app()->environment('testing')) {
             return response()->json([
                 'success' => true,
