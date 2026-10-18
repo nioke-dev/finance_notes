@@ -242,7 +242,7 @@ class ClosingWebController extends Controller
     }
 
     /**
-     * Finalisasi Hari Kerja
+     * Finalisasi Hari Kerja (Mendukung rekonsiliasi saldo digital & snapshot sekaligus dalam satu klik)
      */
     public function finalize(
         Request $request,
@@ -252,28 +252,122 @@ class ClosingWebController extends Controller
     ): RedirectResponse {
         $workDay = WorkDay::findOrFail($id);
 
+        if ($workDay->isFinal()) {
+            return redirect()->route('dashboard')->with('info', "Hari kerja {$workDay->work_date->toDateString()} sudah pernah difinalisasi.");
+        }
+
         $validated = $request->validate([
             'closing_notes' => 'nullable|string',
             'cod_qris_amount' => 'nullable|integer|min:0',
             'digital_balances' => 'nullable|array',
             'digital_balances.*.account_id' => 'required_with:digital_balances|exists:accounts,id',
             'digital_balances.*.actual_balance' => 'required_with:digital_balances|integer|min:0',
+            'balances' => 'nullable|array',
+            'balances.*.account_id' => 'required_with:balances|exists:accounts,id',
+            'balances.*.actual_balance' => 'required_with:balances|integer|min:0',
+            'completed_orders' => 'nullable|integer|min:0',
+            'delivery_fee' => 'nullable|integer|min:0',
+            'hub_income' => 'nullable|integer|min:0',
+            'hub_bonus' => 'nullable|integer|min:0',
+            'customer_tips' => 'nullable|integer|min:0',
+            'bill_100000' => 'nullable|integer|min:0',
+            'bill_50000' => 'nullable|integer|min:0',
+            'bill_20000' => 'nullable|integer|min:0',
+            'bill_10000' => 'nullable|integer|min:0',
+            'bill_5000' => 'nullable|integer|min:0',
+            'bill_2000' => 'nullable|integer|min:0',
+            'bill_1000' => 'nullable|integer|min:0',
+            'coin_1000' => 'nullable|integer|min:0',
+            'coin_500' => 'nullable|integer|min:0',
+            'coin_200' => 'nullable|integer|min:0',
+            'coin_100' => 'nullable|integer|min:0',
+            'damaged_notes_amount' => 'nullable|integer|min:0',
+            'damaged_notes_note' => 'nullable|string|max:255',
         ]);
 
-        if (!empty($validated['digital_balances'])) {
-            $codQrisAmount = (int) ($validated['cod_qris_amount'] ?? 0);
-            $digitalReconciliationService->reconcileDigitalAccounts($workDay, $validated['digital_balances'], $codQrisAmount);
+        // 1. Simpan Denominasi Fisik jika disertakan dalam submit
+        $denomKeys = ['bill_100000', 'bill_50000', 'bill_20000', 'bill_10000', 'bill_5000', 'bill_2000', 'bill_1000', 'coin_1000', 'coin_500', 'coin_200', 'coin_100'];
+        $hasDenomInput = false;
+        foreach ($denomKeys as $dk) {
+            if ($request->has($dk)) {
+                $hasDenomInput = true;
+                break;
+            }
+        }
+
+        if ($hasDenomInput) {
+            $denomination = CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
+            foreach ($denomKeys as $dk) {
+                $denomination->{$dk} = (int) ($validated[$dk] ?? 0);
+            }
+            $denomination->damaged_notes_amount = (int) ($validated['damaged_notes_amount'] ?? 0);
+            $denomination->damaged_notes_note = $validated['damaged_notes_note'] ?? null;
+            $denomination->total_physical_amount = $denomination->calculateTotal();
+            $denomination->save();
+
+            $cashAcc = Account::where('name', 'Cash')->orWhere('type', \App\Enums\AccountType::CASH)->first();
+            if ($cashAcc) {
+                $meta = $cashAcc->metadata ?? [];
+                $meta['denominations'] = $denomination->toArray();
+                $cashAcc->update(['metadata' => $meta]);
+            }
+        }
+
+        // 2. Rekonsiliasi Saldo Digital & Simpan DriverSnapshot
+        $balances = $validated['balances'] ?? $validated['digital_balances'] ?? [];
+        $codQrisAmount = (int) ($validated['cod_qris_amount'] ?? 0);
+
+        if (!empty($balances)) {
+            $digitalReconciliationService->reconcileDigitalAccounts($workDay, $balances, $codQrisAmount);
+
+            // Simpan DriverSnapshot shift ini
+            $shopeepayBalance = 0;
+            $gopayBalance = 0;
+            $gopayMerchantBalance = 0;
+
+            foreach ($balances as $b) {
+                $acc = Account::find($b['account_id']);
+                if (!$acc) continue;
+                $val = (int) $b['actual_balance'];
+                if ($acc->name === 'ShopeePay') {
+                    $shopeepayBalance = $val;
+                } elseif ($acc->name === 'GoPay') {
+                    $gopayBalance = $val;
+                } elseif ($acc->name === 'GoPay Merchant') {
+                    $gopayMerchantBalance = $val;
+                }
+            }
+
+            $cashAcc = Account::where('name', 'Cash')->first();
+            $cashBalance = $cashAcc ? (int) $cashAcc->current_balance : 0;
+
+            \App\Models\DriverSnapshot::create([
+                'work_day_id' => $workDay->id,
+                'recorded_at' => now(),
+                'completed_orders' => (int) ($validated['completed_orders'] ?? 0),
+                'delivery_fee' => (int) ($validated['delivery_fee'] ?? 0),
+                'hub_income' => (int) ($validated['hub_income'] ?? 0),
+                'hub_bonus' => (int) ($validated['hub_bonus'] ?? 0),
+                'customer_tips' => (int) ($validated['customer_tips'] ?? 0),
+                'shopeepay_balance' => $shopeepayBalance,
+                'gopay_balance' => $gopayBalance,
+                'gopay_merchant_balance' => $gopayMerchantBalance,
+                'cash_balance' => $cashBalance,
+                'notes' => $validated['closing_notes'] ?? null,
+            ]);
         }
 
         try {
             $closingService->finalizeWorkDay(
                 workDay: $workDay,
-                digitalBalances: $validated['digital_balances'] ?? [],
+                digitalBalances: $balances,
                 closingNotes: $validated['closing_notes'] ?? null
             );
 
-            return redirect()->route('dashboard')->with('success', "Hari kerja {$workDay->work_date->toDateString()} berhasil difinalisasi!");
+            return redirect()->route('dashboard')->with('success', "Hari kerja {$workDay->work_date->toDateString()} berhasil difinalisasi! Seluruh saldo rekening telah disinkronkan.");
         } catch (UnresolvedDiscrepancyException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        } catch (\InvalidArgumentException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

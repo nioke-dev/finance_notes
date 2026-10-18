@@ -8,6 +8,7 @@ use App\Models\FinancialGoal;
 use App\Models\User;
 use App\Models\WorkDay;
 use Database\Seeders\DefaultAccountsSeeder;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -344,100 +345,110 @@ class FinancialGoalAndDigitalReconWebTest extends TestCase
 
     public function test_cannot_save_checkpoint_with_time_less_than_or_equal_to_previous_checkpoint(): void
     {
-        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
-        $shopeePay->update(['current_balance' => 50000]);
+        Carbon::setTestNow(now()->startOfDay()->addHours(15));
+        try {
+            $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+            $shopeePay->update(['current_balance' => 50000]);
 
-        // Checkpoint 1 jam 14:00:00
-        \App\Models\DriverSnapshot::create([
-            'work_day_id' => $this->workDay->id,
-            'recorded_at' => now()->startOfDay()->addHours(14),
-            'completed_orders' => 5,
-            'delivery_fee' => 40000,
-            'hub_income' => 0,
-            'hub_bonus' => 0,
-            'customer_tips' => 0,
-            'shopeepay_balance' => 50000,
-            'gopay_balance' => 0,
-            'gopay_merchant_balance' => 0,
-            'cash_balance' => 10000,
-        ]);
+            // Checkpoint 1 jam 14:00:00
+            \App\Models\DriverSnapshot::create([
+                'work_day_id' => $this->workDay->id,
+                'recorded_at' => now()->startOfDay()->addHours(14),
+                'completed_orders' => 5,
+                'delivery_fee' => 40000,
+                'hub_income' => 0,
+                'hub_bonus' => 0,
+                'customer_tips' => 0,
+                'shopeepay_balance' => 50000,
+                'gopay_balance' => 0,
+                'gopay_merchant_balance' => 0,
+                'cash_balance' => 10000,
+            ]);
 
-        // Coba input Checkpoint 2 dengan waktu yang MUNDUR (13:59:59)
-        $payloadBackwards = [
-            'work_day_id' => $this->workDay->id,
-            'is_custom_time' => 1,
-            'custom_recorded_at' => now()->startOfDay()->addHours(13)->addMinutes(59)->addSeconds(59)->format('Y-m-d H:i:s'),
-            'completed_orders' => 6,
-            'delivery_fee' => 50000,
-            'balances' => [
-                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
-            ],
-        ];
+            // Coba input Checkpoint 2 dengan waktu yang MUNDUR (13:59:59)
+            $payloadBackwards = [
+                'work_day_id' => $this->workDay->id,
+                'is_custom_time' => 1,
+                'custom_recorded_at' => now()->startOfDay()->addHours(13)->addMinutes(59)->addSeconds(59)->format('Y-m-d H:i:s'),
+                'completed_orders' => 6,
+                'delivery_fee' => 50000,
+                'balances' => [
+                    ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+                ],
+            ];
 
-        $responseBackwards = $this->post('/operational/digital-reconciliation', $payloadBackwards);
-        $responseBackwards->assertRedirect();
-        $responseBackwards->assertSessionHas('error');
-        $this->assertTrue(str_contains(session('error'), 'tidak boleh mendahului atau sama dengan checkpoint sebelumnya'));
+            $responseBackwards = $this->post('/operational/digital-reconciliation', $payloadBackwards);
+            $responseBackwards->assertRedirect();
+            $responseBackwards->assertSessionHas('error');
+            $this->assertTrue(str_contains(session('error'), 'tidak boleh mendahului atau sama dengan checkpoint sebelumnya'));
 
-        // Coba input Checkpoint 2 dengan waktu yang SAMA PERSIS (14:00:00)
-        $payloadEqual = [
-            'work_day_id' => $this->workDay->id,
-            'is_custom_time' => 1,
-            'custom_recorded_at' => now()->startOfDay()->addHours(14)->format('Y-m-d H:i:s'),
-            'completed_orders' => 6,
-            'delivery_fee' => 50000,
-            'balances' => [
-                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
-            ],
-        ];
+            // Coba input Checkpoint 2 dengan waktu yang SAMA PERSIS (14:00:00)
+            $payloadEqual = [
+                'work_day_id' => $this->workDay->id,
+                'is_custom_time' => 1,
+                'custom_recorded_at' => now()->startOfDay()->addHours(14)->format('Y-m-d H:i:s'),
+                'completed_orders' => 6,
+                'delivery_fee' => 50000,
+                'balances' => [
+                    ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+                ],
+            ];
 
-        $responseEqual = $this->post('/operational/digital-reconciliation', $payloadEqual);
-        $responseEqual->assertRedirect();
-        $responseEqual->assertSessionHas('error');
-        $this->assertTrue(str_contains(session('error'), 'tidak boleh mendahului atau sama dengan checkpoint sebelumnya'));
+            $responseEqual = $this->post('/operational/digital-reconciliation', $payloadEqual);
+            $responseEqual->assertRedirect();
+            $responseEqual->assertSessionHas('error');
+            $this->assertTrue(str_contains(session('error'), 'tidak boleh mendahului atau sama dengan checkpoint sebelumnya'));
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_can_save_checkpoint_with_custom_time_strictly_greater_than_previous_checkpoint(): void
     {
-        $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
-        $shopeePay->update(['current_balance' => 50000]);
+        Carbon::setTestNow(now()->startOfDay()->addHours(15));
+        try {
+            $shopeePay = Account::where('name', 'ShopeePay')->firstOrFail();
+            $shopeePay->update(['current_balance' => 50000]);
 
-        // Checkpoint 1 jam 14:00:00
-        \App\Models\DriverSnapshot::create([
-            'work_day_id' => $this->workDay->id,
-            'recorded_at' => now()->startOfDay()->addHours(14),
-            'completed_orders' => 5,
-            'delivery_fee' => 40000,
-            'hub_income' => 0,
-            'hub_bonus' => 0,
-            'customer_tips' => 0,
-            'shopeepay_balance' => 50000,
-            'gopay_balance' => 0,
-            'gopay_merchant_balance' => 0,
-            'cash_balance' => 10000,
-        ]);
+            // Checkpoint 1 jam 14:00:00
+            \App\Models\DriverSnapshot::create([
+                'work_day_id' => $this->workDay->id,
+                'recorded_at' => now()->startOfDay()->addHours(14),
+                'completed_orders' => 5,
+                'delivery_fee' => 40000,
+                'hub_income' => 0,
+                'hub_bonus' => 0,
+                'customer_tips' => 0,
+                'shopeepay_balance' => 50000,
+                'gopay_balance' => 0,
+                'gopay_merchant_balance' => 0,
+                'cash_balance' => 10000,
+            ]);
 
-        // Checkpoint 2 jam 14:00:01 (Beda 1 detik lebih baru)
-        $payloadValid = [
-            'work_day_id' => $this->workDay->id,
-            'is_custom_time' => 1,
-            'custom_recorded_at' => now()->startOfDay()->addHours(14)->addSecond()->format('Y-m-d H:i:s'),
-            'completed_orders' => 6,
-            'delivery_fee' => 50000,
-            'balances' => [
-                ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
-            ],
-        ];
+            // Checkpoint 2 jam 14:00:01 (Beda 1 detik lebih baru)
+            $payloadValid = [
+                'work_day_id' => $this->workDay->id,
+                'is_custom_time' => 1,
+                'custom_recorded_at' => now()->startOfDay()->addHours(14)->addSecond()->format('Y-m-d H:i:s'),
+                'completed_orders' => 6,
+                'delivery_fee' => 50000,
+                'balances' => [
+                    ['account_id' => $shopeePay->id, 'actual_balance' => 50000],
+                ],
+            ];
 
-        $responseValid = $this->post('/operational/digital-reconciliation', $payloadValid);
-        $responseValid->assertRedirect();
-        $responseValid->assertSessionHas('success');
+            $responseValid = $this->post('/operational/digital-reconciliation', $payloadValid);
+            $responseValid->assertRedirect();
+            $responseValid->assertSessionHas('success');
 
-        $this->assertDatabaseHas('driver_snapshots', [
-            'work_day_id' => $this->workDay->id,
-            'completed_orders' => 6,
-            'delivery_fee' => 50000,
-        ]);
+            $this->assertDatabaseHas('driver_snapshots', [
+                'work_day_id' => $this->workDay->id,
+                'completed_orders' => 6,
+                'delivery_fee' => 50000,
+            ]);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_cannot_save_checkpoint_with_time_in_the_future(): void

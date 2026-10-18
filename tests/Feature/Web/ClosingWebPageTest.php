@@ -359,5 +359,68 @@ class ClosingWebPageTest extends TestCase
         $this->assertTrue($response->viewData('isPreFilledFromPrevious'));
         $this->assertStringContainsString('Saldo Kas Berjalan', $response->viewData('previousDenominationDate'));
     }
+
+    public function test_finalize_with_unified_payload_synchronizes_digital_balances_and_records_driver_snapshot(): void
+    {
+        $shopeePay = Account::create([
+            'name' => 'ShopeePay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 50000,
+            'initial_balance' => 50000,
+        ]);
+
+        $gopay = Account::create([
+            'name' => 'GoPay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 20000,
+            'initial_balance' => 20000,
+        ]);
+
+        $cashAcc = Account::where('name', 'Cash')->first();
+        $cashAcc->update(['current_balance' => 150000]);
+
+        // Submit finalize with digital balances and shift metrics directly
+        $payload = [
+            'closing_notes' => 'Tutup shift langsung final',
+            'completed_orders' => 15,
+            'delivery_fee' => 90000,
+            'hub_income' => 10000,
+            'hub_bonus' => 5000,
+            'customer_tips' => 4000,
+            'cod_qris_amount' => 0,
+            'bill_100000' => 1,
+            'bill_50000' => 1,
+            'balances' => [
+                [
+                    'account_id' => $shopeePay->id,
+                    'actual_balance' => 155000, // surplus +105.000
+                ],
+                [
+                    'account_id' => $gopay->id,
+                    'actual_balance' => 24000,  // surplus +4.000 tip QRIS
+                ],
+            ],
+        ];
+
+        $response = $this->post('/closing/' . $this->workDay->id . '/finalize', $payload);
+        $response->assertRedirect('/dashboard');
+        $response->assertSessionHas('success');
+
+        // Workday status is final
+        $this->assertEquals(WorkDay::STATUS_FINAL, $this->workDay->fresh()->status);
+
+        // Balances are synchronized
+        $this->assertEquals(155000, $shopeePay->fresh()->current_balance);
+        $this->assertEquals(24000, $gopay->fresh()->current_balance);
+
+        // DriverSnapshot is recorded
+        $this->assertDatabaseHas('driver_snapshots', [
+            'work_day_id' => $this->workDay->id,
+            'completed_orders' => 15,
+            'delivery_fee' => 90000,
+            'shopeepay_balance' => 155000,
+            'gopay_balance' => 24000,
+        ]);
+    }
 }
 

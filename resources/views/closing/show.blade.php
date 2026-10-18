@@ -573,7 +573,7 @@
                     @endif
 
                     {{-- Form Finalisasi Hari Kerja --}}
-                    <form method="POST" action="/closing/{{ $workDay->id }}/finalize" class="space-y-3 pt-2">
+                    <form method="POST" action="/closing/{{ $workDay->id }}/finalize" id="form-finalize-workday" class="space-y-3 pt-2" onsubmit="prepareFinalizeSubmission(this)">
                         @csrf
                         <div>
                             <label class="block text-xs font-bold text-slate-300 mb-1">Catatan Closing (Opsional)</label>
@@ -582,6 +582,7 @@
 
                         <button 
                             type="submit" 
+                            id="btn-finalize-workday"
                             {{ !$isBalanced ? 'disabled' : '' }}
                             class="w-full py-3 px-4 font-bold text-sm rounded-xl transition shadow flex items-center justify-center space-x-2 {{ $isBalanced ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer' : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-60' }}"
                         >
@@ -733,6 +734,14 @@
             if (cashReconInput && total > 0) {
                 cashReconInput.value = total;
                 calculateClosingReconDiff();
+            }
+
+            // Jika fisik kas cocok dengan saldo kas buku, aktifkan tombol finalisasi secara live
+            const cashLedgerBalance = {{ (int) ($cashAccount?->current_balance ?? 0) }};
+            const btnFinalize = document.getElementById('btn-finalize-workday');
+            if (btnFinalize && total === cashLedgerBalance && total > 0) {
+                btnFinalize.disabled = false;
+                btnFinalize.className = 'w-full py-3 px-4 font-bold text-sm rounded-xl transition shadow flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer';
             }
         }
 
@@ -894,6 +903,88 @@
             const inputEl = document.getElementById('correct-new-amount');
             if (inputEl) inputEl.value = currentAmount;
             openModal('modal-correct-closing-tx');
+        }
+
+        function prepareFinalizeSubmission(form) {
+            // 1. Kumpulkan semua saldo wadah digital dan kas dari input rekonsiliasi
+            document.querySelectorAll('.closing-recon-digital-input').forEach((input, idx) => {
+                const accId = input.id.replace('closing-recon-input-', '');
+                const val = input.value;
+                
+                let existingAcc = form.querySelector(`input[name="balances[${idx}][account_id]"]`);
+                if (!existingAcc) {
+                    existingAcc = document.createElement('input');
+                    existingAcc.type = 'hidden';
+                    existingAcc.name = `balances[${idx}][account_id]`;
+                    form.appendChild(existingAcc);
+                }
+                existingAcc.value = accId;
+                
+                let existingVal = form.querySelector(`input[name="balances[${idx}][actual_balance]"]`);
+                if (!existingVal) {
+                    existingVal = document.createElement('input');
+                    existingVal.type = 'hidden';
+                    existingVal.name = `balances[${idx}][actual_balance]`;
+                    form.appendChild(existingVal);
+                }
+                existingVal.value = val;
+            });
+
+            // 2. Kumpulkan metrik driver (ongkir, tip, bonus hub, order selesai, tagihan COD QRIS)
+            ['delivery_fee', 'hub_income', 'hub_bonus', 'customer_tips', 'completed_orders', 'cod_qris_amount'].forEach(fieldName => {
+                const el = document.getElementById('closing-' + fieldName.replace(/_/g, '-'));
+                if (el) {
+                    let existing = form.querySelector(`input[name="${fieldName}"]`);
+                    if (!existing) {
+                        existing = document.createElement('input');
+                        existing.type = 'hidden';
+                        existing.name = fieldName;
+                        form.appendChild(existing);
+                    }
+                    existing.value = el.value;
+                }
+            });
+
+            // 3. Kumpulkan rincian pecahan fisik kas di dompet
+            if (typeof denomValues !== 'undefined') {
+                Object.keys(denomValues).forEach(denomKey => {
+                    const el = document.getElementById(denomKey);
+                    if (el) {
+                        let existing = form.querySelector(`input[name="${denomKey}"]`);
+                        if (!existing) {
+                            existing = document.createElement('input');
+                            existing.type = 'hidden';
+                            existing.name = denomKey;
+                            form.appendChild(existing);
+                        }
+                        existing.value = el.value;
+                    }
+                });
+            }
+
+            // 4. Kumpulkan uang rusak / sobek jika ada
+            const damagedAmountEl = document.getElementById('damaged_notes_amount');
+            if (damagedAmountEl) {
+                let existing = form.querySelector('input[name="damaged_notes_amount"]');
+                if (!existing) {
+                    existing = document.createElement('input');
+                    existing.type = 'hidden';
+                    existing.name = 'damaged_notes_amount';
+                    form.appendChild(existing);
+                }
+                existing.value = damagedAmountEl.value;
+            }
+            const damagedNoteEl = document.getElementById('damaged_notes_note');
+            if (damagedNoteEl) {
+                let existing = form.querySelector('input[name="damaged_notes_note"]');
+                if (!existing) {
+                    existing = document.createElement('input');
+                    existing.type = 'hidden';
+                    existing.name = 'damaged_notes_note';
+                    form.appendChild(existing);
+                }
+                existing.value = damagedNoteEl.value;
+            }
         }
     </script>
 
