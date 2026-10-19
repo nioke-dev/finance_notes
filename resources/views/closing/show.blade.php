@@ -667,19 +667,27 @@
                                 @php
                                     $isReversed = \App\Models\Transaction::where('metadata->reversed_transaction_id', $tx->id)->exists();
                                     $isReversal = $tx->type === 'reversal';
+                                    $typeLabel = match(strtolower($tx->type)) {
+                                        'expense' => 'Pengeluaran',
+                                        'income' => 'Pemasukan',
+                                        'transfer' => 'Transfer',
+                                        'discrepancy_adjustment' => 'Selisih Kas',
+                                        'reversal' => 'Koreksi',
+                                        default => strtoupper(str_replace('_', ' ', $tx->type)),
+                                    };
                                 @endphp
-                                <div class="p-3 bg-slate-900/70 border border-slate-700/50 rounded-xl flex items-center justify-between text-xs {{ $isReversed ? 'opacity-40' : '' }}">
-                                    <div class="flex-1 pr-2">
-                                        <span class="font-bold text-white block">{{ $tx->description }}</span>
-                                        <span class="text-[10px] text-slate-300 font-medium">
+                                <div class="p-3 bg-slate-900/70 border border-slate-700/50 rounded-xl flex items-start justify-between text-xs gap-2.5 {{ $isReversed ? 'opacity-40' : '' }}">
+                                    <div class="flex-1 min-w-0">
+                                        <span class="font-bold text-white block break-words leading-snug">{{ $tx->description }}</span>
+                                        <span class="text-[10px] text-slate-300 font-medium block mt-1">
                                             {{ $tx->transaction_time ? $tx->transaction_time->format('H:i') : '' }} &bull; 
-                                            <span class="uppercase font-semibold text-slate-300">{{ $tx->type }}</span>
+                                            <span class="font-semibold text-slate-300">{{ $typeLabel }}</span>
                                             @if($isReversed)
                                                 &bull; <span class="text-rose-400 font-semibold">(Telah Dikoreksi)</span>
                                             @endif
                                         </span>
                                     </div>
-                                    <div class="text-right flex items-center space-x-2">
+                                    <div class="text-right flex items-center space-x-2 shrink-0">
                                         <span class="font-bold text-white block">
                                             Rp {{ number_format($tx->amount, 0, ',', '.') }}
                                         </span>

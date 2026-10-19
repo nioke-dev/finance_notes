@@ -1804,34 +1804,94 @@
 
         {{-- Riwayat Transaksi Terbaru --}}
         @if($recentTransactions->isNotEmpty())
-            <div id="tour-recent-tx" class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow">
-                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">20 Transaksi Terakhir</h3>
+            <div id="tour-recent-tx" class="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow">
+                <div class="flex items-center justify-between mb-3 border-b border-slate-700/50 pb-2">
+                    <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300">20 Transaksi Terakhir</h3>
+                    <span class="text-[10px] text-slate-400 font-medium">Terbaru ke Lama</span>
+                </div>
                 <div class="divide-y divide-slate-700/50">
                     @foreach($recentTransactions as $tx)
-                        <div class="py-3 flex justify-between items-center text-xs">
-                            <div>
-                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                                    <span class="font-bold text-white block">{{ $tx->description }}</span>
+                        @php
+                            $typeConfig = match(strtolower($tx->type)) {
+                                'expense' => [
+                                    'label' => 'Pengeluaran',
+                                    'badge' => 'bg-rose-950/60 text-rose-300 border-rose-500/40',
+                                    'amount_color' => 'text-rose-400',
+                                    'sign' => '-',
+                                ],
+                                'income' => [
+                                    'label' => 'Pemasukan',
+                                    'badge' => 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40',
+                                    'amount_color' => 'text-emerald-400',
+                                    'sign' => '+',
+                                ],
+                                'transfer' => [
+                                    'label' => 'Transfer',
+                                    'badge' => 'bg-sky-950/60 text-sky-300 border-sky-500/40',
+                                    'amount_color' => 'text-sky-300',
+                                    'sign' => '',
+                                ],
+                                'discrepancy_adjustment' => [
+                                    'label' => 'Selisih Kas',
+                                    'badge' => 'bg-amber-950/60 text-amber-300 border-amber-500/40',
+                                    'amount_color' => 'text-amber-300',
+                                    'sign' => '±',
+                                ],
+                                'reversal' => [
+                                    'label' => 'Koreksi',
+                                    'badge' => 'bg-purple-950/60 text-purple-300 border-purple-500/40',
+                                    'amount_color' => 'text-purple-300',
+                                    'sign' => '',
+                                ],
+                                default => [
+                                    'label' => strtoupper(str_replace('_', ' ', $tx->type)),
+                                    'badge' => 'bg-slate-900 text-slate-300 border-slate-700',
+                                    'amount_color' => 'text-slate-300',
+                                    'sign' => '',
+                                ],
+                            };
+                        @endphp
+                        <div class="py-3 space-y-1.5 text-xs">
+                            {{-- Baris 1: Judul/Deskripsi Transaksi & Badge Tipe --}}
+                            <div class="flex items-start justify-between gap-2.5">
+                                <div class="flex-1 min-w-0">
+                                    <span class="font-bold text-white text-xs sm:text-sm break-words leading-snug block">
+                                        {{ $tx->description }}
+                                    </span>
+                                </div>
+                                <span class="shrink-0 font-bold px-2 py-0.5 rounded text-[10px] tracking-wide border whitespace-nowrap {{ $typeConfig['badge'] }}">
+                                    {{ $typeConfig['label'] }}
+                                </span>
+                            </div>
+
+                            {{-- Baris 2: Waktu, Lokasi Maps, Nominal & Tombol Edit --}}
+                            <div class="flex items-center justify-between gap-2 pt-0.5">
+                                <div class="flex items-center space-x-1.5 flex-wrap text-[10px] text-slate-400 font-medium">
+                                    <span>{{ $tx->transaction_time->format('d M Y H:i') }}</span>
+                                    <span>&bull;</span>
+                                    <span>Shift {{ $tx->workDay->work_date->format('d/m/Y') }}</span>
                                     @if(!empty($tx->metadata['latitude']) && !empty($tx->metadata['longitude']))
-                                        <a href="https://www.google.com/maps?q={{ $tx->metadata['latitude'] }},{{ $tx->metadata['longitude'] }}" target="_blank" class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/40 text-[10px] font-bold flex items-center space-x-0.5 transition" title="Buka Koordinat GPS di Google Maps">
+                                        <a href="https://www.google.com/maps?q={{ $tx->metadata['latitude'] }},{{ $tx->metadata['longitude'] }}" target="_blank" class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/40 text-[9px] font-bold inline-flex items-center space-x-0.5 transition" title="Buka Koordinat GPS di Google Maps">
                                             <span>📍</span>
                                             <span>Maps</span>
                                         </a>
                                     @endif
                                 </div>
-                                <span class="text-[10px] text-slate-300 font-medium">{{ $tx->transaction_time->format('d M Y H:i') }} &bull; Shift {{ $tx->workDay->work_date->format('d/m/Y') }}</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <button type="button" 
-                                    onclick="openEditTxModal({{ $tx->id }}, '{{ addslashes($tx->description) }}', 'Rp {{ number_format($tx->amount, 0, ',', '.') }}', '{{ $tx->transaction_time->format('d M Y H:i') }} WIB', '{{ $tx->transaction_time->format('Y-m-d\TH:i') }}')" 
-                                    class="px-2 py-1 bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg border border-slate-600 text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm" 
-                                    title="Edit Keterangan / Jam Transaksi">
-                                    <span>✏️</span>
-                                    <span>Edit</span>
-                                </button>
-                                <span class="font-bold px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200">
-                                    {{ strtoupper($tx->type) }}
-                                </span>
+
+                                <div class="flex items-center space-x-2 shrink-0">
+                                    @if($tx->amount > 0)
+                                        <span class="font-black text-xs {{ $typeConfig['amount_color'] }}">
+                                            {{ $typeConfig['sign'] }}Rp {{ number_format($tx->amount, 0, ',', '.') }}
+                                        </span>
+                                    @endif
+                                    <button type="button" 
+                                        onclick="openEditTxModal({{ $tx->id }}, '{{ addslashes($tx->description) }}', 'Rp {{ number_format($tx->amount, 0, ',', '.') }}', '{{ $tx->transaction_time->format('d M Y H:i') }} WIB', '{{ $tx->transaction_time->format('Y-m-d\TH:i') }}')" 
+                                        class="px-2 py-0.5 bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg border border-slate-600 text-[10px] font-semibold flex items-center space-x-1 transition shadow-sm" 
+                                        title="Edit Keterangan / Jam Transaksi">
+                                        <span>✏️</span>
+                                        <span>Edit</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     @endforeach
