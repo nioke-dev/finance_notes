@@ -152,9 +152,9 @@
                 {{-- Grid 4 Metrik Driver (High OLED Contrast) --}}
                 <div class="grid grid-cols-2 gap-4 text-xs">
                     <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3.5 space-y-1">
-                        <span class="text-slate-300 text-[11px] uppercase font-bold block">Tagihan COD / Ongkir</span>
-                        <span class="text-base font-extrabold text-white block">Rp {{ number_format($dayRegularIncome, 0, ',', '.') }}</span>
-                        <span class="text-xs text-slate-300 font-medium block">{{ $dayOrdersCount }} pesanan diselesaikan</span>
+                        <span class="text-slate-300 text-[11px] uppercase font-bold block">Tagihan COD Dilunasi</span>
+                        <span class="text-base font-extrabold text-white block">Rp {{ number_format($dayCodBillSettled ?? 0, 0, ',', '.') }}</span>
+                        <span class="text-xs text-slate-300 font-medium block">{{ $dayOrdersCount }} pesanan COD diselesaikan</span>
                     </div>
 
                     <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3.5 space-y-1">
@@ -3538,14 +3538,14 @@
     {{-- 7. Modal Pemasukan Pribadi (Project Luar / Jual Barang / Transferan) --}}
     <div id="modal-personal-income" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
         <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-base font-bold text-white mb-1">💰 Pemasukan Pribadi di Luar Driver</h3>
-            <p class="text-xs text-slate-300 font-medium mb-4">Catat honor freelance, hasil jual barang bekas, atau transferan keluarga (tidak dicampur ke omzet ShopeeFood).</p>
+            <h3 class="text-base font-bold text-white mb-1">💰 Pemasukan Pribadi & Titipan di Luar Driver</h3>
+            <p class="text-xs text-slate-300 font-medium mb-4">Catat honor freelance, hasil jual barang, atau titipan/reimbursement teman via QRIS GoPay Merchant (agar tidak tercampur ke omzet ShopeeFood/tip).</p>
             <form method="POST" action="/operational/personal-income" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Sumber Pemasukan</label>
-                    <input type="text" name="description" placeholder="Contoh: Jual helm second / Honor project freelance" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Sumber Pemasukan / Titipan</label>
+                    <input type="text" name="description" placeholder="Contoh: Titipan makan teman di kafe via QRIS / Honor freelance" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Masuk ke Rekening / Dompet</label>
@@ -4412,6 +4412,11 @@
                         </span>
                     </div>
 
+                    {{-- Panduan Tegas Sumber Data --}}
+                    <div class="p-2.5 bg-orange-950/40 border border-orange-500/30 rounded-xl text-[11px] text-orange-200 leading-snug">
+                        📱 <strong>Murni Layar Aplikasi ShopeeFood Driver:</strong> Masukkan angka yang tertera di menu <em>Pendapatan Hari Ini</em> pada aplikasi ShopeeFood Driver. Bagian ini <em>BUKAN</em> untuk tagihan makanan COD, tip cash kembalian, atau tip QRIS lapangan (semuanya telah dicatat sistem di wadah masing-masing). Jika belum ada tip di aplikasi Shopee, biarkan <strong>0</strong>.
+                    </div>
+
                     {{-- Total Pendapatan yang Diterima (Mirip Tampilan Atas Layar HP Driver) --}}
                     <div class="p-3 bg-slate-950/90 border border-orange-500/30 rounded-xl flex items-center justify-between">
                         <div>
@@ -4420,7 +4425,7 @@
                         </div>
                         <div class="text-right">
                             <span id="disp-completed-orders" class="px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 font-black text-xs border border-orange-500/30 inline-block">
-                                {{ $latestSnapshot?->completed_orders ?? $dayOrdersCount ?? 0 }} Pesanan Selesai
+                                {{ $latestSnapshot?->completed_orders ?? 0 }} Pesanan Selesai
                             </span>
                         </div>
                     </div>
@@ -4448,7 +4453,7 @@
 
                         <div>
                             <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                                Tip dari Pelanggan (Rp)
+                                Tip dari Pelanggan (In-App ShopeeFood) (Rp)
                             </label>
                             <input 
                                 type="number" 
@@ -4456,14 +4461,14 @@
                                 pattern="[0-9]*" 
                                 name="customer_tips" 
                                 id="recon-customer-tips" 
-                                value="{{ $latestSnapshot?->customer_tips ?? $dayTipIncome ?? 0 }}" 
+                                value="{{ $latestSnapshot?->customer_tips ?? 0 }}" 
                                 min="0" 
                                 step="1" 
                                 oninput="calculateDigitalReconDiff()" 
                                 placeholder="0" 
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                             >
-                            <span class="text-[10px] text-slate-400">Sesuai baris <strong>Tip dari Pelanggan</strong></span>
+                            <span class="text-[10px] text-slate-400 leading-snug block mt-0.5">Sesuai baris <strong>Tip dari Pelanggan</strong> di apk ShopeeFood (cair ke ShopeePay). <em>Bukan tip cash COD / QRIS.</em></span>
                         </div>
 
                         <div>
@@ -4496,14 +4501,14 @@
                                 pattern="[0-9]*" 
                                 name="hub_income" 
                                 id="recon-hub-income" 
-                                value="{{ $latestSnapshot?->hub_income ?? $dayRegularIncome ?? 0 }}" 
+                                value="{{ $latestSnapshot?->hub_income ?? 0 }}" 
                                 min="0" 
                                 step="1" 
                                 oninput="calculateDigitalReconDiff()" 
                                 placeholder="0" 
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                             >
-                            <span class="text-[10px] text-slate-400">Sesuai baris <strong>Pendapatan Hub</strong></span>
+                            <span class="text-[10px] text-slate-400 leading-snug block mt-0.5">Sesuai baris <strong>Pendapatan Hub</strong> di apk Shopee (<em>BUKAN tagihan makanan COD</em>).</span>
                         </div>
 
                         <div class="sm:col-span-2">
@@ -4516,14 +4521,14 @@
                                 pattern="[0-9]*" 
                                 name="completed_orders" 
                                 id="recon-completed-orders" 
-                                value="{{ $latestSnapshot?->completed_orders ?? $dayOrdersCount ?? 0 }}" 
+                                value="{{ $latestSnapshot?->completed_orders ?? 0 }}" 
                                 min="0" 
                                 step="1" 
                                 oninput="calculateDigitalReconDiff()" 
                                 placeholder="Contoh: 12" 
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-black focus:ring-2 focus:ring-orange-500 focus:outline-none"
                             >
-                            <span class="text-[10px] text-slate-400">Sesuai tulisan <strong>... Pesanan Selesai</strong></span>
+                            <span class="text-[10px] text-slate-400">Sesuai tulisan <strong>... Pesanan Selesai</strong> di aplikasi ShopeeFood Driver</span>
                         </div>
                     </div>
                 </div>

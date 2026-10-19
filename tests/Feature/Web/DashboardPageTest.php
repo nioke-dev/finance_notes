@@ -205,4 +205,70 @@ class DashboardPageTest extends TestCase
         $dashboardResponse->assertSee('20 Transaksi Terakhir');
         $dashboardResponse->assertSee('Talangan COD #SPF-998877');
     }
+
+    public function test_checkpoint_modal_inputs_default_to_zero_and_not_contaminated_by_cod_bill_or_cash_tips(): void
+    {
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
+        $shopeePay = Account::create([
+            'name' => 'ShopeePay',
+            'type' => AccountType::EWALLET,
+            'current_balance' => 200000,
+            'initial_balance' => 200000,
+            'is_active' => true,
+        ]);
+
+        $cash = Account::create([
+            'name' => 'Cash',
+            'type' => AccountType::CASH,
+            'current_balance' => 100000,
+            'initial_balance' => 100000,
+            'is_active' => true,
+        ]);
+
+        $todayWorkDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        // Simulasikan order COD senilai 17.800 dan customer membayar 19.000 cash (surplus tip 1.200)
+        $this->post('/operational/cod-orders/accept', [
+            'work_day_id' => $todayWorkDay->id,
+            'order_code' => 'COD-17800',
+            'merchant_name' => 'Nasi Padang',
+            'bill_amount' => 17800,
+            'rounded_bill_amount' => 18000,
+        ]);
+
+        $order = \App\Models\ActiveCodOrder::where('order_code', 'COD-17800')->firstOrFail();
+
+        $this->post("/operational/cod-orders/{$order->id}/complete", [
+            'payment_method' => 'cash',
+            'received_amount' => 19000,
+            'customer_gave_amount' => 19000,
+            'change_returned' => 0,
+            'settlement_account_id' => $cash->id,
+        ]);
+
+        // Buka Dashboard
+        $response = $this->get('/dashboard');
+        $response->assertStatus(200);
+
+        // Verifikasi metrik controller:
+        // Tagihan COD yang dilunasi adalah 17.800
+        $response->assertViewHas('dayCodBillSettled', 17800);
+        // Pendapatan reguler ShopeeFood TIDAK boleh terkontaminasi oleh tagihan makanan COD (tetap 0)
+        $response->assertViewHas('dayRegularIncome', 0);
+        // Tip COD masuk ke metrik tip hari ini
+        $response->assertViewHas('dayTipIncome', 1200);
+
+        // Verifikasi bahwa input di form modal Update Saldo Narik:
+        // Tip dari pelanggan di ShopeeFood Driver TETAP 0 (bukan 1.200)
+        $response->assertSee('id="recon-customer-tips"', false);
+        $response->assertSee('id="recon-hub-income"', false);
+        $response->assertSee('id="recon-completed-orders"', false);
+        $response->assertDontSee('id="recon-customer-tips" \n value="1200"', false);
+        $response->assertDontSee('1200 Pesanan Selesai');
+    }
 }

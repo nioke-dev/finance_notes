@@ -52,6 +52,7 @@ class DashboardController extends Controller
         // 1. Metrik Operasional Narik Driver
         $dayOrdersCount = 0;
         $dayRegularIncome = 0;
+        $dayCodBillSettled = 0;
         $dayTipIncome = 0;
         $dayBonusIncome = 0;
         $dayFuelExpense = 0;
@@ -83,7 +84,7 @@ class DashboardController extends Controller
                 // Operasional Narik ShopeeFood
                 if ($type === 'cod_order' || $type === 'cod_order_completed') {
                     $dayOrdersCount++;
-                    $dayRegularIncome += (int) ($meta['bill_amount'] ?? 0);
+                    $dayCodBillSettled += (int) ($meta['bill_amount'] ?? 0);
                     $tip = (int) ($meta['tip_amount'] ?? $meta['surplus_amount'] ?? 0);
                     $method = strtolower($meta['payment_method'] ?? 'cash');
                     if ($method === 'qris') {
@@ -458,6 +459,7 @@ class DashboardController extends Controller
             'selectedDate',
             'dayOrdersCount',
             'dayRegularIncome',
+            'dayCodBillSettled',
             'dayTipIncome',
             'dayBonusIncome',
             'dayTotalIncome',
