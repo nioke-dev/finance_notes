@@ -3476,10 +3476,10 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Bayar Menggunakan <span class="text-rose-400">*</span></label>
-                    <select name="source_account_id" id="expense-source-select" onchange="toggleExpenseTenor(this); checkShopeePayCashback(this, 'expense-cashback-wrap')" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <select name="source_account_id" id="expense-source-select" onchange="toggleExpenseTenor(this); checkShopeePayCashback(this, 'expense-cashback-wrap'); toggleExpenseCashDrawer(this);" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         <optgroup label="💵 Uang Kas & Saldo Rekening">
                             @foreach($accounts as $acc)
-                                <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                                <option value="{{ $acc->id }}" data-acc-type="{{ $acc->type->value }}" data-acc-name="{{ $acc->name }}">{{ $acc->name }} (Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
                             @endforeach
                         </optgroup>
                         @if(isset($paylaterProviders) && $paylaterProviders->isNotEmpty())
@@ -3524,8 +3524,163 @@
                     <p class="text-[10px] text-slate-300">Saldo kas fisik/bank tidak akan terpotong sekarang. Tagihan akan masuk ke jadwal cicilan hutang.</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pengeluaran (Rp)</label>
-                    <input type="number" name="amount" min="1" placeholder="15000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Pengeluaran (Rp) <span class="text-rose-400">*</span></label>
+                    <input type="number" name="amount" id="input-expense-amount" oninput="updateExpenseCashLiveCalculator()" min="1" placeholder="15000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button type="button" onclick="setExpenseAmountPreset(10000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">10k</button>
+                        <button type="button" onclick="setExpenseAmountPreset(15000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">15k</button>
+                        <button type="button" onclick="setExpenseAmountPreset(20000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">20k</button>
+                        <button type="button" onclick="setExpenseAmountPreset(25000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">25k</button>
+                        <button type="button" onclick="setExpenseAmountPreset(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">50k</button>
+                    </div>
+                </div>
+
+                {{-- Rincian Pecahan Uang Dibayar & Kembalian (Muncul jika Bayar Pakai Cash) --}}
+                <div id="expense-cash-drawer-wrapper" class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
+                    <button type="button" onclick="toggleCashBreakdownAccordion('expense-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-emerald-400 text-sm">💵</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block">Rincian Pecahan Cash & Kembalian</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Auto-hitung uang pas, uang bulat, dan kembalian live</span>
+                            </div>
+                        </div>
+                        <span id="expense-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                    </button>
+                    <div id="expense-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                        {{-- Tombol Cepat Pilihan Bayar Kas --}}
+                        <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Bayar:</span>
+                            <button type="button" onclick="setTxCashExactPay('expense', 'input-expense-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal belanja ke uang lembaran/koin secara otomatis">
+                                <span>⚡</span>
+                                <span>Bayar Uang Pas</span>
+                            </button>
+                            <button type="button" onclick="setTxCashRoundPay('expense', 50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">50k</button>
+                            <button type="button" onclick="setTxCashRoundPay('expense', 100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">100k</button>
+                            <button type="button" onclick="resetTxCashGroup('expense_paid'); resetTxCashGroup('expense_change'); updateExpenseCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                        </div>
+
+                        {{-- 1. Uang Dikeluarkan (Dibayar) --}}
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-amber-400 uppercase tracking-wide">Uang Dibayarkan:</span>
+                                <span id="expense-paid-total-display" class="text-sm font-black text-amber-300">Rp 0</span>
+                            </div>
+
+                            {{-- Pecahan Kertas --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                            </div>
+                                            <div class="mb-1.5 w-full">
+                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="expense_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('expense_paid', 'expense-paid-total-display'); updateExpenseCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('expense_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'expense_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                <button type="button" onclick="stepTxCash('expense_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'expense_paid')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Pecahan Logam (Koin) --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                            </div>
+                                            <div class="mb-1.5 w-full">
+                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="expense_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('expense_paid', 'expense-paid-total-display'); updateExpenseCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('expense_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'expense_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                <button type="button" onclick="stepTxCash('expense_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'expense_paid')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Perhitungan Live & Tombol Auto-Set Kembalian --}}
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400 font-medium">Harusnya Kembalian:</span>
+                                <span id="expense-expected-change-display" class="font-black text-amber-300 text-sm">Rp 0</span>
+                            </div>
+                            <button type="button" id="btn-expense-auto-set-change" onclick="autoSetTxCashChange('expense', this.getAttribute('data-target-change'))" class="hidden w-full py-1.5 bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 text-[11px] font-bold rounded-lg border border-indigo-500/40 transition flex items-center justify-center space-x-1">
+                                <span>⚡</span>
+                                <span class="btn-change-text">Auto-Set Pecahan Kembalian</span>
+                            </button>
+                        </div>
+
+                        {{-- 2. Kembalian Diterima --}}
+                        <div class="space-y-2 pt-1 border-t border-slate-800">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">Kembalian Diterima:</span>
+                                <span id="expense-change-total-display" class="text-sm font-black text-emerald-400">Rp 0</span>
+                            </div>
+
+                            {{-- Pecahan Kertas --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                            </div>
+                                            <div class="mb-1.5 w-full">
+                                                <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="expense_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('expense_change', 'expense-change-total-display'); updateExpenseCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('expense_change_bill_{{ $nom }}', -1, {{ $nom }}, 'expense_change')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                <button type="button" onclick="stepTxCash('expense_change_bill_{{ $nom }}', 1, {{ $nom }}, 'expense_change')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Pecahan Logam (Koin) --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                            </div>
+                                            <div class="mb-1.5 w-full">
+                                                <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="expense_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('expense_change', 'expense-change-total-display'); updateExpenseCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('expense_change_coin_{{ $nom }}', -1, {{ $nom }}, 'expense_change')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                <button type="button" onclick="stepTxCash('expense_change_coin_{{ $nom }}', 1, {{ $nom }}, 'expense_change')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Banner Status Evaluasi Kembalian Live --}}
+                        <div id="expense-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                            <span>💡 Ketik nominal belanja di atas atau pilih pecahan uang yang dibayarkan.</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-expense')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
@@ -5384,6 +5539,11 @@
                     detectParkingGps(false);
                     updateParkingCashLiveCalculator();
                 }
+                if (id === 'modal-expense') {
+                    const sel = document.getElementById('expense-source-select');
+                    if (sel) toggleExpenseCashDrawer(sel);
+                    updateExpenseCashLiveCalculator();
+                }
                 if (id === 'modal-complete-cod') {
                     updateCodCashLiveCalculator();
                 }
@@ -5536,6 +5696,7 @@
             calcTxCash(groupPrefix, `${groupPrefix.replace('_', '-')}-total-display`);
             if (groupPrefix.startsWith('fuel')) updateFuelCashLiveCalculator();
             if (groupPrefix.startsWith('parking')) updateParkingCashLiveCalculator();
+            if (groupPrefix.startsWith('expense')) updateExpenseCashLiveCalculator();
             if (groupPrefix.startsWith('cod')) updateCodCashLiveCalculator();
         }
 
@@ -5608,6 +5769,7 @@
 
             if (prefix === 'fuel') updateFuelCashLiveCalculator();
             if (prefix === 'parking') updateParkingCashLiveCalculator();
+            if (prefix === 'expense') updateExpenseCashLiveCalculator();
             if (prefix === 'cod_cust' || prefix === 'cod') updateCodCashLiveCalculator();
         }
 
@@ -5623,6 +5785,7 @@
 
             if (prefix === 'fuel') updateFuelCashLiveCalculator();
             if (prefix === 'parking') updateParkingCashLiveCalculator();
+            if (prefix === 'expense') updateExpenseCashLiveCalculator();
             if (prefix === 'cod_cust' || prefix === 'cod') updateCodCashLiveCalculator();
         }
 
@@ -5639,6 +5802,7 @@
 
             if (prefix === 'fuel') updateFuelCashLiveCalculator();
             if (prefix === 'parking') updateParkingCashLiveCalculator();
+            if (prefix === 'expense') updateExpenseCashLiveCalculator();
             if (prefix === 'cod') updateCodCashLiveCalculator();
         }
 
@@ -5879,6 +6043,151 @@
                             <div>
                                 <span class="font-bold block">KEMBALIAN PAS: Rp ${change.toLocaleString('id-ID')}</span>
                                 <span class="text-[10px] text-emerald-400 font-normal">Kembalian parkir cocok 100% (Bayar Rp ${paid.toLocaleString('id-ID')} - Parkir Rp ${nominal.toLocaleString('id-ID')}).</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                    `;
+                } else if (change < expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🚨</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN KURANG: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-rose-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, baru diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${absDiffChange}</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN LEBIH: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, tapi diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${absDiffChange}</span>
+                    `;
+                }
+            }
+        }
+
+        function toggleExpenseCashDrawer(selectEl) {
+            if (!selectEl) return;
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            const accType = selectedOption ? selectedOption.getAttribute('data-acc-type') : '';
+            const accName = selectedOption ? (selectedOption.getAttribute('data-acc-name') || selectedOption.innerText) : '';
+            const drawerWrapper = document.getElementById('expense-cash-drawer-wrapper');
+            if (!drawerWrapper) return;
+            if (accType === 'cash' || (accName && accName.toLowerCase().includes('cash'))) {
+                drawerWrapper.classList.remove('hidden');
+            } else {
+                drawerWrapper.classList.add('hidden');
+            }
+        }
+
+        function setExpenseAmountPreset(val) {
+            const input = document.getElementById('input-expense-amount');
+            if (input) {
+                input.value = val;
+                updateExpenseCashLiveCalculator();
+            }
+        }
+
+        function updateExpenseCashLiveCalculator() {
+            const amountInput = document.getElementById('input-expense-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            const paid = calcTxCash('expense_paid', 'expense-paid-total-display');
+            const change = calcTxCash('expense_change', 'expense-change-total-display');
+
+            const expectedChangeEl = document.getElementById('expense-expected-change-display');
+            const statusBanner = document.getElementById('expense-cash-status-banner');
+            const autoSetChangeBtn = document.getElementById('btn-expense-auto-set-change');
+
+            if (!statusBanner) return;
+
+            if (nominal <= 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between';
+                statusBanner.innerHTML = '<span>ℹ️ Ketik nominal belanja di atas untuk mengaktifkan kalkulator kembalian live.</span>';
+                if (expectedChangeEl) expectedChangeEl.innerText = 'Rp 0';
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+                return;
+            }
+
+            const expectedChange = Math.max(0, paid - nominal);
+            if (expectedChangeEl) expectedChangeEl.innerText = `Rp ${expectedChange.toLocaleString('id-ID')}`;
+
+            if (paid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Nominal Belanja: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Pilih pecahan uang dibayar atau tap <strong>⚡ Bayar Uang Pas</strong>.</span>
+                    </div>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid < nominal) {
+                const shortage = nominal - paid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Uang Dibayar Masih Kurang: Rp ${shortage.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-rose-300 font-normal">Dibayar Rp ${paid.toLocaleString('id-ID')} dari nominal belanja Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${shortage.toLocaleString('id-ID')}</span>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid === nominal) {
+                if (change === 0) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang PAS (Rp ${nominal.toLocaleString('id-ID')})</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Tidak ada kembalian. Kas fisik dompet Anda sinkron otomatis.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">UANG PAS</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang Pas Tapi Ada Input Kembalian</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Kembalian harusnya Rp 0.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else {
+                if (autoSetChangeBtn) {
+                    autoSetChangeBtn.classList.remove('hidden');
+                    autoSetChangeBtn.setAttribute('data-target-change', expectedChange);
+                    const spanText = autoSetChangeBtn.querySelector('.btn-change-text');
+                    if (spanText) spanText.innerText = `Auto-Set Pecahan Kembalian (Rp ${expectedChange.toLocaleString('id-ID')})`;
+                }
+
+                const diffChange = change - expectedChange;
+                const absDiffChange = Math.abs(diffChange).toLocaleString('id-ID');
+
+                if (change === expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN PAS: Rp ${change.toLocaleString('id-ID')}</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Kembalian belanja cocok 100% (Bayar Rp ${paid.toLocaleString('id-ID')} - Belanja Rp ${nominal.toLocaleString('id-ID')}).</span>
                             </div>
                         </div>
                         <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>

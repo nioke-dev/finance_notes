@@ -197,5 +197,53 @@ class CashOperationalWebTest extends TestCase
         $dashResponse->assertSee('https://www.google.com/maps?q=-7.9421234,112.6178912', false);
         $dashResponse->assertSee('Maps');
     }
+
+    public function test_personal_expense_with_cash_breakdown_updates_cash_denominations(): void
+    {
+        // Seed baseline denomination for the shift
+        $denom = CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_50000' => 4, // Rp 200.000
+            'total_physical_amount' => 200000,
+        ]);
+
+        // Makan siang Rp 15.000, bayar pakai selembar 50rb, kembalian 35rb (20k + 10k + 5k)
+        $response = $this->post('/operational/personal-expense', [
+            'work_day_id' => $this->workDay->id,
+            'source_account_id' => $this->cashAccount->id,
+            'amount' => 15000,
+            'description' => 'Makan Siang Soto Ayam Lamongan',
+            'paid_breakdown' => [
+                'bill_50000' => 1,
+            ],
+            'change_breakdown' => [
+                'bill_20000' => 1,
+                'bill_10000' => 1,
+                'bill_5000' => 1,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Cash account reduced by 15.000
+        $this->assertEquals(185000, $this->cashAccount->fresh()->current_balance);
+
+        // Denominations updated: 50k: 4 - 1 = 3 (150k), 20k: 1 (20k), 10k: 1 (10k), 5k: 1 (5k) -> Total = 185k
+        $updatedDenom = CashDenomination::where('work_day_id', $this->workDay->id)->first();
+        $this->assertEquals(3, $updatedDenom->bill_50000);
+        $this->assertEquals(1, $updatedDenom->bill_20000);
+        $this->assertEquals(1, $updatedDenom->bill_10000);
+        $this->assertEquals(1, $updatedDenom->bill_5000);
+        $this->assertEquals(185000, $updatedDenom->total_physical_amount);
+
+        // Transaction metadata records cash breakdown
+        $tx = \App\Models\Transaction::where('work_day_id', $this->workDay->id)
+            ->where('description', 'Makan Siang Soto Ayam Lamongan')
+            ->firstOrFail();
+        $this->assertNotNull($tx->metadata['cash_breakdown'] ?? null);
+        $this->assertEquals(1, $tx->metadata['cash_breakdown']['paid']['bill_50000']);
+        $this->assertEquals(1, $tx->metadata['cash_breakdown']['change']['bill_20000']);
+    }
 }
 

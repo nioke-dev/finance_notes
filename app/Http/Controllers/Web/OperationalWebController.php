@@ -959,6 +959,8 @@ class OperationalWebController extends Controller
             'description' => 'required|string|max:255',
             'tenor_months' => 'nullable|integer|min:1|max:24',
             'cashback_amount' => 'nullable|integer|min:0',
+            'paid_breakdown' => 'nullable|array',
+            'change_breakdown' => 'nullable|array',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -1036,6 +1038,22 @@ class OperationalWebController extends Controller
             $validated['description'],
             $tx->transaction_time
         );
+
+        // Penerapan rincian pecahan kas jika sumber pembayaran adalah Kas Tunai
+        $isCash = ($source->name === 'Cash' || $source->type === AccountType::CASH);
+        $paidBreakdown = $request->input('paid_breakdown');
+        $changeBreakdown = $request->input('change_breakdown');
+        if ($isCash && ($paidBreakdown || $changeBreakdown)) {
+            $this->applyCashBreakdown($workDay, $paidBreakdown, $changeBreakdown, 'expense');
+            $tx->update([
+                'metadata' => array_merge($tx->metadata ?? [], [
+                    'cash_breakdown' => [
+                        'paid' => $paidBreakdown,
+                        'change' => $changeBreakdown,
+                    ],
+                ]),
+            ]);
+        }
 
         $msg = "Pengeluaran {$validated['description']} berhasil dicatat.";
         if ($cashbackTx) {
