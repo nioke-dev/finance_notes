@@ -927,13 +927,14 @@ class OperationalWebController extends Controller
             'amount' => 'required|integer|min:1',
             'admin_fee' => 'nullable|integer|min:0',
             'note' => 'nullable|string|max:255',
+            'paid_breakdown' => 'nullable|array',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
         $source = Account::findOrFail($validated['source_account_id']);
         $dest = Account::findOrFail($validated['destination_account_id']);
 
-        $transferService->transfer(
+        $tx = $transferService->transfer(
             workDay: $workDay,
             sourceAccount: $source,
             destinationAccount: $dest,
@@ -941,6 +942,20 @@ class OperationalWebController extends Controller
             adminFee: (int) ($validated['admin_fee'] ?? 0),
             note: $validated['note'] ?? null
         );
+
+        // Penerapan rincian pecahan fisik kas jika penarikan masuk ke Kas Dompet
+        $isDestCash = ($dest->name === 'Cash' || $dest->type === AccountType::CASH);
+        $paidBreakdown = $request->input('paid_breakdown');
+        if ($isDestCash && $paidBreakdown) {
+            $this->applyCashBreakdown($workDay, $paidBreakdown, null, 'income');
+            if ($tx) {
+                $tx->update([
+                    'metadata' => array_merge($tx->metadata ?? [], [
+                        'cash_breakdown' => ['inflow' => $paidBreakdown],
+                    ]),
+                ]);
+            }
+        }
 
         return redirect()->back()->with('success', 'Transfer antar rekening berhasil dibukukan.');
     }
@@ -1076,6 +1091,8 @@ class OperationalWebController extends Controller
             'amount' => 'required|integer|min:500',
             'source_account_id' => 'nullable|exists:accounts,id',
             'cashback_amount' => 'nullable|integer|min:0',
+            'paid_breakdown' => 'nullable|array',
+            'change_breakdown' => 'nullable|array',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -1123,6 +1140,22 @@ class OperationalWebController extends Controller
             $tx->transaction_time
         );
 
+        // Penerapan rincian pecahan kas jika sumber pembayaran adalah Kas Tunai
+        $isCash = ($sourceAccount->name === 'Cash' || $sourceAccount->type === AccountType::CASH);
+        $paidBreakdown = $request->input('paid_breakdown');
+        $changeBreakdown = $request->input('change_breakdown');
+        if ($isCash && ($paidBreakdown || $changeBreakdown)) {
+            $this->applyCashBreakdown($workDay, $paidBreakdown, $changeBreakdown, 'expense');
+            $tx->update([
+                'metadata' => array_merge($tx->metadata ?? [], [
+                    'cash_breakdown' => [
+                        'paid' => $paidBreakdown,
+                        'change' => $changeBreakdown,
+                    ],
+                ]),
+            ]);
+        }
+
         $msg = "Biaya serba-serbi '{$validated['description']}' (Rp " . number_format($amount, 0, ',', '.') . ") berhasil dicatat memotong {$sourceAccount->name}.";
         if ($cashbackTx) {
             $msg .= " Mendapatkan cashback ShopeePay Rp " . number_format($cashback, 0, ',', '.') . " (saldo ShopeePay bertambah kembali).";
@@ -1143,6 +1176,7 @@ class OperationalWebController extends Controller
             'destination_account_id' => 'required|exists:accounts,id',
             'amount' => 'required|integer|min:1',
             'description' => 'required|string|max:255',
+            'paid_breakdown' => 'nullable|array',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -1157,7 +1191,7 @@ class OperationalWebController extends Controller
             ]
         );
 
-        $ledgerService->recordTransaction(
+        $tx = $ledgerService->recordTransaction(
             workDay: $workDay,
             type: 'income',
             description: $validated['description'],
@@ -1169,6 +1203,18 @@ class OperationalWebController extends Controller
             isEstimatedTime: false,
             metadata: ['type' => 'personal_external_income']
         );
+
+        // Penerapan rincian pecahan fisik kas jika pemasukan masuk ke Kas Tunai
+        $isCash = ($dest->name === 'Cash' || $dest->type === AccountType::CASH);
+        $paidBreakdown = $request->input('paid_breakdown');
+        if ($isCash && $paidBreakdown) {
+            $this->applyCashBreakdown($workDay, $paidBreakdown, null, 'income');
+            $tx->update([
+                'metadata' => array_merge($tx->metadata ?? [], [
+                    'cash_breakdown' => ['inflow' => $paidBreakdown],
+                ]),
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Pemasukan pribadi berhasil dicatat ke saldo ' . $dest->name);
     }
@@ -1602,6 +1648,7 @@ class OperationalWebController extends Controller
             'borrower_name' => 'required|string|max:100',
             'amount' => 'required|integer|min:1000',
             'notes' => 'nullable|string|max:255',
+            'paid_breakdown' => 'nullable|array',
         ]);
 
         $workDay = WorkDay::findOrFail($validated['work_day_id']);
@@ -1649,7 +1696,7 @@ class OperationalWebController extends Controller
             $desc .= " - {$validated['notes']}";
         }
 
-        $ledgerService->recordTransaction(
+        $tx = $ledgerService->recordTransaction(
             workDay: $workDay,
             type: 'expense',
             description: $desc,
@@ -1666,6 +1713,17 @@ class OperationalWebController extends Controller
                 'notes' => $validated['notes'] ?? null,
             ]
         );
+
+        // Penerapan rincian pecahan kas jika kas fisik yang diserahkan dirinci
+        $paidBreakdown = $request->input('paid_breakdown');
+        if ($paidBreakdown) {
+            $this->applyCashBreakdown($workDay, $paidBreakdown, null, 'expense');
+            $tx->update([
+                'metadata' => array_merge($tx->metadata ?? [], [
+                    'cash_breakdown' => ['outflow' => $paidBreakdown],
+                ]),
+            ]);
+        }
 
         \App\Models\AuditLog::create([
             'auditable_type' => Debt::class,

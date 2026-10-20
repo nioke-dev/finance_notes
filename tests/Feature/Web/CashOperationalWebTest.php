@@ -245,5 +245,153 @@ class CashOperationalWebTest extends TestCase
         $this->assertEquals(1, $tx->metadata['cash_breakdown']['paid']['bill_50000']);
         $this->assertEquals(1, $tx->metadata['cash_breakdown']['change']['bill_20000']);
     }
+
+    public function test_field_incidental_with_cash_breakdown_updates_cash_denominations(): void
+    {
+        $denom = CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_50000' => 4, // 200.000
+            'total_physical_amount' => 200000,
+        ]);
+
+        // Tambal ban Rp 15.000, bayar uang 50k, kembalian 35k (20k + 10k + 5k)
+        $response = $this->post('/operational/field-incidental-expense', [
+            'work_day_id' => $this->workDay->id,
+            'source_account_id' => $this->cashAccount->id,
+            'amount' => 15000,
+            'description' => 'Tambal ban tubeless belakang',
+            'paid_breakdown' => [
+                'bill_50000' => 1,
+            ],
+            'change_breakdown' => [
+                'bill_20000' => 1,
+                'bill_10000' => 1,
+                'bill_5000' => 1,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(185000, $this->cashAccount->fresh()->current_balance);
+
+        $updatedDenom = CashDenomination::where('work_day_id', $this->workDay->id)->first();
+        $this->assertEquals(3, $updatedDenom->bill_50000);
+        $this->assertEquals(1, $updatedDenom->bill_20000);
+        $this->assertEquals(185000, $updatedDenom->total_physical_amount);
+
+        $tx = \App\Models\Transaction::where('work_day_id', $this->workDay->id)
+            ->where('description', 'like', '%Tambal ban tubeless belakang%')
+            ->firstOrFail();
+        $this->assertNotNull($tx->metadata['cash_breakdown'] ?? null);
+    }
+
+    public function test_lend_friend_with_cash_breakdown_updates_cash_denominations(): void
+    {
+        $denom = CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_50000' => 4, // 200.000
+            'total_physical_amount' => 200000,
+        ]);
+
+        // Pinjamkan Rp 50.000 (1 lembar 50k)
+        $response = $this->post('/operational/lend-friend-cash', [
+            'work_day_id' => $this->workDay->id,
+            'borrower_name' => 'Agus Driver',
+            'amount' => 50000,
+            'notes' => 'Pinjam buat bensin',
+            'paid_breakdown' => [
+                'bill_50000' => 1,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(150000, $this->cashAccount->fresh()->current_balance);
+
+        $updatedDenom = CashDenomination::where('work_day_id', $this->workDay->id)->first();
+        $this->assertEquals(3, $updatedDenom->bill_50000);
+        $this->assertEquals(150000, $updatedDenom->total_physical_amount);
+
+        $tx = \App\Models\Transaction::where('work_day_id', $this->workDay->id)
+            ->where('description', 'like', '%Agus Driver%')
+            ->firstOrFail();
+        $this->assertNotNull($tx->metadata['cash_breakdown'] ?? null);
+        $this->assertEquals(1, $tx->metadata['cash_breakdown']['outflow']['bill_50000']);
+    }
+
+    public function test_cash_withdraw_with_cash_breakdown_increments_cash_denominations(): void
+    {
+        $denom = CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_50000' => 2, // 100.000
+            'total_physical_amount' => 100000,
+        ]);
+
+        // Tarik tunai Rp 100.000 dari BCA ke Cash: dapat selembar 100k
+        $response = $this->post('/operational/transfer', [
+            'work_day_id' => $this->workDay->id,
+            'source_account_id' => $this->bankAccount->id,
+            'destination_account_id' => $this->cashAccount->id,
+            'amount' => 100000,
+            'admin_fee' => 0,
+            'note' => 'Tarik tunai ATM BCA',
+            'paid_breakdown' => [
+                'bill_100000' => 1,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(300000, $this->cashAccount->fresh()->current_balance);
+
+        $updatedDenom = CashDenomination::where('work_day_id', $this->workDay->id)->first();
+        $this->assertEquals(1, $updatedDenom->bill_100000);
+        $this->assertEquals(2, $updatedDenom->bill_50000);
+        $this->assertEquals(200000, $updatedDenom->total_physical_amount);
+
+        $tx = \App\Models\Transaction::where('work_day_id', $this->workDay->id)
+            ->where('description', 'like', '%Tarik tunai ATM BCA%')
+            ->firstOrFail();
+        $this->assertNotNull($tx->metadata['cash_breakdown'] ?? null);
+        $this->assertEquals(1, $tx->metadata['cash_breakdown']['inflow']['bill_100000']);
+    }
+
+    public function test_personal_income_with_cash_breakdown_increments_cash_denominations(): void
+    {
+        $denom = CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_50000' => 2, // 100.000
+            'total_physical_amount' => 100000,
+        ]);
+
+        // Pemasukan freelance Rp 50.000 diterima cash
+        $response = $this->post('/operational/personal-income', [
+            'work_day_id' => $this->workDay->id,
+            'destination_account_id' => $this->cashAccount->id,
+            'amount' => 50000,
+            'description' => 'Freelance Desain Logo',
+            'paid_breakdown' => [
+                'bill_50000' => 1,
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(250000, $this->cashAccount->fresh()->current_balance);
+
+        $updatedDenom = CashDenomination::where('work_day_id', $this->workDay->id)->first();
+        $this->assertEquals(3, $updatedDenom->bill_50000);
+        $this->assertEquals(150000, $updatedDenom->total_physical_amount);
+
+        $tx = \App\Models\Transaction::where('work_day_id', $this->workDay->id)
+            ->where('description', 'Freelance Desain Logo')
+            ->firstOrFail();
+        $this->assertNotNull($tx->metadata['cash_breakdown'] ?? null);
+        $this->assertEquals(1, $tx->metadata['cash_breakdown']['inflow']['bill_50000']);
+    }
 }
 

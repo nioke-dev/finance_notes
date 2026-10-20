@@ -3704,15 +3704,106 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Masuk ke Rekening / Dompet</label>
-                    <select name="destination_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <select name="destination_account_id" id="income-dest-select" onchange="toggleIncomeCashDrawer(this);" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         @foreach($accounts as $acc)
-                            <option value="{{ $acc->id }}">{{ $acc->name }} (Saat ini: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
+                            <option value="{{ $acc->id }}" data-acc-type="{{ $acc->type->value }}" data-acc-name="{{ $acc->name }}">{{ $acc->name }} (Saat ini: Rp {{ number_format($acc->current_balance, 0, ',', '.') }})</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Uang Masuk (Rp)</label>
-                    <input type="number" name="amount" min="1" placeholder="100000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
+                    <input type="number" name="amount" id="input-income-amount" oninput="updateIncomeCashLiveCalculator()" min="1" placeholder="100000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button type="button" onclick="setIncomeAmountPreset(20000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">20k</button>
+                        <button type="button" onclick="setIncomeAmountPreset(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">50k</button>
+                        <button type="button" onclick="setIncomeAmountPreset(100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">100k</button>
+                        <button type="button" onclick="setIncomeAmountPreset(200000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">200k</button>
+                        <button type="button" onclick="setIncomeAmountPreset(500000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-[11px] text-slate-300 font-bold rounded-lg border border-slate-700 transition">500k</button>
+                    </div>
+                </div>
+
+                {{-- Rincian Pecahan Uang Masuk Kas Fisik (Muncul jika Masuk ke Cash) --}}
+                <div id="income-cash-drawer-wrapper" class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
+                    <button type="button" onclick="toggleCashBreakdownAccordion('income-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-emerald-400 text-sm">💵</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block">Rincian Pecahan Kas Tunai Diterima</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Rekam lembaran & koin tunai yang masuk ke saku</span>
+                            </div>
+                        </div>
+                        <span id="income-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                    </button>
+                    <div id="income-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                        {{-- Tombol Cepat Pilihan --}}
+                        <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Pecahan:</span>
+                            <button type="button" onclick="setTxCashExactPay('income', 'input-income-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal pemasukan ke uang lembaran/koin secara otomatis">
+                                <span>⚡</span>
+                                <span>Pas Sesuai Nominal</span>
+                            </button>
+                            <button type="button" onclick="setTxCashRoundPay('income', 50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">50k</button>
+                            <button type="button" onclick="setTxCashRoundPay('income', 100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">100k</button>
+                            <button type="button" onclick="resetTxCashGroup('income_paid'); updateIncomeCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                        </div>
+
+                        {{-- Uang Diterima --}}
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">Pecahan Diterima:</span>
+                                <span id="income-paid-total-display" class="text-sm font-black text-emerald-400">Rp 0</span>
+                            </div>
+
+                            {{-- Pecahan Kertas --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                            </div>
+                                            <div class="mb-1.5 w-full">
+                                                <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="income_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('income_paid', 'income-paid-total-display'); updateIncomeCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('income_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'income_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                <button type="button" onclick="stepTxCash('income_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'income_paid')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Pecahan Logam (Koin) --}}
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                            <div class="flex items-center justify-between w-full mb-1">
+                                                <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                            </div>
+                                            <div class="mb-1.5 w-full">
+                                                <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="income_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('income_paid', 'income-paid-total-display'); updateIncomeCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                <button type="button" onclick="stepTxCash('income_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'income_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                <button type="button" onclick="stepTxCash('income_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'income_paid')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Banner Status Evaluasi Live --}}
+                        <div id="income-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                            <span>💡 Ketik nominal uang masuk di atas atau pilih pecahan yang diterima.</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-personal-income')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
@@ -4232,6 +4323,7 @@
                             type="number" 
                             name="amount" 
                             id="input-lend-amount"
+                            oninput="updateLendCashLiveCalculator()"
                             required 
                             min="1" 
                             step="1"
@@ -4239,9 +4331,93 @@
                             class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
                         <div class="flex space-x-2 mt-2">
-                            <button type="button" onclick="document.getElementById('input-lend-amount').value = 20000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">20k</button>
-                            <button type="button" onclick="document.getElementById('input-lend-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
-                            <button type="button" onclick="document.getElementById('input-lend-amount').value = 100000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
+                            <button type="button" onclick="setLendAmountPreset(20000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">20k</button>
+                            <button type="button" onclick="setLendAmountPreset(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                            <button type="button" onclick="setLendAmountPreset(100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
+                        </div>
+                    </div>
+
+                    {{-- Rincian Pecahan Kas yang Diserahkan ke Teman --}}
+                    <div id="lend-cash-drawer-wrapper" class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
+                        <button type="button" onclick="toggleCashBreakdownAccordion('lend-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-emerald-400 text-sm">💵</span>
+                                <div>
+                                    <span class="text-xs font-bold text-white block">Rincian Pecahan Uang Diserahkan</span>
+                                    <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Lembaran & koin fisik yang dipinjamkan</span>
+                                </div>
+                            </div>
+                            <span id="lend-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                        </button>
+                        <div id="lend-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                            {{-- Tombol Cepat Pilihan --}}
+                            <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Pecahan:</span>
+                                <button type="button" onclick="setTxCashExactPay('lend', 'input-lend-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal pinjaman ke uang lembaran/koin secara otomatis">
+                                    <span>⚡</span>
+                                    <span>Pas Sesuai Nominal</span>
+                                </button>
+                                <button type="button" onclick="setTxCashRoundPay('lend', 50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">50k</button>
+                                <button type="button" onclick="setTxCashRoundPay('lend', 100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">100k</button>
+                                <button type="button" onclick="resetTxCashGroup('lend_paid'); updateLendCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                            </div>
+
+                            {{-- Uang Dikeluarkan --}}
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-black text-amber-400 uppercase tracking-wide">Pecahan Diserahkan:</span>
+                                    <span id="lend-paid-total-display" class="text-sm font-black text-amber-300">Rp 0</span>
+                                </div>
+
+                                {{-- Pecahan Kertas --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="lend_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('lend_paid', 'lend-paid-total-display'); updateLendCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('lend_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'lend_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('lend_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'lend_paid')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Pecahan Logam (Koin) --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="lend_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('lend_paid', 'lend-paid-total-display'); updateLendCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('lend_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'lend_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('lend_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'lend_paid')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Banner Status Evaluasi Live --}}
+                            <div id="lend-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                                <span>💡 Ketik nominal pinjaman di atas atau pilih pecahan yang diserahkan.</span>
+                            </div>
                         </div>
                     </div>
 
@@ -4322,6 +4498,7 @@
                             type="number" 
                             name="amount" 
                             id="input-withdraw-amount"
+                            oninput="updateWithdrawCashLiveCalculator()"
                             required 
                             min="1" 
                             step="1"
@@ -4329,10 +4506,95 @@
                             class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
                         <div class="flex space-x-2 mt-2">
-                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
-                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 100000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
-                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 200000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">200k</button>
-                            <button type="button" onclick="document.getElementById('input-withdraw-amount').value = 500000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">500k</button>
+                            <button type="button" onclick="setWithdrawAmountPreset(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                            <button type="button" onclick="setWithdrawAmountPreset(100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">100k</button>
+                            <button type="button" onclick="setWithdrawAmountPreset(200000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">200k</button>
+                            <button type="button" onclick="setWithdrawAmountPreset(500000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">500k</button>
+                        </div>
+                    </div>
+
+                    {{-- Rincian Pecahan Uang Fisik yang Diterima dari Tarik Tunai Masuk Saku --}}
+                    <div id="withdraw-cash-drawer-wrapper" class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
+                        <button type="button" onclick="toggleCashBreakdownAccordion('withdraw-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-emerald-400 text-sm">💵</span>
+                                <div>
+                                    <span class="text-xs font-bold text-white block">Rincian Pecahan Ditarik Masuk Saku</span>
+                                    <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Lembaran fisik ATM/minimarket masuk ke dompet</span>
+                                </div>
+                            </div>
+                            <span id="withdraw-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                        </button>
+                        <div id="withdraw-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                            {{-- Tombol Cepat Pilihan --}}
+                            <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Pecahan:</span>
+                                <button type="button" onclick="setTxCashExactPay('withdraw', 'input-withdraw-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal tarik tunai ke uang lembaran/koin secara otomatis">
+                                    <span>⚡</span>
+                                    <span>Pas Sesuai Nominal</span>
+                                </button>
+                                <button type="button" onclick="setTxCashRoundPay('withdraw', 100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">100k</button>
+                                <button type="button" onclick="setTxCashRoundPay('withdraw', 200000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">200k</button>
+                                <button type="button" onclick="setTxCashRoundPay('withdraw', 500000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">500k</button>
+                                <button type="button" onclick="resetTxCashGroup('withdraw_paid'); updateWithdrawCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                            </div>
+
+                            {{-- Uang Masuk Saku --}}
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">Pecahan Masuk Dompet:</span>
+                                    <span id="withdraw-paid-total-display" class="text-sm font-black text-emerald-400">Rp 0</span>
+                                </div>
+
+                                {{-- Pecahan Kertas --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="withdraw_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('withdraw_paid', 'withdraw-paid-total-display'); updateWithdrawCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('withdraw_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'withdraw_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('withdraw_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'withdraw_paid')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Pecahan Logam (Koin) --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="withdraw_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('withdraw_paid', 'withdraw-paid-total-display'); updateWithdrawCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('withdraw_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'withdraw_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('withdraw_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'withdraw_paid')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Banner Status Evaluasi Live --}}
+                            <div id="withdraw-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                                <span>💡 Ketik nominal tarik tunai di atas atau pilih pecahan yang ditarik masuk saku.</span>
+                            </div>
                         </div>
                     </div>
 
@@ -4416,6 +4678,7 @@
                             pattern="[0-9]*" 
                             name="amount" 
                             id="input-incidental-amount"
+                            oninput="updateIncidentalCashLiveCalculator()"
                             required 
                             min="1" 
                             step="1"
@@ -4423,11 +4686,11 @@
                             class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
                         <div class="flex space-x-2 mt-2">
-                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 5000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">5k</button>
-                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 10000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">10k</button>
-                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 15000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">15k</button>
-                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 20000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">20k</button>
-                            <button type="button" onclick="document.getElementById('input-incidental-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
+                            <button type="button" onclick="setIncidentalAmountPreset(5000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">5k</button>
+                            <button type="button" onclick="setIncidentalAmountPreset(10000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">10k</button>
+                            <button type="button" onclick="setIncidentalAmountPreset(15000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">15k</button>
+                            <button type="button" onclick="setIncidentalAmountPreset(20000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">20k</button>
+                            <button type="button" onclick="setIncidentalAmountPreset(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded-lg">50k</button>
                         </div>
                     </div>
 
@@ -4435,12 +4698,12 @@
                         <label class="block text-xs font-bold text-slate-300 mb-1">
                             Sumber Dana (Bayar Pakai Apa?) <span class="text-rose-400">*</span>
                         </label>
-                        <select name="source_account_id" id="incidental-source-select" onchange="checkShopeePayCashback(this, 'incidental-cashback-wrap')" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <select name="source_account_id" id="incidental-source-select" onchange="checkShopeePayCashback(this, 'incidental-cashback-wrap'); toggleIncidentalCashDrawer(this);" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                             @if($cashAccObj)
-                                <option value="{{ $cashAccObj->id }}" selected>💵 Kas Dompet (Fisik Cash) - Saldo: Rp {{ number_format($cashAccObj->current_balance, 0, ',', '.') }}</option>
+                                <option value="{{ $cashAccObj->id }}" data-acc-type="cash" data-acc-name="Cash" selected>💵 Kas Dompet (Fisik Cash) - Saldo: Rp {{ number_format($cashAccObj->current_balance, 0, ',', '.') }}</option>
                             @endif
                             @foreach($digitalAccs as $acc)
-                                <option value="{{ $acc->id }}">💳 {{ $acc->name }} (QRIS / Transfer) - Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }}</option>
+                                <option value="{{ $acc->id }}" data-acc-type="{{ $acc->type->value }}" data-acc-name="{{ $acc->name }}">💳 {{ $acc->name }} (QRIS / Transfer) - Saldo: Rp {{ number_format($acc->current_balance, 0, ',', '.') }}</option>
                             @endforeach
                         </select>
                         <span class="text-[10px] text-slate-300 font-medium block mt-1">Default memotong Kas Dompet, bisa diganti jika bayar via QRIS BCA/SeaBank.</span>
@@ -4461,6 +4724,155 @@
                         </div>
                         <input type="number" name="cashback_amount" id="input-incidental-cashback" min="0" value="0" placeholder="0" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         <p class="text-[10px] text-amber-200/70">Cashback ini akan langsung menambah saldo ShopeePay Anda kembali dan dicatat sebagai pendapatan reward.</p>
+                    </div>
+
+                    {{-- Rincian Pecahan Uang Dibayar & Kembalian (Muncul jika Bayar Pakai Cash) --}}
+                    <div id="incidental-cash-drawer-wrapper" class="border border-slate-700/80 rounded-xl bg-slate-900/60 overflow-hidden">
+                        <button type="button" onclick="toggleCashBreakdownAccordion('incidental-cash-drawer')" class="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/60 transition">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-emerald-400 text-sm">💵</span>
+                                <div>
+                                    <span class="text-xs font-bold text-white block">Rincian Pecahan Cash & Kembalian</span>
+                                    <span class="text-[10px] text-slate-400 block font-normal">Opsional &bull; Auto-hitung uang pas, uang bulat, dan kembalian live</span>
+                                </div>
+                            </div>
+                            <span id="incidental-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
+                        </button>
+                        <div id="incidental-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                            {{-- Tombol Cepat Pilihan Bayar Kas --}}
+                            <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Bayar:</span>
+                                <button type="button" onclick="setTxCashExactPay('incidental', 'input-incidental-amount')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-[11px] font-extrabold rounded-lg border border-emerald-500/40 transition flex items-center space-x-1" title="Pecah nominal pengeluaran ke uang lembaran/koin secara otomatis">
+                                    <span>⚡</span>
+                                    <span>Bayar Uang Pas</span>
+                                </button>
+                                <button type="button" onclick="setTxCashRoundPay('incidental', 20000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">20k</button>
+                                <button type="button" onclick="setTxCashRoundPay('incidental', 50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">50k</button>
+                                <button type="button" onclick="setTxCashRoundPay('incidental', 100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">100k</button>
+                                <button type="button" onclick="resetTxCashGroup('incidental_paid'); resetTxCashGroup('incidental_change'); updateIncidentalCashLiveCalculator();" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                            </div>
+
+                            {{-- 1. Uang Dikeluarkan (Dibayar) --}}
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-black text-amber-400 uppercase tracking-wide">Uang Dibayarkan:</span>
+                                    <span id="incidental-paid-total-display" class="text-sm font-black text-amber-300">Rp 0</span>
+                                </div>
+
+                                {{-- Pecahan Kertas --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="paid_breakdown[bill_{{ $nom }}]" id="incidental_paid_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('incidental_paid', 'incidental-paid-total-display'); updateIncidentalCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('incidental_paid_bill_{{ $nom }}', -1, {{ $nom }}, 'incidental_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('incidental_paid_bill_{{ $nom }}', 1, {{ $nom }}, 'incidental_paid')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Pecahan Logam (Koin) --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="paid_breakdown[coin_{{ $nom }}]" id="incidental_paid_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('incidental_paid', 'incidental-paid-total-display'); updateIncidentalCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('incidental_paid_coin_{{ $nom }}', -1, {{ $nom }}, 'incidental_paid')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('incidental_paid_coin_{{ $nom }}', 1, {{ $nom }}, 'incidental_paid')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Perhitungan Live & Tombol Auto-Set Kembalian --}}
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 font-medium">Harusnya Kembalian:</span>
+                                    <span id="incidental-expected-change-display" class="font-black text-amber-300 text-sm">Rp 0</span>
+                                </div>
+                                <button type="button" id="btn-incidental-auto-set-change" onclick="autoSetTxCashChange('incidental', this.getAttribute('data-target-change'))" class="hidden w-full py-1.5 bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 text-[11px] font-bold rounded-lg border border-indigo-500/40 transition flex items-center justify-center space-x-1">
+                                    <span>⚡</span>
+                                    <span class="btn-change-text">Auto-Set Pecahan Kembalian</span>
+                                </button>
+                            </div>
+
+                            {{-- 2. Kembalian Diterima --}}
+                            <div class="space-y-2 pt-1 border-t border-slate-800">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">Kembalian Diterima:</span>
+                                    <span id="incidental-change-total-display" class="text-sm font-black text-emerald-400">Rp 0</span>
+                                </div>
+
+                                {{-- Pecahan Kertas --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="change_breakdown[bill_{{ $nom }}]" id="incidental_change_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('incidental_change', 'incidental-change-total-display'); updateIncidentalCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('incidental_change_bill_{{ $nom }}', -1, {{ $nom }}, 'incidental_change')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('incidental_change_bill_{{ $nom }}', 1, {{ $nom }}, 'incidental_change')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Pecahan Logam (Koin) --}}
+                                <div>
+                                    <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                            <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                                <div class="flex items-center justify-between w-full mb-1">
+                                                    <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                                    <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                                </div>
+                                                <div class="mb-1.5 w-full">
+                                                    <input type="number" name="change_breakdown[coin_{{ $nom }}]" id="incidental_change_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('incidental_change', 'incidental-change-total-display'); updateIncidentalCashLiveCalculator();" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-emerald-500 focus:outline-none p-0">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                                    <button type="button" onclick="stepTxCash('incidental_change_coin_{{ $nom }}', -1, {{ $nom }}, 'incidental_change')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                                    <button type="button" onclick="stepTxCash('incidental_change_coin_{{ $nom }}', 1, {{ $nom }}, 'incidental_change')" class="h-9 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Banner Status Evaluasi Kembalian Live --}}
+                            <div id="incidental-cash-status-banner" class="p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between transition-all">
+                                <span>💡 Ketik nominal pengeluaran di atas atau pilih pecahan uang yang dibayarkan.</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
@@ -5544,6 +5956,22 @@
                     if (sel) toggleExpenseCashDrawer(sel);
                     updateExpenseCashLiveCalculator();
                 }
+                if (id === 'modal-field-incidental') {
+                    const sel = document.getElementById('incidental-source-select');
+                    if (sel) toggleIncidentalCashDrawer(sel);
+                    updateIncidentalCashLiveCalculator();
+                }
+                if (id === 'modal-personal-income') {
+                    const sel = document.getElementById('income-dest-select');
+                    if (sel) toggleIncomeCashDrawer(sel);
+                    updateIncomeCashLiveCalculator();
+                }
+                if (id === 'modal-lend-friend') {
+                    updateLendCashLiveCalculator();
+                }
+                if (id === 'modal-cash-withdraw') {
+                    updateWithdrawCashLiveCalculator();
+                }
                 if (id === 'modal-complete-cod') {
                     updateCodCashLiveCalculator();
                 }
@@ -5697,6 +6125,10 @@
             if (groupPrefix.startsWith('fuel')) updateFuelCashLiveCalculator();
             if (groupPrefix.startsWith('parking')) updateParkingCashLiveCalculator();
             if (groupPrefix.startsWith('expense')) updateExpenseCashLiveCalculator();
+            if (groupPrefix.startsWith('incidental')) updateIncidentalCashLiveCalculator();
+            if (groupPrefix.startsWith('income')) updateIncomeCashLiveCalculator();
+            if (groupPrefix.startsWith('lend')) updateLendCashLiveCalculator();
+            if (groupPrefix.startsWith('withdraw')) updateWithdrawCashLiveCalculator();
             if (groupPrefix.startsWith('cod')) updateCodCashLiveCalculator();
         }
 
@@ -5770,6 +6202,10 @@
             if (prefix === 'fuel') updateFuelCashLiveCalculator();
             if (prefix === 'parking') updateParkingCashLiveCalculator();
             if (prefix === 'expense') updateExpenseCashLiveCalculator();
+            if (prefix === 'incidental') updateIncidentalCashLiveCalculator();
+            if (prefix === 'income') updateIncomeCashLiveCalculator();
+            if (prefix === 'lend') updateLendCashLiveCalculator();
+            if (prefix === 'withdraw') updateWithdrawCashLiveCalculator();
             if (prefix === 'cod_cust' || prefix === 'cod') updateCodCashLiveCalculator();
         }
 
@@ -5786,6 +6222,10 @@
             if (prefix === 'fuel') updateFuelCashLiveCalculator();
             if (prefix === 'parking') updateParkingCashLiveCalculator();
             if (prefix === 'expense') updateExpenseCashLiveCalculator();
+            if (prefix === 'incidental') updateIncidentalCashLiveCalculator();
+            if (prefix === 'income') updateIncomeCashLiveCalculator();
+            if (prefix === 'lend') updateLendCashLiveCalculator();
+            if (prefix === 'withdraw') updateWithdrawCashLiveCalculator();
             if (prefix === 'cod_cust' || prefix === 'cod') updateCodCashLiveCalculator();
         }
 
@@ -5803,6 +6243,7 @@
             if (prefix === 'fuel') updateFuelCashLiveCalculator();
             if (prefix === 'parking') updateParkingCashLiveCalculator();
             if (prefix === 'expense') updateExpenseCashLiveCalculator();
+            if (prefix === 'incidental') updateIncidentalCashLiveCalculator();
             if (prefix === 'cod') updateCodCashLiveCalculator();
         }
 
@@ -6217,6 +6658,390 @@
                         <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${absDiffChange}</span>
                     `;
                 }
+            }
+        }
+
+        // ==========================================
+        // 1. BIAYA SERBA-SERBI & LAPANGAN
+        // ==========================================
+        function toggleIncidentalCashDrawer(selectEl) {
+            if (!selectEl) return;
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            const accType = selectedOption ? selectedOption.getAttribute('data-acc-type') : '';
+            const accName = selectedOption ? (selectedOption.getAttribute('data-acc-name') || selectedOption.innerText) : '';
+            const drawerWrapper = document.getElementById('incidental-cash-drawer-wrapper');
+            if (!drawerWrapper) return;
+            if (accType === 'cash' || (accName && (accName.toLowerCase().includes('kas') || accName.toLowerCase().includes('cash')))) {
+                drawerWrapper.classList.remove('hidden');
+            } else {
+                drawerWrapper.classList.add('hidden');
+            }
+        }
+
+        function setIncidentalAmountPreset(val) {
+            const input = document.getElementById('input-incidental-amount');
+            if (input) {
+                input.value = val;
+                updateIncidentalCashLiveCalculator();
+            }
+        }
+
+        function updateIncidentalCashLiveCalculator() {
+            const amountInput = document.getElementById('input-incidental-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            const paid = calcTxCash('incidental_paid', 'incidental-paid-total-display');
+            const change = calcTxCash('incidental_change', 'incidental-change-total-display');
+
+            const expectedChangeEl = document.getElementById('incidental-expected-change-display');
+            const statusBanner = document.getElementById('incidental-cash-status-banner');
+            const autoSetChangeBtn = document.getElementById('btn-incidental-auto-set-change');
+
+            if (!statusBanner) return;
+
+            if (nominal <= 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between';
+                statusBanner.innerHTML = '<span>ℹ️ Ketik nominal biaya di atas untuk mengaktifkan kalkulator kembalian live.</span>';
+                if (expectedChangeEl) expectedChangeEl.innerText = 'Rp 0';
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+                return;
+            }
+
+            const expectedChange = Math.max(0, paid - nominal);
+            if (expectedChangeEl) expectedChangeEl.innerText = `Rp ${expectedChange.toLocaleString('id-ID')}`;
+
+            if (paid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Nominal Biaya Lapangan: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Pilih pecahan uang dibayar atau tap <strong>⚡ Bayar Uang Pas</strong>.</span>
+                    </div>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid < nominal) {
+                const shortage = nominal - paid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Uang Dibayar Masih Kurang: Rp ${shortage.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-rose-300 font-normal">Dibayar Rp ${paid.toLocaleString('id-ID')} dari biaya lapangan Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${shortage.toLocaleString('id-ID')}</span>
+                `;
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else if (paid === nominal) {
+                if (change === 0) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang PAS (Rp ${nominal.toLocaleString('id-ID')})</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Tidak ada kembalian. Kas fisik dompet Anda sinkron otomatis.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">UANG PAS</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">Bayar Uang Pas Tapi Ada Input Kembalian</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Kembalian harusnya Rp 0.</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                if (autoSetChangeBtn) autoSetChangeBtn.classList.add('hidden');
+            } else {
+                if (autoSetChangeBtn) {
+                    autoSetChangeBtn.classList.remove('hidden');
+                    autoSetChangeBtn.setAttribute('data-target-change', expectedChange);
+                    const spanText = autoSetChangeBtn.querySelector('.btn-change-text');
+                    if (spanText) spanText.innerText = `Auto-Set Pecahan Kembalian (Rp ${expectedChange.toLocaleString('id-ID')})`;
+                }
+
+                const diffChange = change - expectedChange;
+                const absDiffChange = Math.abs(diffChange).toLocaleString('id-ID');
+
+                if (change === expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">✅</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN PAS: Rp ${change.toLocaleString('id-ID')}</span>
+                                <span class="text-[10px] text-emerald-400 font-normal">Kembalian cocok 100% (Bayar Rp ${paid.toLocaleString('id-ID')} - Biaya Rp ${nominal.toLocaleString('id-ID')}).</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                    `;
+                } else if (change < expectedChange) {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🚨</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN KURANG: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-rose-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, baru diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${absDiffChange}</span>
+                    `;
+                } else {
+                    statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                    statusBanner.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block">KEMBALIAN LEBIH: Rp ${absDiffChange}</span>
+                                <span class="text-[10px] text-amber-300 font-normal">Harusnya kembali Rp ${expectedChange.toLocaleString('id-ID')}, tapi diisi Rp ${change.toLocaleString('id-ID')}.</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${absDiffChange}</span>
+                    `;
+                }
+            }
+        }
+
+        // ==========================================
+        // 2. PEMASUKAN PRIBADI DI LUAR DRIVER
+        // ==========================================
+        function toggleIncomeCashDrawer(selectEl) {
+            if (!selectEl) return;
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            const accType = selectedOption ? selectedOption.getAttribute('data-acc-type') : '';
+            const accName = selectedOption ? (selectedOption.getAttribute('data-acc-name') || selectedOption.innerText) : '';
+            const drawerWrapper = document.getElementById('income-cash-drawer-wrapper');
+            if (!drawerWrapper) return;
+            if (accType === 'cash' || (accName && (accName.toLowerCase().includes('kas') || accName.toLowerCase().includes('cash')))) {
+                drawerWrapper.classList.remove('hidden');
+            } else {
+                drawerWrapper.classList.add('hidden');
+            }
+        }
+
+        function setIncomeAmountPreset(val) {
+            const input = document.getElementById('input-income-amount');
+            if (input) {
+                input.value = val;
+                updateIncomeCashLiveCalculator();
+            }
+        }
+
+        function updateIncomeCashLiveCalculator() {
+            const amountInput = document.getElementById('input-income-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            const paid = calcTxCash('income_paid', 'income-paid-total-display');
+            const statusBanner = document.getElementById('income-cash-status-banner');
+
+            if (!statusBanner) return;
+
+            if (nominal <= 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between';
+                statusBanner.innerHTML = '<span>ℹ️ Ketik nominal uang masuk di atas atau pilih pecahan lembar/koin yang diterima.</span>';
+                return;
+            }
+
+            if (paid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Nominal Pemasukan: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Pilih pecahan uang tunai yang diterima atau tap <strong>⚡ Pas Sesuai Nominal</strong>.</span>
+                    </div>
+                `;
+            } else if (paid < nominal) {
+                const diff = nominal - paid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Pecahan Baru Tercatat: Rp ${paid.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-amber-300 font-normal">Kurang Rp ${diff.toLocaleString('id-ID')} agar sesuai nominal Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">-Rp ${diff.toLocaleString('id-ID')}</span>
+                `;
+            } else if (paid === nominal) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">✅</span>
+                        <div>
+                            <span class="font-bold block">PECAHAN PAS COCOK 100% (Rp ${nominal.toLocaleString('id-ID')})</span>
+                            <span class="text-[10px] text-emerald-400 font-normal">Fisik kas di saku Anda langsung sinkron bertambah Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                `;
+            } else {
+                const diff = paid - nominal;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Pecahan Melebihi Nominal: +Rp ${diff.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-amber-300 font-normal">Total pecahan diinput Rp ${paid.toLocaleString('id-ID')}, nominal uang masuk Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${diff.toLocaleString('id-ID')}</span>
+                `;
+            }
+        }
+
+        // ==========================================
+        // 3. KAS DIPINJAM TEMAN / TALANGAN
+        // ==========================================
+        function setLendAmountPreset(val) {
+            const input = document.getElementById('input-lend-amount');
+            if (input) {
+                input.value = val;
+                updateLendCashLiveCalculator();
+            }
+        }
+
+        function updateLendCashLiveCalculator() {
+            const amountInput = document.getElementById('input-lend-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            const paid = calcTxCash('lend_paid', 'lend-paid-total-display');
+            const statusBanner = document.getElementById('lend-cash-status-banner');
+
+            if (!statusBanner) return;
+
+            if (nominal <= 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between';
+                statusBanner.innerHTML = '<span>ℹ️ Ketik nominal pinjaman di atas atau pilih pecahan lembar/koin yang diserahkan.</span>';
+                return;
+            }
+
+            if (paid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Nominal Pinjaman: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Pilih pecahan uang kas yang dipinjamkan atau tap <strong>⚡ Pas Sesuai Nominal</strong>.</span>
+                    </div>
+                `;
+            } else if (paid < nominal) {
+                const diff = nominal - paid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Pecahan Masih Kurang: Rp ${diff.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-rose-300 font-normal">Baru dipilih Rp ${paid.toLocaleString('id-ID')} dari pinjaman Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-black border border-rose-500/30 whitespace-nowrap">-Rp ${diff.toLocaleString('id-ID')}</span>
+                `;
+            } else if (paid === nominal) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">✅</span>
+                        <div>
+                            <span class="font-bold block">PECAHAN DISERAHKAN PAS (Rp ${nominal.toLocaleString('id-ID')})</span>
+                            <span class="text-[10px] text-emerald-400 font-normal">Kas saku dompet berkurang pas Rp ${nominal.toLocaleString('id-ID')} dan piutang otomatis tercatat.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">PAS</span>
+                `;
+            } else {
+                const diff = paid - nominal;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Pecahan Melebihi Pinjaman: +Rp ${diff.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-amber-300 font-normal">Pecahan dipilih Rp ${paid.toLocaleString('id-ID')}, nominal pinjaman Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${diff.toLocaleString('id-ID')}</span>
+                `;
+            }
+        }
+
+        // ==========================================
+        // 4. TARIK TUNAI MODAL KAS
+        // ==========================================
+        function setWithdrawAmountPreset(val) {
+            const input = document.getElementById('input-withdraw-amount');
+            if (input) {
+                input.value = val;
+                updateWithdrawCashLiveCalculator();
+            }
+        }
+
+        function updateWithdrawCashLiveCalculator() {
+            const amountInput = document.getElementById('input-withdraw-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            const paid = calcTxCash('withdraw_paid', 'withdraw-paid-total-display');
+            const statusBanner = document.getElementById('withdraw-cash-status-banner');
+
+            if (!statusBanner) return;
+
+            if (nominal <= 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-between';
+                statusBanner.innerHTML = '<span>ℹ️ Ketik nominal tarik tunai di atas atau pilih pecahan uang yang ditarik masuk saku.</span>';
+                return;
+            }
+
+            if (paid === 0) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>💡</span>
+                        <span>Nominal Tarik Tunai: <strong>Rp ${nominal.toLocaleString('id-ID')}</strong>. Pilih pecahan uang masuk dompet atau tap <strong>⚡ Pas Sesuai Nominal</strong>.</span>
+                    </div>
+                `;
+            } else if (paid < nominal) {
+                const diff = nominal - paid;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Pecahan Ditarik Belum Lengkap: Rp ${paid.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-amber-300 font-normal">Kurang Rp ${diff.toLocaleString('id-ID')} agar sesuai nominal tarik tunai Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">-Rp ${diff.toLocaleString('id-ID')}</span>
+                `;
+            } else if (paid === nominal) {
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">✅</span>
+                        <div>
+                            <span class="font-bold block">PECAHAN TARIK TUNAI COCOK (Rp ${nominal.toLocaleString('id-ID')})</span>
+                            <span class="text-[10px] text-emerald-400 font-normal">Kas fisik dompet langsung sinkron bertambah Rp ${nominal.toLocaleString('id-ID')} untuk modal kembalian.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30 whitespace-nowrap">COCOK</span>
+                `;
+            } else {
+                const diff = paid - nominal;
+                statusBanner.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between';
+                statusBanner.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <span class="font-bold block">Pecahan Melebihi Tarik Tunai: +Rp ${diff.toLocaleString('id-ID')}</span>
+                            <span class="text-[10px] text-amber-300 font-normal">Pecahan diinput Rp ${paid.toLocaleString('id-ID')}, nominal tarik tunai Rp ${nominal.toLocaleString('id-ID')}.</span>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 whitespace-nowrap">+Rp ${diff.toLocaleString('id-ID')}</span>
+                `;
             }
         }
 
