@@ -1122,19 +1122,69 @@
                         </div>
                     </div>
 
-                    @if($todayVoiceMemos->isNotEmpty())
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            @foreach($todayVoiceMemos as $memo)
-                                <x-voice-memo-player :memo="$memo" />
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-6 bg-slate-900/60 rounded-xl border border-slate-700/50">
-                            <span class="text-2xl block mb-1">🎧</span>
-                            <span class="text-xs font-semibold text-slate-200 block">Belum ada rekaman suara helm untuk shift ini.</span>
-                            <span class="text-[11px] text-slate-400 block mt-0.5">Tekan tombol mikrofon di kanan bawah saat di lampu merah/menunggu resto untuk merekam cepat.</span>
-                        </div>
-                    @endif
+                    {{-- Tab Filter Rekaman: Shift Ini vs Semua Rekaman Terkini --}}
+                    <div class="flex items-center space-x-2 border-b border-slate-700/60 pb-2">
+                        <button 
+                            type="button" 
+                            id="btn-voice-tab-current" 
+                            onclick="switchVoiceMemoTab('current')" 
+                            class="px-3 py-1 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 transition flex items-center space-x-1.5"
+                        >
+                            <span>📅 Shift Ini ({{ $currentWorkDay ? \Carbon\Carbon::parse($currentWorkDay->work_date)->format('d M') : 'Hari Ini' }})</span>
+                            <span class="px-1.5 py-0.2 rounded-full bg-slate-900 text-[10px] text-slate-300">{{ $todayVoiceMemos->count() }}</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            id="btn-voice-tab-all" 
+                            onclick="switchVoiceMemoTab('all')" 
+                            class="px-3 py-1 rounded-lg text-xs font-bold text-slate-400 border border-transparent hover:text-slate-200 transition flex items-center space-x-1.5"
+                        >
+                            <span>📁 Semua Rekaman Terkini</span>
+                            <span class="px-1.5 py-0.2 rounded-full bg-slate-900 text-[10px] text-slate-300">{{ $recentVoiceMemos->count() }}</span>
+                        </button>
+                    </div>
+
+                    {{-- KONTEN TAB 1: REKAMAN SHIFT INI --}}
+                    <div id="voice-tab-current" class="space-y-3">
+                        @if($todayVoiceMemos->isNotEmpty())
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach($todayVoiceMemos as $memo)
+                                    <x-voice-memo-player :memo="$memo" />
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-5 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-2">
+                                <span class="text-2xl block">🎧</span>
+                                <span class="text-xs font-semibold text-slate-200 block">Belum ada rekaman suara helm khusus untuk shift ini.</span>
+                                @if($recentVoiceMemos->isNotEmpty())
+                                    <span class="text-[11px] text-amber-300 block font-medium">
+                                        💡 Ada {{ $recentVoiceMemos->count() }} rekaman dari tanggal sebelumnya (Tgl 20, 21, dll).
+                                    </span>
+                                    <button type="button" onclick="switchVoiceMemoTab('all')" class="mt-2 inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition">
+                                        <span>Lihat Semua Rekaman Terkini ({{ $recentVoiceMemos->count() }}) &rarr;</span>
+                                    </button>
+                                @else
+                                    <span class="text-[11px] text-slate-400 block">Tekan tombol mikrofon di kanan bawah saat di lampu merah/menunggu resto untuk merekam cepat.</span>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- KONTEN TAB 2: SEMUA REKAMAN TERKINI (LINTAS TANGGAL) --}}
+                    <div id="voice-tab-all" class="space-y-3 hidden">
+                        @if($recentVoiceMemos->isNotEmpty())
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach($recentVoiceMemos as $memo)
+                                    <x-voice-memo-player :memo="$memo" />
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-6 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                                <span class="text-2xl block mb-1">🎧</span>
+                                <span class="text-xs font-semibold text-slate-200 block">Belum ada riwayat rekaman suara sama sekali.</span>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
@@ -5920,6 +5970,32 @@
                 <button type="button" onclick="detectGps()" class="text-xs text-emerald-400 hover:underline font-semibold">Refresh</button>
             </div>
 
+            {{-- Target Tanggal Rekaman --}}
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-2.5 text-left space-y-1.5">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-slate-300 flex items-center space-x-1">
+                        <span>📅</span>
+                        <span>Ditujukan Buat Tanggal:</span>
+                    </span>
+                    <span id="voice-memo-date-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        {{ $currentWorkDay ? \Carbon\Carbon::parse($currentWorkDay->work_date)->format('d M Y') : now()->format('d M Y') }}
+                    </span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <input 
+                        type="date" 
+                        id="voice-memo-target-date" 
+                        name="work_date" 
+                        value="{{ $currentWorkDay ? $currentWorkDay->work_date : now()->toDateString() }}" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-rose-500 font-mono"
+                        onchange="updateVoiceMemoDateBadge(this.value)"
+                    >
+                    <button type="button" onclick="setVoiceMemoDate('{{ now()->toDateString() }}')" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-semibold border border-slate-700 shrink-0">
+                        Hari Ini
+                    </button>
+                </div>
+            </div>
+
             {{-- Timer & Gelombang Rekaman --}}
             <div class="py-4 space-y-2">
                 <div id="recording-timer" class="text-4xl font-mono font-black text-white tracking-widest">
@@ -7951,6 +8027,10 @@
             const ext = recordedMimeType.includes('mp4') ? 'mp4' : (recordedMimeType.includes('ogg') ? 'ogg' : 'webm');
             const formData = new FormData();
             formData.append('work_day_id', currentWorkDayId);
+            const targetDateInput = document.getElementById('voice-memo-target-date');
+            if (targetDateInput && targetDateInput.value) {
+                formData.append('work_date', targetDateInput.value);
+            }
             formData.append('audio_file', recordedAudioBlob, `memo_${Date.now()}.${ext}`);
             formData.append('duration_seconds', recordingSeconds);
             if (currentGpsCoords.lat && currentGpsCoords.lng) {
@@ -7991,6 +8071,48 @@
                 }
                 if (btnRetry) btnRetry.disabled = false;
                 document.getElementById('record-status-label').innerText = 'Kesalahan jaringan. Silakan coba lagi.';
+            }
+        }
+
+        function updateVoiceMemoDateBadge(val) {
+            const badge = document.getElementById('voice-memo-date-badge');
+            if (badge && val) {
+                badge.innerText = val;
+            }
+        }
+
+        function setVoiceMemoDate(val) {
+            const input = document.getElementById('voice-memo-target-date');
+            if (input) {
+                input.value = val;
+                updateVoiceMemoDateBadge(val);
+            }
+        }
+
+        function switchVoiceMemoTab(tab) {
+            const tabCurrent = document.getElementById('voice-tab-current');
+            const tabAll = document.getElementById('voice-tab-all');
+            const btnCurrent = document.getElementById('btn-voice-tab-current');
+            const btnAll = document.getElementById('btn-voice-tab-all');
+
+            if (tab === 'current') {
+                if (tabCurrent) tabCurrent.classList.remove('hidden');
+                if (tabAll) tabAll.classList.add('hidden');
+                if (btnCurrent) {
+                    btnCurrent.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 transition flex items-center space-x-1.5';
+                }
+                if (btnAll) {
+                    btnAll.className = 'px-3 py-1 rounded-lg text-xs font-bold text-slate-400 border border-transparent hover:text-slate-200 transition flex items-center space-x-1.5';
+                }
+            } else {
+                if (tabCurrent) tabCurrent.classList.add('hidden');
+                if (tabAll) tabAll.classList.remove('hidden');
+                if (btnAll) {
+                    btnAll.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 transition flex items-center space-x-1.5';
+                }
+                if (btnCurrent) {
+                    btnCurrent.className = 'px-3 py-1 rounded-lg text-xs font-bold text-slate-400 border border-transparent hover:text-slate-200 transition flex items-center space-x-1.5';
+                }
             }
         }
 

@@ -13,8 +13,19 @@ class VoiceMemoController extends Controller
     public function upload(UploadVoiceMemoRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        $targetDate = $validated['work_date'] ?? null;
         $workDayId = $validated['work_day_id'] ?? null;
-        if (!empty($workDayId)) {
+
+        if (!empty($targetDate)) {
+            $workDay = WorkDay::firstOrCreate(
+                ['work_date' => $targetDate],
+                [
+                    'day_type' => WorkDay::TYPE_ON_BID,
+                    'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+                    'opened_at' => \Illuminate\Support\Carbon::parse($targetDate . ' 08:00:00'),
+                ]
+            );
+        } elseif (!empty($workDayId)) {
             $workDay = WorkDay::findOrFail($workDayId);
         } else {
             $workDay = WorkDay::firstOrCreate(
@@ -38,13 +49,19 @@ class VoiceMemoController extends Controller
 
         $path = $file->storeAs('voice_memos', $fileName, 'public');
 
+        $recordedAt = !empty($validated['recorded_at'])
+            ? \Illuminate\Support\Carbon::parse($validated['recorded_at'])
+            : (!empty($targetDate) && $targetDate !== now()->toDateString()
+                ? \Illuminate\Support\Carbon::parse($targetDate . ' ' . now()->format('H:i:s'))
+                : now());
+
         $memo = VoiceMemo::create([
             'work_day_id' => $workDay->id,
             'file_path' => $path,
             'duration_seconds' => $validated['duration_seconds'] ?? null,
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
-            'recorded_at' => now(),
+            'recorded_at' => $recordedAt,
         ]);
 
         return response()->json([
@@ -55,6 +72,8 @@ class VoiceMemoController extends Controller
                 'audio_url' => $memo->audio_url,
                 'duration_seconds' => $memo->duration_seconds,
                 'recorded_at' => $memo->recorded_at->toISOString(),
+                'work_date' => $workDay->work_date instanceof \Carbon\CarbonInterface ? $workDay->work_date->toDateString() : substr((string) $workDay->work_date, 0, 10),
+                'date_formatted' => $memo->recorded_at->format('d M Y'),
             ],
         ], 201);
     }

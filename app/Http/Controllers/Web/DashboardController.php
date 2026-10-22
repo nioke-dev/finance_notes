@@ -317,10 +317,16 @@ class DashboardController extends Controller
             'total_income' => $dayTotalIncome,
         ];
 
-        // Voice Memos (Kotak Hitam Helm) Hari Ini
+        // Voice Memos (Kotak Hitam Helm) Hari Ini & Terkini Lintas Tanggal
         $todayVoiceMemos = $currentWorkDay
-            ? $currentWorkDay->voiceMemos()->latest('recorded_at')->get()
+            ? $currentWorkDay->voiceMemos()->with('workDay')->latest('recorded_at')->latest('id')->get()
             : collect();
+
+        $recentVoiceMemos = \App\Models\VoiceMemo::with('workDay')
+            ->latest('recorded_at')
+            ->latest('id')
+            ->take(15)
+            ->get();
 
         // Wadah PayLater Aktif untuk Belanja Kebutuhan
         $paylaterProviders = \App\Models\PaylaterProvider::active()->get();
@@ -467,6 +473,7 @@ class DashboardController extends Controller
             'accounts',
             'paylaterProviders',
             'todayVoiceMemos',
+            'recentVoiceMemos',
             'totalDigital',
             'totalCash',
             'totalDebt',

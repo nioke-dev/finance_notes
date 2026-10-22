@@ -10,13 +10,36 @@
         default => 'audio/webm',
     };
     $streamUrl = $memo->id ? route('operational.voice-memo.stream', $memo->id) : $memo->audio_url;
+
+    $recDateTime = $memo->recorded_at ?? $memo->created_at;
+    $dateFormatted = $recDateTime ? $recDateTime->translatedFormat('d M Y') : ($memo->workDay ? \Carbon\Carbon::parse($memo->workDay->work_date)->translatedFormat('d M Y') : '-');
+    $dayName = $recDateTime ? $recDateTime->translatedFormat('l') : '';
+    $timeFormatted = $recDateTime ? $recDateTime->format('H:i') : ($memo->recorded_at?->format('H:i') ?? '-');
+    $shiftDateFormatted = $memo->workDay ? \Carbon\Carbon::parse($memo->workDay->work_date)->translatedFormat('d M Y') : null;
 @endphp
 
 <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-3.5 flex flex-col space-y-2.5 shadow-sm hover:border-slate-600 transition">
+    {{-- Baris Header: Tanggal Rekaman & Badge Shift --}}
+    <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 font-bold text-xs shadow-sm">
+            <span>📅</span>
+            <span>{{ $dateFormatted }}</span>
+            @if($dayName)
+                <span class="text-indigo-400 font-medium text-[11px]">({{ $dayName }})</span>
+            @endif
+        </div>
+        @if($shiftDateFormatted)
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-900 border border-slate-700 text-slate-300 font-medium" title="Dikaitkan ke Shift {{ $shiftDateFormatted }}">
+                Shift: {{ $shiftDateFormatted }}
+            </span>
+        @endif
+    </div>
+
+    {{-- Baris Jam, Durasi & GPS --}}
     <div class="flex items-center justify-between text-xs text-slate-300 font-medium">
         <div class="flex items-center space-x-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>Rekaman: {{ $memo->recorded_at?->format('H:i') ?? '-' }} WIB</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+            <span class="font-semibold text-white">Rekaman: {{ $timeFormatted }} WIB</span>
             @if($memo->duration_seconds)
                 <span class="text-slate-400 font-medium">&bull; {{ $memo->duration_seconds }}s</span>
             @endif
@@ -48,6 +71,7 @@
         </div>
     </div>
 
+    {{-- Player Audio --}}
     <audio controls preload="metadata" class="w-full h-8 rounded-lg accent-emerald-500 focus:outline-none">
         <source src="{{ $streamUrl }}" type="{{ $mime }}">
         <source src="{{ $memo->audio_url }}" type="{{ $mime }}">

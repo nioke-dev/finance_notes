@@ -619,12 +619,20 @@
                     @else
                         <div class="space-y-2.5 max-h-56 overflow-y-auto pr-1">
                             @foreach($workDay->voiceMemos as $memo)
+                                @php
+                                    $memoDate = $memo->recorded_at ?? $memo->created_at;
+                                @endphp
                                 <div class="p-3 bg-slate-900/70 border border-slate-700/50 rounded-xl space-y-2">
-                                    <div class="flex justify-between items-center text-[11px]">
-                                        <span class="font-bold text-white flex items-center space-x-1.5">
-                                            <span>⏰</span>
-                                            <span>{{ $memo->recorded_at ? $memo->recorded_at->format('H:i:s') : $memo->created_at->format('H:i:s') }}</span>
-                                        </span>
+                                    <div class="flex justify-between items-center text-[11px] gap-2 flex-wrap">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                                                📅 {{ $memoDate ? $memoDate->format('d M Y') : '-' }}
+                                            </span>
+                                            <span class="font-bold text-white flex items-center space-x-1">
+                                                <span>⏰</span>
+                                                <span>{{ $memoDate ? $memoDate->format('H:i') : '-' }} WIB</span>
+                                            </span>
+                                        </div>
                                         @if($memo->latitude && $memo->longitude)
                                             <a href="https://www.google.com/maps?q={{ $memo->latitude }},{{ $memo->longitude }}" target="_blank" class="text-blue-400 hover:text-blue-300 hover:underline flex items-center space-x-1 font-semibold">
                                                 <span>📍</span>

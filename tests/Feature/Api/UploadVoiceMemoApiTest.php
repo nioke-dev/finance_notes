@@ -75,4 +75,41 @@ class UploadVoiceMemoApiTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['audio_file']);
     }
+
+    public function test_can_upload_voice_memo_with_target_work_date(): void
+    {
+        Storage::fake('public');
+
+        $fakeAudio = UploadedFile::fake()->create('intercom_audio.m4a', 500, 'audio/mp4');
+
+        $payload = [
+            'work_date' => '2026-10-20',
+            'audio_file' => $fakeAudio,
+            'duration_seconds' => 22,
+        ];
+
+        $response = $this->postJson('/api/v1/quick/voice-memo', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => 'success',
+                'data' => [
+                    'duration_seconds' => 22,
+                    'work_date' => '2026-10-20',
+                    'date_formatted' => '20 Oct 2026',
+                ],
+            ]);
+
+        $this->assertDatabaseHas('work_days', [
+            'work_date' => '2026-10-20',
+        ]);
+
+        $workDay = WorkDay::where('work_date', '2026-10-20')->first();
+        $this->assertNotNull($workDay);
+
+        $this->assertDatabaseHas('voice_memos', [
+            'work_day_id' => $workDay->id,
+            'duration_seconds' => 22,
+        ]);
+    }
 }

@@ -36,6 +36,8 @@ class VoiceMemoPlayerComponentTest extends TestCase
         );
 
         $this->assertStringContainsString('Rekaman: 14:25 WIB', $renderedHtml);
+        $this->assertStringContainsString('14 Okt 2026', $renderedHtml);
+        $this->assertStringContainsString('Shift: 14 Okt 2026', $renderedHtml);
         $this->assertStringContainsString('18s', $renderedHtml);
         $this->assertStringContainsString('voice-memos/memo-1.mp4', $renderedHtml);
         $this->assertStringContainsString('<audio controls', $renderedHtml);

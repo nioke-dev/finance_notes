@@ -15,6 +15,8 @@ class UploadVoiceMemoRequest extends FormRequest
     {
         return [
             'work_day_id' => ['nullable', 'integer', 'exists:work_days,id'],
+            'work_date' => ['nullable', 'date_format:Y-m-d'],
+            'recorded_at' => ['nullable', 'date'],
             'audio_file' => ['required', 'file', 'mimes:m4a,mp3,wav,aac,ogg,webm,mp4', 'max:10240'], // Max 10MB
             'duration_seconds' => ['nullable', 'integer', 'min:1'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
