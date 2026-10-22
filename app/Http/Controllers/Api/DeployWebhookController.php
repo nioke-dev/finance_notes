@@ -35,6 +35,25 @@ class DeployWebhookController extends Controller
             ]);
         }
 
+        if ($request->query('action') === 'setup_shifts') {
+            $created = [];
+            foreach (['2026-10-20', '2026-10-21', '2026-10-22'] as $d) {
+                $created[] = \App\Models\WorkDay::firstOrCreate(
+                    ['work_date' => $d],
+                    [
+                        'day_type' => \App\Models\WorkDay::TYPE_ON_BID,
+                        'status' => \App\Models\WorkDay::STATUS_NEEDS_RECONCILIATION,
+                        'opened_at' => \Carbon\Carbon::parse("{$d} 08:00:00"),
+                    ]
+                );
+            }
+            return response()->json([
+                'success' => true,
+                'message' => 'Shifts 20, 21, and 22 setup successfully.',
+                'work_days' => $created,
+            ]);
+        }
+
         if (app()->environment('testing')) {
             return response()->json([
                 'success' => true,

@@ -1923,6 +1923,122 @@ class OperationalWebController extends Controller
     }
 
     /**
+     * Catat Sekaligus Transaksi dari Buku / Catatan Lapangan ke Masing-Masing Tanggal
+     */
+    public function storeBatchTransactions(Request $request, LedgerService $ledgerService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'entries' => 'required|array|min:1',
+            'entries.*.transaction_date' => 'required|date',
+            'entries.*.transaction_time' => 'nullable|string',
+            'entries.*.category' => 'required|string|in:expense,fuel,parking,field_incidental,personal_income,tip',
+            'entries.*.description' => 'required|string|max:255',
+            'entries.*.account_id' => 'required|exists:accounts,id',
+            'entries.*.amount' => 'required|integer|min:1',
+        ]);
+
+        $recordedCount = 0;
+        $affectedDates = [];
+
+        foreach ($validated['entries'] as $entry) {
+            $dateStr = Carbon::parse($entry['transaction_date'])->toDateString();
+            $timeStr = !empty($entry['transaction_time']) ? $entry['transaction_time'] : '12:00:00';
+            
+            try {
+                $txTimestamp = Carbon::parse("{$dateStr} {$timeStr}");
+            } catch (\Exception $e) {
+                $txTimestamp = Carbon::parse($dateStr)->setTime(12, 0, 0);
+            }
+
+            // Dapatkan atau buat WorkDay untuk tanggal transaksi tersebut
+            $workDay = WorkDay::firstOrCreate(
+                ['work_date' => $dateStr],
+                [
+                    'day_type' => WorkDay::TYPE_ON_BID,
+                    'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+                    'opened_at' => Carbon::parse($dateStr)->setTime(8, 0, 0),
+                ]
+            );
+
+            $sourceAccount = Account::findOrFail($entry['account_id']);
+            $amount = (int) $entry['amount'];
+            $desc = trim($entry['description']);
+            $category = $entry['category'];
+
+            if (in_array($category, ['expense', 'fuel', 'parking', 'field_incidental'])) {
+                // Tentukan target Expense Account
+                $expenseAccountName = match($category) {
+                    'fuel' => 'Beban Bensin Operasional',
+                    'parking' => 'Beban Parkir Driver',
+                    'field_incidental' => 'Beban Operasional Lapangan Driver',
+                    default => 'Pengeluaran Pribadi & Makan',
+                };
+
+                $expenseAccount = Account::firstOrCreate(
+                    ['name' => $expenseAccountName],
+                    ['type' => AccountType::EXPENSE, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                );
+
+                $metaType = match($category) {
+                    'fuel' => 'fuel_expense',
+                    'parking' => 'parking_expense',
+                    'field_incidental' => 'field_incidental_expense',
+                    default => 'personal_expense',
+                };
+
+                $ledgerService->recordTransaction(
+                    workDay: $workDay,
+                    type: 'expense',
+                    description: "[Tabel {$dateStr}] {$desc}",
+                    transactionTime: $txTimestamp,
+                    entries: [
+                        ['account_id' => $expenseAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $amount],
+                        ['account_id' => $sourceAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $amount],
+                    ],
+                    isEstimatedTime: false,
+                    metadata: [
+                        'type' => $metaType,
+                        'source' => 'batch_table_input',
+                        'raw_category' => $category,
+                        'transaction_date' => $dateStr,
+                    ]
+                );
+            } else {
+                // Pemasukan atau Tip
+                $incomeAccountName = ($category === 'tip') ? 'Tip Cash / Surplus COD' : 'Pemasukan Pribadi & Honor Luar';
+                $incomeAccount = Account::firstOrCreate(
+                    ['name' => $incomeAccountName],
+                    ['type' => AccountType::INCOME, 'current_balance' => 0, 'initial_balance' => 0, 'is_active' => true]
+                );
+
+                $ledgerService->recordTransaction(
+                    workDay: $workDay,
+                    type: 'income',
+                    description: "[Tabel {$dateStr}] {$desc}",
+                    transactionTime: $txTimestamp,
+                    entries: [
+                        ['account_id' => $sourceAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $amount],
+                        ['account_id' => $incomeAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $amount],
+                    ],
+                    isEstimatedTime: false,
+                    metadata: [
+                        'type' => ($category === 'tip' ? 'direct_customer_tip' : 'personal_income'),
+                        'source' => 'batch_table_input',
+                        'raw_category' => $category,
+                        'transaction_date' => $dateStr,
+                    ]
+                );
+            }
+
+            $recordedCount++;
+            $affectedDates[$dateStr] = true;
+        }
+
+        $datesList = implode(', ', array_keys($affectedDates));
+        return redirect()->back()->with('success', "✅ Berhasil mencatat {$recordedCount} transaksi dari tabel ke masing-masing tanggal ({$datesList})!");
+    }
+
+    /**
      * Catat Tip Langsung Pelanggan (Ikhlas / Sukarela di Lapangan via Cash / QRIS / Transfer)
      */
     public function storeQuickTip(Request $request, LedgerService $ledgerService): RedirectResponse

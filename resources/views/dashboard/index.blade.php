@@ -1089,6 +1089,14 @@
                                 <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Suara + GPS</span>
                             </div>
                         </button>
+
+                        <a href="#section-batch-table" class="p-3.5 bg-gradient-to-br from-indigo-950/80 to-slate-900 hover:from-indigo-900/80 hover:to-slate-800 border border-indigo-500/50 hover:border-indigo-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">📋</span>
+                            <div>
+                                <span class="text-xs font-bold text-indigo-300 block group-hover:text-indigo-200">Input Tabel Cepat</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Tgl 20, 21, 22</span>
+                            </div>
+                        </a>
                     </div>
                 </div>
 
@@ -1800,6 +1808,83 @@
                     </div>
                 @endforeach
             </div>
+        </div>
+
+        {{-- TABEL INPUT TRANSAKSI MULTI-TANGGAL (REKAP BUKU / CATATAN LAPANGAN) --}}
+        <div id="section-batch-table" class="bg-slate-900/90 border-2 border-indigo-500/50 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-indigo-500/30 pb-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xl shrink-0">
+                        📋
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-sm sm:text-base font-extrabold text-white">Tabel Input Transaksi Multi-Tanggal</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                                Rekap Buku / Catatan
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-0.5">Input pengeluaran/pemasukan tanggal 20, 21, dan hari ini sekaligus dalam format tabel cepat tanpa reload.</p>
+                    </div>
+                </div>
+
+                {{-- Preset Baris Cepat --}}
+                <div class="flex flex-wrap items-center gap-1.5 self-end sm:self-auto">
+                    <span class="text-[11px] text-slate-400 font-semibold mr-1">Tambah baris cepat:</span>
+                    <button type="button" onclick="addBatchRow('{{ now()->subDays(2)->toDateString() }}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs font-bold rounded-lg border border-indigo-500/30 transition">
+                        + Tgl {{ now()->subDays(2)->format('d M') }} (20)
+                    </button>
+                    <button type="button" onclick="addBatchRow('{{ now()->subDay()->toDateString() }}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs font-bold rounded-lg border border-indigo-500/30 transition">
+                        + Tgl {{ now()->subDay()->format('d M') }} (21)
+                    </button>
+                    <button type="button" onclick="addBatchRow('{{ now()->toDateString() }}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-bold rounded-lg border border-emerald-500/30 transition">
+                        + Hari Ini ({{ now()->format('d M') }})
+                    </button>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('operational.batch-transactions') }}" id="form-batch-transactions" onsubmit="return validateBatchForm()">
+                @csrf
+                <div class="overflow-x-auto rounded-xl border border-slate-700/80 bg-slate-950/60">
+                    <table class="w-full text-left text-xs" id="table-batch-entries">
+                        <thead class="bg-slate-900 border-b border-slate-800 text-[11px] font-black uppercase tracking-wider text-slate-300">
+                            <tr>
+                                <th class="p-2.5 min-w-[130px]">Tanggal</th>
+                                <th class="p-2.5 min-w-[90px]">Jam</th>
+                                <th class="p-2.5 min-w-[150px]">Kategori</th>
+                                <th class="p-2.5 min-w-[200px]">Keterangan</th>
+                                <th class="p-2.5 min-w-[140px]">Wadah Uang</th>
+                                <th class="p-2.5 min-w-[130px]">Nominal (Rp)</th>
+                                <th class="p-2.5 text-center w-10">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batch-tbody" class="divide-y divide-slate-800/80">
+                            <!-- Baris otomatis di-generate via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-3">
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="addBatchRow()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition flex items-center space-x-1.5 shadow">
+                            <span>➕</span>
+                            <span>Tambah Baris</span>
+                        </button>
+                        <span id="batch-rows-count" class="text-xs text-slate-400 font-medium">3 baris transaksi</span>
+                    </div>
+
+                    <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-400 block font-medium">Total Terhitung:</span>
+                            <span id="batch-total-display" class="text-base font-black text-emerald-400">Rp 0</span>
+                        </div>
+                        <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center space-x-2 transition">
+                            <span>⚡</span>
+                            <span>Simpan Semua Transaksi ke Tanggal Terkait</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
 
         {{-- Riwayat Transaksi Terbaru --}}
@@ -6142,6 +6227,106 @@
             }
             return true;
         }
+
+        let batchRowIndex = 0;
+        const availableBatchAccounts = @json($accounts->map(fn($a) => ['id' => $a->id, 'name' => $a->name]));
+
+        function addBatchRow(defaultDate = null, defaultCat = 'expense', defaultDesc = '', defaultAmount = '') {
+            const tbody = document.getElementById('batch-tbody');
+            if (!tbody) return;
+
+            const idx = batchRowIndex++;
+            const dateVal = defaultDate || '{{ $selectedDate }}';
+            const tr = document.createElement('tr');
+            tr.id = `batch-row-${idx}`;
+            tr.className = 'hover:bg-slate-900/60 transition';
+
+            let optionsHtml = '';
+            availableBatchAccounts.forEach(acc => {
+                const isSelected = acc.name === 'Cash' ? 'selected' : '';
+                optionsHtml += `<option value="${acc.id}" ${isSelected}>${acc.name}</option>`;
+            });
+
+            tr.innerHTML = `
+                <td class="p-2">
+                    <input type="date" name="entries[${idx}][transaction_date]" value="${dateVal}" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                </td>
+                <td class="p-2">
+                    <input type="time" name="entries[${idx}][transaction_time]" value="12:00" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                </td>
+                <td class="p-2">
+                    <select name="entries[${idx}][category]" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs font-semibold focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        <option value="expense" ${defaultCat === 'expense' ? 'selected' : ''}>🍜 Makan / Belanja</option>
+                        <option value="fuel" ${defaultCat === 'fuel' ? 'selected' : ''}>⛽ Bensin</option>
+                        <option value="parking" ${defaultCat === 'parking' ? 'selected' : ''}>🅿️ Parkir</option>
+                        <option value="field_incidental" ${defaultCat === 'field_incidental' ? 'selected' : ''}>🛠️ Biaya Lapangan</option>
+                        <option value="personal_income" ${defaultCat === 'personal_income' ? 'selected' : ''}>💰 Pemasukan Luar</option>
+                        <option value="tip" ${defaultCat === 'tip' ? 'selected' : ''}>🎁 Tip Customer</option>
+                    </select>
+                </td>
+                <td class="p-2">
+                    <input type="text" name="entries[${idx}][description]" value="${defaultDesc}" placeholder="Misal: Sarapan / Bensin" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                </td>
+                <td class="p-2">
+                    <select name="entries[${idx}][account_id]" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs font-bold focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        ${optionsHtml}
+                    </select>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="entries[${idx}][amount]" value="${defaultAmount}" min="1" step="1" placeholder="25000" required oninput="calcBatchTotal()" class="batch-amount-input w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-black text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                </td>
+                <td class="p-2 text-center">
+                    <button type="button" onclick="removeBatchRow(${idx})" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700 flex items-center justify-center font-bold text-xs transition" title="Hapus Baris">✕</button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            updateBatchRowsCount();
+            calcBatchTotal();
+        }
+
+        function removeBatchRow(idx) {
+            const row = document.getElementById(`batch-row-${idx}`);
+            if (row) row.remove();
+            updateBatchRowsCount();
+            calcBatchTotal();
+        }
+
+        function updateBatchRowsCount() {
+            const tbody = document.getElementById('batch-tbody');
+            const count = tbody ? tbody.children.length : 0;
+            const el = document.getElementById('batch-rows-count');
+            if (el) el.innerText = `${count} baris transaksi`;
+        }
+
+        function calcBatchTotal() {
+            let total = 0;
+            document.querySelectorAll('.batch-amount-input').forEach(inp => {
+                const val = parseInt(inp.value) || 0;
+                total += val;
+            });
+            const disp = document.getElementById('batch-total-display');
+            if (disp) disp.innerText = 'Rp ' + total.toLocaleString('id-ID');
+        }
+
+        function validateBatchForm() {
+            const tbody = document.getElementById('batch-tbody');
+            if (!tbody || tbody.children.length === 0) {
+                alert('Tabel transaksi masih kosong. Silakan tambah minimal 1 baris.');
+                return false;
+            }
+            return true;
+        }
+
+        // Inisialisasi baris tabel batch saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            const tbody = document.getElementById('batch-tbody');
+            if (tbody && tbody.children.length === 0) {
+                addBatchRow('{{ now()->subDays(2)->toDateString() }}', 'expense', 'Makan / Belanja Tgl 20');
+                addBatchRow('{{ now()->subDay()->toDateString() }}', 'expense', 'Makan / Belanja Tgl 21');
+                addBatchRow('{{ now()->toDateString() }}', 'expense', 'Pengeluaran Hari Ini');
+            }
+        });
 
         function openModal(id) {
             const el = document.getElementById(id);

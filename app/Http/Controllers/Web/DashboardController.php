@@ -48,6 +48,10 @@ class DashboardController extends Controller
         $hasCustomDate = $request->has('date');
         $selectedDate = $request->input('date', now()->toDateString());
 
+        // Filter tanggal untuk evaluasi harian (default: hari ini)
+        $hasCustomDate = $request->has('date');
+        $selectedDate = $request->input('date', now()->toDateString());
+
         if ($hasCustomDate) {
             // Jika user memilih tanggal secara eksplisit di filter kalender (misal tanggal 20), buat atau muat WorkDay hari tersebut
             $currentWorkDay = WorkDay::firstOrCreate(

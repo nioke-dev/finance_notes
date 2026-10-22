@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/operational/fuel', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeFuel'])->name('operational.fuel');
     Route::post('/operational/parking', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeParking'])->name('operational.parking');
     Route::post('/operational/quick-tip', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeQuickTip'])->name('operational.quick-tip');
+    Route::post('/operational/batch-transactions', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeBatchTransactions'])->name('operational.batch-transactions');
     Route::post('/operational/update-hub-bonus', [\App\Http\Controllers\Web\OperationalWebController::class, 'updateHubBonus'])->name('operational.update-hub-bonus');
     Route::post('/operational/claim-hub-bonus', [\App\Http\Controllers\Web\OperationalWebController::class, 'claimHubBonus'])->name('operational.claim-hub-bonus');
     Route::post('/operational/cod', [\App\Http\Controllers\Web\OperationalWebController::class, 'storeCod'])->name('operational.cod');
