@@ -2501,7 +2501,7 @@
 
                 {{-- Nominal Tip --}}
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Tip (Rp)</label>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nominal Tip Diterima (Rp) <span class="text-amber-400">*</span></label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-sm text-slate-400 font-bold">Rp</span>
                         <input 
@@ -2511,19 +2511,19 @@
                             name="amount" 
                             id="quick-tip-amount" 
                             required 
-                            min="1000" 
-                            step="1000" 
+                            min="1" 
                             placeholder="Contoh: 5.000" 
                             class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-3 py-2.5 text-white text-base font-black focus:ring-2 focus:ring-amber-500 focus:outline-none"
                         >
                     </div>
                     {{-- Quick Buttons --}}
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 2000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+2.000</button>
-                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 5000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+5.000</button>
-                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 10000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+10.000</button>
-                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 20000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+20.000</button>
-                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">+50.000</button>
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 1000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">1k</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 2000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">2k</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 5000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">5k</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 10000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">10k</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 20000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">20k</button>
+                        <button type="button" onclick="document.getElementById('quick-tip-amount').value = 50000" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg border border-slate-700">50k</button>
                     </div>
                 </div>
 
@@ -2532,13 +2532,18 @@
                     <label class="block text-xs font-bold text-slate-300 mb-1">Masuk ke Wadah / Rekening Mana?</label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         @foreach($tipAccounts as $tAcc)
+                            @php
+                                $isCashAcc = ($tAcc->name === 'Cash' || $tAcc->type->value === 'cash');
+                            @endphp
                             <label class="p-2.5 bg-slate-950/80 border border-slate-700 hover:border-amber-500/50 rounded-xl flex items-center justify-between cursor-pointer transition select-none group">
                                 <div class="flex items-center space-x-2">
                                     <input 
                                         type="radio" 
                                         name="account_id" 
                                         value="{{ $tAcc->id }}" 
+                                        data-is-cash="{{ $isCashAcc ? '1' : '0' }}"
                                         {{ $tAcc->name === 'Cash' ? 'checked' : '' }} 
+                                        onchange="toggleQuickTipCashDrawer(this)"
                                         class="text-amber-500 focus:ring-amber-500 bg-slate-900 border-slate-700"
                                     >
                                     <span class="text-xs font-bold text-white group-hover:text-amber-300 flex items-center space-x-1">
@@ -2577,30 +2582,78 @@
                             <span class="text-amber-400 text-sm">💵</span>
                             <div>
                                 <span class="text-xs font-bold text-white block">Rincian Lembar Tip Cash (Opsional)</span>
-                                <span class="text-[10px] text-slate-400 block font-normal">Pilih lembar tip cash yang diberikan</span>
+                                <span class="text-[10px] text-slate-400 block font-normal">Pilih lembar / koin tip cash yang diberikan</span>
                             </div>
                         </div>
                         <span id="quick-tip-cash-drawer-icon" class="text-xs text-slate-400 font-bold transition-transform">▼</span>
                     </button>
-                    <div id="quick-tip-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-2 bg-slate-950/40">
+                    <div id="quick-tip-cash-drawer" class="hidden p-3 border-t border-slate-800 space-y-3 bg-slate-950/40">
+                        {{-- Tombol Cepat Pecahan Tip Cash --}}
+                        <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-800/80">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Opsi Bayar:</span>
+                            <button type="button" onclick="setQuickTipExactBreakdown()" class="px-2.5 py-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 text-[11px] font-extrabold rounded-lg border border-amber-500/40 transition flex items-center space-x-1" title="Pecah nominal tip ke lembaran/koin secara otomatis">
+                                <span>⚡</span>
+                                <span>Pecah Otomatis</span>
+                            </button>
+                            <button type="button" onclick="setQuickTipRound(2000)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">2k</button>
+                            <button type="button" onclick="setQuickTipRound(5000)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">5k</button>
+                            <button type="button" onclick="setQuickTipRound(10000)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">10k</button>
+                            <button type="button" onclick="setQuickTipRound(20000)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg border border-slate-700 transition">20k</button>
+                            <button type="button" onclick="resetQuickTipBreakdown()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-[10px] font-bold rounded-lg border border-slate-700 ml-auto transition">Reset 0</button>
+                        </div>
+
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-[11px] font-bold text-amber-400 uppercase">Pecahan Tip Cash:</span>
-                            <span id="tip-cash-total-display" class="text-xs font-bold text-white">Rp 0</span>
+                            <span class="text-[11px] font-black text-amber-400 uppercase tracking-wide">Pecahan Tip Cash:</span>
+                            <span id="tip-cash-total-display" class="text-sm font-black text-amber-400">Rp 0</span>
                         </div>
-                        <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                            @foreach([50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
-                                <div class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center">
-                                    <span class="text-[10px] text-slate-300 font-bold">Rp{{ $label }}</span>
-                                    <div class="flex items-center space-x-1 mt-1">
-                                        <button type="button" onclick="stepTxCash('tip_bill_{{ $nom }}', -1, {{ $nom }}, 'tip_cash')" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold flex items-center justify-center">-</button>
-                                        <input type="number" name="tip_cash_breakdown[bill_{{ $nom }}]" id="tip_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('tip_cash', 'tip-cash-total-display')" class="w-7 text-center bg-transparent border-0 p-0 text-white font-bold text-xs">
-                                        <button type="button" onclick="stepTxCash('tip_bill_{{ $nom }}', 1, {{ $nom }}, 'tip_cash')" class="w-6 h-6 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold flex items-center justify-center">+</button>
+
+                        {{-- Pecahan Kertas --}}
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-400 block mb-1">💵 Lembaran:</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                @foreach([100000 => '100k', 50000 => '50k', 20000 => '20k', 10000 => '10k', 5000 => '5k', 2000 => '2k', 1000 => '1k'] as $nom => $label)
+                                    <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                        <div class="flex items-center justify-between w-full mb-1">
+                                            <span class="text-xs text-slate-200 font-extrabold">Rp{{ $label }}</span>
+                                            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Lembar</span>
+                                        </div>
+                                        <div class="mb-1.5 w-full">
+                                            <input type="number" name="tip_cash_breakdown[bill_{{ $nom }}]" id="tip_cash_bill_{{ $nom }}" value="0" min="0" oninput="calcTxCash('tip_cash', 'tip-cash-total-display')" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-1.5 w-full">
+                                            <button type="button" onclick="stepTxCash('tip_cash_bill_{{ $nom }}', -1, {{ $nom }}, 'tip_cash')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                            <button type="button" onclick="stepTxCash('tip_cash_bill_{{ $nom }}', 1, {{ $nom }}, 'tip_cash')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                        </div>
                                     </div>
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
-                        <button type="button" onclick="applyTipTotalToInput()" class="mt-1.5 w-full py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold rounded-lg border border-amber-500/30">
-                            ⚡ Gunakan sebagai Nominal Tip
+
+                        {{-- Pecahan Logam (Koin) --}}
+                        <div>
+                            <span class="text-[10px] font-bold text-amber-300/80 block mb-1">🪙 Koin:</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                @foreach([1000 => '1.000', 500 => '500', 200 => '200', 100 => '100'] as $nom => $label)
+                                    <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between shadow-sm">
+                                        <div class="flex items-center justify-between w-full mb-1">
+                                            <span class="text-xs text-amber-200 font-extrabold">Rp{{ $label }}</span>
+                                            <span class="text-[9px] text-amber-400/60 font-bold uppercase tracking-wider">Koin</span>
+                                        </div>
+                                        <div class="mb-1.5 w-full">
+                                            <input type="number" name="tip_cash_breakdown[coin_{{ $nom }}]" id="tip_cash_coin_{{ $nom }}" value="0" min="0" oninput="calcTxCash('tip_cash', 'tip-cash-total-display')" class="no-spin w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg text-white font-black text-base focus:ring-1 focus:ring-amber-500 focus:outline-none p-0">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-1.5 w-full">
+                                            <button type="button" onclick="stepTxCash('tip_cash_coin_{{ $nom }}', -1, {{ $nom }}, 'tip_cash')" class="h-9 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">-</button>
+                                            <button type="button" onclick="stepTxCash('tip_cash_coin_{{ $nom }}', 1, {{ $nom }}, 'tip_cash')" class="h-9 bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-lg text-lg font-black flex items-center justify-center shadow select-none">+</button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="applyTipTotalToInput()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/30 transition flex items-center justify-center space-x-1.5 shadow">
+                            <span>⚡</span>
+                            <span>Salin Total Pecahan ke Input "Nominal Tip" di Atas</span>
                         </button>
                     </div>
                 </div>
@@ -5978,6 +6031,11 @@
                 if (id === 'modal-quick-cash-denominations') {
                     calculateQuickCashTotal();
                 }
+                if (id === 'modal-quick-tip') {
+                    const activeRadio = el.querySelector('input[name="account_id"]:checked');
+                    if (activeRadio) toggleQuickTipCashDrawer(activeRadio);
+                    calcTxCash('tip_cash', 'tip-cash-total-display');
+                }
             }
         }
         function closeModal(id) {
@@ -7202,6 +7260,51 @@
                     if (typeof recalculateCodAmounts === 'function') recalculateCodAmounts();
                 }
             }
+        }
+
+        function toggleQuickTipCashDrawer(radioEl) {
+            const drawerWrapper = document.getElementById('quick-tip-cash-breakdown-drawer');
+            if (!drawerWrapper) return;
+            const isCash = radioEl && (radioEl.getAttribute('data-is-cash') === '1');
+            if (isCash) {
+                drawerWrapper.classList.remove('hidden');
+            } else {
+                drawerWrapper.classList.add('hidden');
+            }
+        }
+
+        function setQuickTipExactBreakdown() {
+            const amountInput = document.getElementById('quick-tip-amount');
+            const nominal = amountInput ? (parseInt(amountInput.value, 10) || 0) : 0;
+            if (nominal <= 0) {
+                alert('Silakan tentukan atau ketik nominal tip terlebih dahulu.');
+                if (amountInput) amountInput.focus();
+                return;
+            }
+            resetTxCashGroup('tip_cash');
+            const decomp = decomposeCashAmount(nominal);
+            for (const [key, qty] of Object.entries(decomp)) {
+                const input = document.getElementById(`tip_cash_${key}`);
+                if (input) input.value = qty;
+            }
+            calcTxCash('tip_cash', 'tip-cash-total-display');
+        }
+
+        function setQuickTipRound(amount) {
+            resetTxCashGroup('tip_cash');
+            const decomp = decomposeCashAmount(amount);
+            for (const [key, qty] of Object.entries(decomp)) {
+                const input = document.getElementById(`tip_cash_${key}`);
+                if (input) input.value = qty;
+            }
+            calcTxCash('tip_cash', 'tip-cash-total-display');
+            const tipInput = document.getElementById('quick-tip-amount');
+            if (tipInput) tipInput.value = amount;
+        }
+
+        function resetQuickTipBreakdown() {
+            resetTxCashGroup('tip_cash');
+            calcTxCash('tip_cash', 'tip-cash-total-display');
         }
 
         function applyTipTotalToInput() {

@@ -1886,7 +1886,7 @@ class OperationalWebController extends Controller
     {
         $validated = $request->validate([
             'work_day_id' => 'nullable|exists:work_days,id',
-            'amount' => 'required|integer|min:1000',
+            'amount' => 'required|integer|min:100',
             'account_id' => 'required|exists:accounts,id',
             'notes' => 'nullable|string|max:255',
             'tip_cash_breakdown' => 'nullable|array',
