@@ -413,6 +413,7 @@ class OperationalWebController extends Controller
     {
         $validated = $request->validate([
             'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'bill_100000' => 'nullable|integer|min:0',
             'bill_50000' => 'nullable|integer|min:0',
             'bill_20000' => 'nullable|integer|min:0',
@@ -429,17 +430,7 @@ class OperationalWebController extends Controller
         ]);
 
         try {
-            $workDay = !empty($validated['work_day_id'])
-                ? WorkDay::findOrFail($validated['work_day_id'])
-                : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
-
-            if (!$workDay) {
-                $workDay = WorkDay::create([
-                    'work_date' => now()->toDateString(),
-                    'day_type' => WorkDay::TYPE_DAY_OFF,
-                    'status' => 'active',
-                ]);
-            }
+            $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
 
             $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay->id]);
             $oldValues = $denom->exists ? $denom->toArray() : null;
@@ -505,6 +496,49 @@ class OperationalWebController extends Controller
             \Illuminate\Support\Facades\Log::error("Gagal update pecahan kas: " . $e->getMessage());
             return redirect()->back()->withInput()->with('error', "Gagal memperbarui kas fisik: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Cari atau Buat Otomatis WorkDay berdasarkan ID atau Waktu Transaksi
+     * Memastikan user dapat mencatat transaksi kapan saja / tanggal berapa saja tanpa wajib pre-open shift manual.
+     */
+    protected function resolveWorkDay(?string $workDayId = null, ?string $transactionTime = null): WorkDay
+    {
+        // 1. Jika ada waktu transaksi khusus (misal tanggal 20)
+        if (!empty($transactionTime)) {
+            try {
+                $targetDate = Carbon::parse($transactionTime)->toDateString();
+                return WorkDay::firstOrCreate(
+                    ['work_date' => $targetDate],
+                    [
+                        'day_type' => WorkDay::TYPE_ON_BID,
+                        'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+                        'opened_at' => Carbon::parse($targetDate)->setTime(8, 0, 0),
+                    ]
+                );
+            } catch (\Throwable $e) {
+                // Lanjut ke fallback
+            }
+        }
+
+        // 2. Jika ID WorkDay valid dikirimkan
+        if (!empty($workDayId)) {
+            $workDay = WorkDay::find($workDayId);
+            if ($workDay) {
+                return $workDay;
+            }
+        }
+
+        // 3. Fallback ke tanggal hari ini
+        $today = now()->toDateString();
+        return WorkDay::firstOrCreate(
+            ['work_date' => $today],
+            [
+                'day_type' => WorkDay::TYPE_ON_BID,
+                'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+                'opened_at' => now(),
+            ]
+        );
     }
 
     /**
@@ -630,7 +664,8 @@ class OperationalWebController extends Controller
         LedgerService $ledgerService
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'source_account_id' => 'required|exists:accounts,id',
             'vendor_type' => 'required|in:spbu,madura',
             'amount' => 'required|integer|min:1000',
@@ -639,14 +674,16 @@ class OperationalWebController extends Controller
             'change_breakdown' => 'nullable|array',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
         $account = Account::findOrFail($validated['source_account_id']);
 
         $tx = $fuelService->recordFuel(
             workDay: $workDay,
             sourceAccount: $account,
             vendorType: $validated['vendor_type'],
-            amount: (int) $validated['amount']
+            amount: (int) $validated['amount'],
+            transactionTime: $txTime
         );
 
         $cashback = (int) ($validated['cashback_amount'] ?? 0);
@@ -692,6 +729,7 @@ class OperationalWebController extends Controller
     ): RedirectResponse {
         $validated = $request->validate([
             'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'amount' => 'required|integer|min:0',
             'restaurant_name' => 'nullable|string|max:255',
             'order_code' => 'nullable|string|max:50',
@@ -705,14 +743,8 @@ class OperationalWebController extends Controller
             'change_breakdown' => 'nullable|array',
         ]);
 
-        $workDay = !empty($validated['work_day_id'])
-            ? WorkDay::findOrFail($validated['work_day_id'])
-            : (WorkDay::whereDate('work_date', now()->toDateString())->first() 
-                ?? WorkDay::create([
-                    'work_date' => now()->toDateString(),
-                    'day_type' => WorkDay::TYPE_DAY_OFF,
-                    'status' => 'active',
-                ]));
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
 
         $isCovered = $request->boolean('is_covered_by_resto');
         $vehicleType = $validated['vehicle_type'] ?? 'motor';
@@ -731,6 +763,7 @@ class OperationalWebController extends Controller
             restaurantName: $restaurantName ?: null,
             latitude: !empty($validated['latitude']) ? (float) $validated['latitude'] : null,
             longitude: !empty($validated['longitude']) ? (float) $validated['longitude'] : null,
+            transactionTime: $txTime,
             isCoveredByResto: $isCovered,
             sourceAccountId: $sourceAccountId,
             vehicleType: $vehicleType
@@ -791,7 +824,8 @@ class OperationalWebController extends Controller
         ActiveCodOrderService $service
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'order_code' => 'required|string|max:20',
             'bill_amount' => 'required|integer|min:100',
             'merchant_name' => 'nullable|string|max:255',
@@ -801,7 +835,8 @@ class OperationalWebController extends Controller
             'notes' => 'nullable|string|max:255',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
 
         $order = $service->acceptCodOrder(
             workDay: $workDay,
@@ -811,7 +846,8 @@ class OperationalWebController extends Controller
             roundedBillAmount: !empty($validated['rounded_bill_amount']) ? (int) $validated['rounded_bill_amount'] : null,
             latitude: !empty($validated['latitude']) ? (float) $validated['latitude'] : null,
             longitude: !empty($validated['longitude']) ? (float) $validated['longitude'] : null,
-            notes: $validated['notes'] ?? null
+            notes: $validated['notes'] ?? null,
+            transactionTime: $txTime
         );
 
         return redirect()->back()->with('success', "Pesanan COD #{$order->order_code} berhasil diterima. Saldo ShopeePay otomatis terpotong Rp " . number_format($order->bill_amount, 0, ',', '.') . ".");
@@ -836,10 +872,13 @@ class OperationalWebController extends Controller
             'parking_reimbursed' => 'nullable|integer|min:0',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'transaction_time' => 'nullable|date',
             'notes' => 'nullable|string|max:255',
             'customer_cash_breakdown' => 'nullable|array',
             'change_cash_breakdown' => 'nullable|array',
         ]);
+
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
 
         $completed = $service->completeCodOrder(
             order: $order,
@@ -851,7 +890,8 @@ class OperationalWebController extends Controller
             parkingReimbursed: (int) ($validated['parking_reimbursed'] ?? 0),
             latitude: !empty($validated['latitude']) ? (float) $validated['latitude'] : null,
             longitude: !empty($validated['longitude']) ? (float) $validated['longitude'] : null,
-            notes: $validated['notes'] ?? null
+            notes: $validated['notes'] ?? null,
+            transactionTime: $txTime
         );
 
         // Jika bayar tunai (cash) dan ada rincian pecahan lembaran/koin yang diisi opsional
@@ -921,7 +961,8 @@ class OperationalWebController extends Controller
         TransferService $transferService
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'source_account_id' => 'required|exists:accounts,id|different:destination_account_id',
             'destination_account_id' => 'required|exists:accounts,id',
             'amount' => 'required|integer|min:1',
@@ -930,7 +971,8 @@ class OperationalWebController extends Controller
             'paid_breakdown' => 'nullable|array',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
         $source = Account::findOrFail($validated['source_account_id']);
         $dest = Account::findOrFail($validated['destination_account_id']);
 
@@ -940,6 +982,7 @@ class OperationalWebController extends Controller
             destinationAccount: $dest,
             amount: (int) $validated['amount'],
             adminFee: (int) ($validated['admin_fee'] ?? 0),
+            transactionTime: $txTime,
             note: $validated['note'] ?? null
         );
 
@@ -968,7 +1011,8 @@ class OperationalWebController extends Controller
         LedgerService $ledgerService
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'source_account_id' => 'required',
             'amount' => 'required|integer|min:1',
             'description' => 'required|string|max:255',
@@ -978,7 +1022,8 @@ class OperationalWebController extends Controller
             'change_breakdown' => 'nullable|array',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
 
         // Jika sumber pembayaran adalah Wadah PayLater
         if (str_starts_with($validated['source_account_id'], 'paylater_')) {
@@ -988,9 +1033,9 @@ class OperationalWebController extends Controller
 
             $tenor = (int) ($validated['tenor_months'] ?? 1);
             $amount = (int) $validated['amount'];
-            $dueDate = now()->addMonths($tenor)->endOfMonth();
+            $dueDate = $txTime->copy()->addMonths($tenor)->endOfMonth();
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $slug, $amount, $tenor) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $slug, $amount, $tenor, $txTime) {
                 $debt = Debt::create([
                     'name' => 'Belanja PayLater: ' . $validated['description'],
                     'platform' => $slug,
@@ -1000,7 +1045,7 @@ class OperationalWebController extends Controller
                     'total_obligation' => $amount,
                     'tenor_months' => $tenor,
                     'status' => 'active',
-                    'started_at' => now(),
+                    'started_at' => $txTime,
                 ]);
 
                 $monthlyInstallment = (int) ceil($amount / $tenor);
@@ -1008,7 +1053,7 @@ class OperationalWebController extends Controller
                     DebtInstallment::create([
                         'debt_id' => $debt->id,
                         'installment_number' => $i,
-                        'due_date' => now()->addMonths($i)->endOfMonth(),
+                        'due_date' => $txTime->copy()->addMonths($i)->endOfMonth(),
                         'amount_due' => ($i === $tenor) ? ($amount - ($monthlyInstallment * ($tenor - 1))) : $monthlyInstallment,
                         'amount_paid' => 0,
                         'status' => 'unpaid',
@@ -1035,7 +1080,7 @@ class OperationalWebController extends Controller
             workDay: $workDay,
             type: 'expense',
             description: $validated['description'],
-            transactionTime: now(),
+            transactionTime: $txTime,
             entries: [
                 ['account_id' => $source->id, 'entry_type' => EntryType::CREDIT, 'amount' => (int) $validated['amount']],
                 ['account_id' => $expenseAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => (int) $validated['amount']],
@@ -1086,16 +1131,18 @@ class OperationalWebController extends Controller
         LedgerService $ledgerService
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'description' => 'required|string|max:255',
-            'amount' => 'required|integer|min:500',
+            'amount' => 'required|integer|min:1',
             'source_account_id' => 'nullable|exists:accounts,id',
             'cashback_amount' => 'nullable|integer|min:0',
             'paid_breakdown' => 'nullable|array',
             'change_breakdown' => 'nullable|array',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
         
         $sourceAccount = !empty($validated['source_account_id'])
             ? Account::findOrFail($validated['source_account_id'])
@@ -1118,7 +1165,7 @@ class OperationalWebController extends Controller
             workDay: $workDay,
             type: 'expense',
             description: $desc,
-            transactionTime: now(),
+            transactionTime: $txTime,
             entries: [
                 ['account_id' => $sourceAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $amount],
                 ['account_id' => $expenseAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $amount],
@@ -1172,14 +1219,16 @@ class OperationalWebController extends Controller
         LedgerService $ledgerService
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'destination_account_id' => 'required|exists:accounts,id',
             'amount' => 'required|integer|min:1',
             'description' => 'required|string|max:255',
             'paid_breakdown' => 'nullable|array',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
         $dest = Account::findOrFail($validated['destination_account_id']);
         $incomeAccount = Account::firstOrCreate(
             ['name' => 'Pendapatan Lain-lain / Pribadi'],
@@ -1195,7 +1244,7 @@ class OperationalWebController extends Controller
             workDay: $workDay,
             type: 'income',
             description: $validated['description'],
-            transactionTime: now(),
+            transactionTime: $txTime,
             entries: [
                 ['account_id' => $dest->id, 'entry_type' => EntryType::DEBIT, 'amount' => (int) $validated['amount']],
                 ['account_id' => $incomeAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => (int) $validated['amount']],
@@ -1644,14 +1693,16 @@ class OperationalWebController extends Controller
         \App\Services\LedgerService $ledgerService
     ): RedirectResponse {
         $validated = $request->validate([
-            'work_day_id' => 'required|exists:work_days,id',
+            'work_day_id' => 'nullable|exists:work_days,id',
+            'transaction_time' => 'nullable|date',
             'borrower_name' => 'required|string|max:100',
             'amount' => 'required|integer|min:1000',
             'notes' => 'nullable|string|max:255',
             'paid_breakdown' => 'nullable|array',
         ]);
 
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
         $cashAccount = Account::where('name', 'Cash')->firstOrFail();
         $amount = (int) $validated['amount'];
         $borrowerName = trim($validated['borrower_name']);
@@ -1678,13 +1729,13 @@ class OperationalWebController extends Controller
             'total_obligation' => $amount,
             'tenor_months' => 1,
             'status' => 'active',
-            'started_at' => now(),
+            'started_at' => $txTime,
         ]);
 
         \App\Models\DebtInstallment::create([
             'debt_id' => $debt->id,
             'installment_number' => 1,
-            'due_date' => now()->addDays(7),
+            'due_date' => $txTime->copy()->addDays(7),
             'amount_due' => $amount,
             'amount_paid' => 0,
             'status' => 'unpaid',
@@ -1700,7 +1751,7 @@ class OperationalWebController extends Controller
             workDay: $workDay,
             type: 'expense',
             description: $desc,
-            transactionTime: now(),
+            transactionTime: $txTime,
             entries: [
                 ['account_id' => $cashAccount->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => $amount],
                 ['account_id' => $receivableAccount->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => $amount],
@@ -1760,14 +1811,6 @@ class OperationalWebController extends Controller
             'balances.*.actual_balance' => 'required|integer|min:0',
         ]);
 
-        $workDay = !empty($validated['work_day_id'])
-            ? WorkDay::findOrFail($validated['work_day_id'])
-            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
-
-        if (!$workDay) {
-            return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan. Silakan buka hari kerja terlebih dahulu.');
-        }
-
         // Tentukan waktu checkpoint (Otomatis sekarang vs Custom jika telat)
         $isCustomTime = $request->boolean('is_custom_time') || !empty($validated['is_custom_time']);
         if ($isCustomTime && !empty($validated['custom_recorded_at'])) {
@@ -1782,23 +1825,23 @@ class OperationalWebController extends Controller
             $recordedAt = now();
         }
 
-        // Validasi Ketat: Waktu checkpoint TIDAK BOLEH mendahului atau sama dengan checkpoint sebelumnya di shift ini
-        $latestPreviousSnapshot = \App\Models\DriverSnapshot::where('work_day_id', $workDay->id)
-            ->latest('recorded_at')
-            ->first();
-
-        if ($latestPreviousSnapshot && $recordedAt->lessThanOrEqualTo($latestPreviousSnapshot->recorded_at)) {
-            $prevTimeStr = $latestPreviousSnapshot->recorded_at->timezone('Asia/Jakarta')->format('d M Y, H:i:s');
-            $attemptedTimeStr = $recordedAt->timezone('Asia/Jakarta')->format('d M Y, H:i:s');
-            return redirect()->back()
-                ->withInput()
-                ->with('error', "Waktu checkpoint ({$attemptedTimeStr} WIB) tidak boleh mendahului atau sama dengan checkpoint sebelumnya ({$prevTimeStr} WIB). Waktu harus lebih baru!");
-        }
+        // Tentukan workDay dari tanggal checkpoint (memungkinkan input checkpoint untuk tanggal mundur/tanggal 20 tanpa buka shift)
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $recordedAt->toDateTimeString());
 
         if ($recordedAt->isAfter(now()->addMinutes(2))) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', "Waktu checkpoint tidak boleh melebihi waktu sekarang (masa depan)!");
+        }
+
+        $latestPreviousSnapshot = DriverSnapshot::where('work_day_id', $workDay->id)
+            ->latest('recorded_at')
+            ->first();
+
+        if ($latestPreviousSnapshot && $recordedAt <= $latestPreviousSnapshot->recorded_at) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Waktu checkpoint baru ({$recordedAt->format('H:i:s')}) tidak boleh mendahului atau sama dengan checkpoint sebelumnya ({$latestPreviousSnapshot->recorded_at->format('H:i:s')}). Waktu harus lebih baru.");
         }
 
         $codQrisAmount = (int) ($validated['cod_qris_amount'] ?? 0);
@@ -1890,15 +1933,11 @@ class OperationalWebController extends Controller
             'account_id' => 'required|exists:accounts,id',
             'notes' => 'nullable|string|max:255',
             'tip_cash_breakdown' => 'nullable|array',
+            'transaction_time' => 'nullable|date',
         ]);
 
-        $workDay = !empty($validated['work_day_id'])
-            ? WorkDay::findOrFail($validated['work_day_id'])
-            : (WorkDay::whereDate('work_date', now()->toDateString())->first() ?? WorkDay::latest('work_date')->first());
-
-        if (!$workDay) {
-            return redirect()->back()->with('error', 'Hari kerja aktif tidak ditemukan. Silakan buka hari kerja terlebih dahulu.');
-        }
+        $txTime = !empty($validated['transaction_time']) ? Carbon::parse($validated['transaction_time']) : now();
+        $workDay = $this->resolveWorkDay($validated['work_day_id'] ?? null, $validated['transaction_time'] ?? null);
 
         $account = Account::findOrFail($validated['account_id']);
         $amount = (int) $validated['amount'];
@@ -1923,7 +1962,7 @@ class OperationalWebController extends Controller
             workDay: $workDay,
             type: 'income',
             description: $desc,
-            transactionTime: now(),
+            transactionTime: $txTime,
             entries: [
                 ['account_id' => $account->id, 'entry_type' => EntryType::DEBIT, 'amount' => $amount],
                 ['account_id' => $tipIncomeAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $amount],

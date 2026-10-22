@@ -13,7 +13,19 @@ class VoiceMemoController extends Controller
     public function upload(UploadVoiceMemoRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $workDay = WorkDay::findOrFail($validated['work_day_id']);
+        $workDayId = $validated['work_day_id'] ?? null;
+        if (!empty($workDayId)) {
+            $workDay = WorkDay::findOrFail($workDayId);
+        } else {
+            $workDay = WorkDay::firstOrCreate(
+                ['work_date' => now()->toDateString()],
+                [
+                    'day_type' => WorkDay::TYPE_ON_BID,
+                    'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+                    'opened_at' => now(),
+                ]
+            );
+        }
 
         $file = $request->file('audio_file');
         $fileName = sprintf(

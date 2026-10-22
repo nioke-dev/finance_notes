@@ -1961,6 +1961,21 @@
             <form method="POST" action="/operational/fuel" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                {{-- Tanggal & Jam Transaksi --}}
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/60">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Transaksi (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-fuel')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-fuel" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    >
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Tempat Pembelian (Vendor)</label>
                     <select name="vendor_type" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
@@ -2166,7 +2181,7 @@
 
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-fuel')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Bensin</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Simpan Bensin</button>
                 </div>
             </form>
         </div>
@@ -2191,6 +2206,21 @@
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                 <input type="hidden" name="latitude" id="parking-lat">
                 <input type="hidden" name="longitude" id="parking-lng">
+
+                {{-- Tanggal & Jam Transaksi --}}
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/60">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Parkir (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-parking')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-parking" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    >
+                </div>
 
                 {{-- Status Shift Badge --}}
                 <div class="flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700">
@@ -2495,9 +2525,22 @@
 
             <form method="POST" action="/operational/quick-tip" class="space-y-4">
                 @csrf
-                @if($currentWorkDay)
-                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
-                @endif
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                {{-- Tanggal & Jam Transaksi --}}
+                <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Tip Diterima (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-quick-tip')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-quick-tip" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
+                    >
+                </div>
 
                 {{-- Nominal Tip --}}
                 <div>
@@ -2815,17 +2858,27 @@
                 <button type="button" onclick="closeModal('modal-accept-cod')" class="text-slate-300 hover:text-white font-bold">&times;</button>
             </div>
 
-            @if(!$currentWorkDay)
-                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
-                    ⚠️ Silakan buka shift hari kerja terlebih dahulu sebelum mencatat order COD.
-                </div>
-            @else
                 <form method="POST" action="{{ route('operational.cod-orders.accept') }}" class="space-y-4">
                     @csrf
-                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                     <input type="hidden" name="latitude" id="accept-cod-lat">
                     <input type="hidden" name="longitude" id="accept-cod-lng">
                     <input type="hidden" name="rounded_bill_amount" id="accept-cod-rounded">
+
+                    {{-- Tanggal & Jam Transaksi --}}
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-300">Waktu Terima Order (Tanggal & Jam)</label>
+                            <button type="button" onclick="setTxTimeToNow('tx-time-accept-cod')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                        </div>
+                        <input 
+                            type="datetime-local" 
+                            name="transaction_time" 
+                            id="tx-time-accept-cod" 
+                            value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                        >
+                    </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">
@@ -2903,7 +2956,6 @@
                         </button>
                     </div>
                 </form>
-            @endif
         </div>
     </div>
 
@@ -2930,6 +2982,21 @@
                 <input type="hidden" name="received_amount" id="input-final-received-amount">
                 <input type="hidden" name="latitude" id="complete-cod-lat">
                 <input type="hidden" name="longitude" id="complete-cod-lng">
+
+                {{-- Tanggal & Jam Transaksi Selesai COD --}}
+                <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Selesai (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-complete-cod')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-complete-cod" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    >
+                </div>
 
                 {{-- Ringkasan Tagihan & Saran Pembulatan --}}
                 <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
@@ -3283,6 +3350,21 @@
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
 
+                {{-- Tanggal & Jam Transaksi Update Kas --}}
+                <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Hitung Kas (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-quick-cash')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-quick-cash" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    >
+                </div>
+
                 @php
                     $systemCashBalance = (int) ($driverCashAcc->current_balance ?? $totalCash ?? 0);
                 @endphp
@@ -3523,6 +3605,21 @@
             <form method="POST" action="/operational/personal-expense" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                {{-- Tanggal & Jam Transaksi Pengeluaran --}}
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/60">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Pengeluaran (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-expense')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-expense" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    >
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Pengeluaran</label>
                     <input type="text" name="description" placeholder="Contoh: Sarapan pagi jam 7 sebelum narik" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
@@ -3737,7 +3834,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-expense')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Pengeluaran</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Simpan Pengeluaran</button>
                 </div>
             </form>
         </div>
@@ -3751,6 +3848,21 @@
             <form method="POST" action="/operational/personal-income" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                {{-- Tanggal & Jam Transaksi Pemasukan --}}
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/60">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Pemasukan (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-personal-income')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-personal-income" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    >
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Keterangan Sumber Pemasukan / Titipan</label>
                     <input type="text" name="description" placeholder="Contoh: Titipan makan teman di kafe via QRIS / Honor freelance" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
@@ -3860,7 +3972,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-personal-income')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Pemasukan</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Simpan Pemasukan</button>
                 </div>
             </form>
         </div>
@@ -3917,7 +4029,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-spaylater-purchase')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Belanja PayLater</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow">Simpan Belanja PayLater</button>
                 </div>
             </form>
         </div>
@@ -3978,7 +4090,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-apply-loan')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Cairkan Pinjaman</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Cairkan Pinjaman</button>
                 </div>
             </form>
         </div>
@@ -4026,7 +4138,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-pay-installment')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Bayar Cicilan Sekarang</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Bayar Cicilan Sekarang</button>
                 </div>
             </form>
         </div>
@@ -4040,6 +4152,21 @@
             <form method="POST" action="/operational/transfer" class="space-y-4">
                 @csrf
                 <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                {{-- Tanggal & Jam Transaksi Transfer --}}
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/60">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300">Waktu Transfer (Tanggal & Jam)</label>
+                        <button type="button" onclick="setTxTimeToNow('tx-time-transfer')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                    </div>
+                    <input 
+                        type="datetime-local" 
+                        name="transaction_time" 
+                        id="tx-time-transfer" 
+                        value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                    >
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Dari Akun (Sumber)</label>
                     <select name="source_account_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
@@ -4068,7 +4195,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modal-transfer')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">Simpan Transfer</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Simpan Transfer</button>
                 </div>
             </form>
         </div>
@@ -4346,14 +4473,24 @@
                 <button type="button" onclick="closeModal('modal-lend-friend')" class="text-slate-300 hover:text-white font-bold">&times;</button>
             </div>
 
-            @if(!$currentWorkDay)
-                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
-                    ⚠️ Silakan buka hari terlebih dahulu sebelum mencatat pinjaman kas.
-                </div>
-            @else
                 <form method="POST" action="{{ route('operational.lend-friend-cash') }}" class="space-y-4">
                     @csrf
-                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                    {{-- Tanggal & Jam Transaksi --}}
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-300">Waktu Pinjam (Tanggal & Jam)</label>
+                            <button type="button" onclick="setTxTimeToNow('tx-time-lend-friend')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                        </div>
+                        <input 
+                            type="datetime-local" 
+                            name="transaction_time" 
+                            id="tx-time-lend-friend" 
+                            value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                        >
+                    </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">
@@ -4495,7 +4632,6 @@
                         <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Simpan Pinjaman Kas</button>
                     </div>
                 </form>
-            @endif
         </div>
     </div>
 
@@ -4517,20 +4653,31 @@
                 <button type="button" onclick="closeModal('modal-cash-withdraw')" class="text-slate-300 hover:text-white font-bold">&times;</button>
             </div>
 
-            @if(!$currentWorkDay)
-                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
-                    ⚠️ Silakan buka hari terlebih dahulu sebelum mencatat tarik tunai.
-                </div>
-            @elseif(!$cashAccObj)
+            @if(!$cashAccObj)
                 <div class="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs">
                     ⚠️ Akun Kas fisik belum tersedia di database.
                 </div>
             @else
                 <form method="POST" action="{{ route('operational.transfer') }}" class="space-y-4">
                     @csrf
-                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
                     <input type="hidden" name="destination_account_id" value="{{ $cashAccObj->id }}">
                     <input type="hidden" name="note" value="Tarik Tunai Tambah Modal Kas Dompet">
+
+                    {{-- Tanggal & Jam Transaksi --}}
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-300">Waktu Tarik Tunai (Tanggal & Jam)</label>
+                            <button type="button" onclick="setTxTimeToNow('tx-time-cash-withdraw')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                        </div>
+                        <input 
+                            type="datetime-local" 
+                            name="transaction_time" 
+                            id="tx-time-cash-withdraw" 
+                            value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                        >
+                    </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">
@@ -4693,14 +4840,24 @@
                 <button type="button" onclick="closeModal('modal-field-incidental')" class="text-slate-300 hover:text-white font-bold">&times;</button>
             </div>
 
-            @if(!$currentWorkDay)
-                <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-xs">
-                    ⚠️ Silakan buka hari terlebih dahulu sebelum mencatat pengeluaran serba-serbi.
-                </div>
-            @else
                 <form method="POST" action="{{ route('operational.field-incidental-expense') }}" class="space-y-4">
                     @csrf
-                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
+                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
+
+                    {{-- Tanggal & Jam Transaksi --}}
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-300">Waktu Biaya (Tanggal & Jam)</label>
+                            <button type="button" onclick="setTxTimeToNow('tx-time-incidental')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
+                        </div>
+                        <input 
+                            type="datetime-local" 
+                            name="transaction_time" 
+                            id="tx-time-incidental" 
+                            value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute)->format('Y-m-d\TH:i') }}" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                        >
+                    </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">
@@ -4933,7 +5090,6 @@
                         <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Catat Biaya Lapangan</button>
                     </div>
                 </form>
-            @endif
         </div>
     </div>
 
@@ -4957,9 +5113,7 @@
 
             <form id="form-digital-recon" method="POST" action="/operational/digital-reconciliation" class="space-y-4" onsubmit="return validateReconTimeSubmit(event)">
                 @csrf
-                @if($currentWorkDay)
-                    <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id }}">
-                @endif
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay->id ?? '' }}">
 
                 {{-- Waktu Checkpoint (Otomatis Realtime + Opsi Custom Jika Telat) --}}
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2.5">
@@ -4989,7 +5143,7 @@
                                 class="rounded border-purple-500 bg-slate-900 text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
                             >
                             <span class="text-xs font-bold text-purple-300">
-                                Ubah Tanggal & Jam Manual (Opsi Jika Telat Catat)
+                                Ubah Tanggal & Jam Manual (Opsi Jika Telat Catat / Rekam Suara)
                             </span>
                         </label>
 
@@ -4998,23 +5152,18 @@
                                 <label for="custom-recorded-at" class="text-[11px] font-bold text-purple-200">
                                     Pilih Waktu Checkpoint Sesuai Saat Cek HP Driver:
                                 </label>
-                                @if($latestSnapshot)
-                                    <span class="text-[10px] text-purple-300 font-mono">
-                                        Prev: {{ $latestSnapshot->recorded_at->timezone('Asia/Jakarta')->format('H:i:s') }}
-                                    </span>
-                                @endif
+                                <button type="button" onclick="setReconTimeToNow()" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">⚡ Sekarang</button>
                             </div>
                             <input 
                                 type="datetime-local" 
                                 step="1" 
                                 name="custom_recorded_at" 
                                 id="custom-recorded-at" 
-                                min="{{ $latestSnapshot ? $latestSnapshot->recorded_at->timezone('Asia/Jakarta')->addSecond()->format('Y-m-d\TH:i:s') : '' }}"
-                                max="{{ now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i:s') }}"
+                                value="{{ \Carbon\Carbon::parse($selectedDate)->isToday() ? now()->timezone('Asia/Jakarta')->format('Y-m-d\TH:i:s') : \Carbon\Carbon::parse($selectedDate)->setTime(now()->hour, now()->minute, now()->second)->format('Y-m-d\TH:i:s') }}"
                                 class="w-full bg-slate-950 border border-purple-500/50 rounded-xl px-3 py-2 text-white text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none font-mono"
                             >
                             <p class="text-[10px] text-purple-300/80 leading-relaxed">
-                                ⚠️ <strong>Aturan Urutan Waktu:</strong> Jam checkpoint baru wajib lebih baru (di atas) dari checkpoint sebelumnya ({{ $latestSnapshot ? $latestSnapshot->recorded_at->timezone('Asia/Jakarta')->format('d M Y, H:i:s') . ' WIB' : 'Belum ada checkpoint sebelumnya' }}) dan tidak boleh melebihi jam saat ini.
+                                💡 Bebas memilih tanggal & jam sesuai rekaman suara atau catatan lapangan Anda.
                             </p>
                         </div>
                     </div>
@@ -5655,7 +5804,7 @@
 
                 <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
                     <button type="button" onclick="closeModal('modal-pay-subscription')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Batal</button>
-                    <button type="submit" {{ !$currentWorkDay ? 'disabled' : '' }} class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow {{ !$currentWorkDay ? 'opacity-50 cursor-not-allowed' : '' }}">
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow">
                         Bayar Tagihan Sekarang
                     </button>
                 </div>
@@ -5939,6 +6088,31 @@
             }
         }
 
+        function setTxTimeToNow(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            el.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function setReconTimeToNow() {
+            const el = document.getElementById('custom-recorded-at');
+            if (!el) return;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            el.value = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        }
+
         function validateReconTimeSubmit(event) {
             const toggleCustom = document.getElementById('toggle-custom-checkpoint-time');
             if (toggleCustom && toggleCustom.checked) {
@@ -5964,19 +6138,6 @@
                     }
                     if (event) event.preventDefault();
                     return false;
-                }
-                if (customInput.min) {
-                    const minTime = new Date(customInput.min);
-                    if (selectedTime < minTime) {
-                        const msg = 'Waktu checkpoint baru tidak boleh mendahului atau sama dengan checkpoint sebelumnya! Waktu harus lebih baru.';
-                        if (window.showGlobalToast) window.showGlobalToast(msg, true);
-                        if (customInput) {
-                            customInput.focus();
-                            customInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
-                        }
-                        if (event) event.preventDefault();
-                        return false;
-                    }
                 }
             }
             return true;
@@ -7467,11 +7628,6 @@
         }
 
         async function startVoiceRecording() {
-            if (!currentWorkDayId) {
-                alert('Shift hari ini belum dibuka. Silakan buka shift narik terlebih dahulu.');
-                return;
-            }
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioChunks = [];

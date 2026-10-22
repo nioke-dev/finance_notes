@@ -25,7 +25,8 @@ class FriendDebtSettlementService
         Debt $debt,
         Account $receivingAccount,
         int $receivedAmount,
-        bool $forgiveRemainder = false
+        bool $forgiveRemainder = false,
+        ?Carbon $transactionTime = null
     ): Transaction {
         if ($debt->isPaidOff()) {
             throw new InvalidArgumentException("Utang ini sudah lunas sebelumnya.");
@@ -94,7 +95,7 @@ class FriendDebtSettlementService
                 workDay: $workDay,
                 type: 'income',
                 description: "Pelunasan Utang Teman: " . ($debt->borrower_name ?: $debt->name) . " (Terima Rp{$receivedAmount}" . ($forgiveRemainder && $remainder > 0 ? ", Sedekah Rp{$remainder}" : "") . ")",
-                transactionTime: now(),
+                transactionTime: $transactionTime ?? now(),
                 entries: $entries,
                 isEstimatedTime: false,
                 metadata: [

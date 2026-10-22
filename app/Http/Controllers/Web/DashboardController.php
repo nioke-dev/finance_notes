@@ -45,9 +45,22 @@ class DashboardController extends Controller
             ->get();
 
         // Filter tanggal untuk evaluasi harian (default: hari ini)
+        $hasCustomDate = $request->has('date');
         $selectedDate = $request->input('date', now()->toDateString());
-        $currentWorkDay = WorkDay::whereDate('work_date', $selectedDate)->first()
-            ?? WorkDay::latest('work_date')->first();
+
+        if ($hasCustomDate) {
+            // Jika user memilih tanggal secara eksplisit di filter kalender (misal tanggal 20), buat atau muat WorkDay hari tersebut
+            $currentWorkDay = WorkDay::firstOrCreate(
+                ['work_date' => $selectedDate],
+                [
+                    'day_type' => WorkDay::TYPE_ON_BID,
+                    'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+                    'opened_at' => Carbon::parse($selectedDate)->setTime(8, 0, 0),
+                ]
+            );
+        } else {
+            $currentWorkDay = WorkDay::whereDate('work_date', $selectedDate)->first();
+        }
 
         // 1. Metrik Operasional Narik Driver
         $dayOrdersCount = 0;

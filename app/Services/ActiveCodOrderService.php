@@ -37,7 +37,8 @@ class ActiveCodOrderService
         ?int $roundedBillAmount = null,
         ?float $latitude = null,
         ?float $longitude = null,
-        ?string $notes = null
+        ?string $notes = null,
+        ?\Illuminate\Support\Carbon $transactionTime = null
     ): ActiveCodOrder {
         if ($billAmount <= 0) {
             throw new InvalidArgumentException("Tagihan COD harus lebih besar dari Rp0.");
@@ -49,6 +50,7 @@ class ActiveCodOrderService
         }
 
         $roundedAmount = $roundedBillAmount ?: ActiveCodOrder::calculateRounding($billAmount);
+        $txTime = $transactionTime ?? now();
 
         return DB::transaction(function () use (
             $workDay,
@@ -58,7 +60,8 @@ class ActiveCodOrderService
             $roundedAmount,
             $latitude,
             $longitude,
-            $notes
+            $notes,
+            $txTime
         ) {
             $shopeePayAccount = Account::where('name', 'ShopeePay')->firstOrFail();
             $talanganAccount = Account::firstOrCreate(
@@ -79,7 +82,7 @@ class ActiveCodOrderService
                 workDay: $workDay,
                 type: 'expense',
                 description: $desc,
-                transactionTime: now(),
+                transactionTime: $txTime,
                 entries: [
                     ['account_id' => $shopeePayAccount->id, 'entry_type' => EntryType::CREDIT, 'amount' => $billAmount],
                     ['account_id' => $talanganAccount->id, 'entry_type' => EntryType::DEBIT, 'amount' => $billAmount],
@@ -103,7 +106,7 @@ class ActiveCodOrderService
                 'bill_amount' => $billAmount,
                 'rounded_bill_amount' => $roundedAmount,
                 'status' => 'on_delivery',
-                'accepted_at' => now(),
+                'accepted_at' => $txTime,
                 'accepted_latitude' => $latitude,
                 'accepted_longitude' => $longitude,
                 'initial_transaction_id' => $tx->id,
@@ -140,7 +143,8 @@ class ActiveCodOrderService
         int $parkingReimbursed = 0,
         ?float $latitude = null,
         ?float $longitude = null,
-        ?string $notes = null
+        ?string $notes = null,
+        ?\Illuminate\Support\Carbon $transactionTime = null
     ): ActiveCodOrder {
         if ($order->status !== 'on_delivery') {
             throw new InvalidArgumentException("Order COD #{$order->order_code} sudah tidak dalam status pengantaran (status: {$order->status}).");
@@ -149,6 +153,8 @@ class ActiveCodOrderService
         if ($receivedAmount < $order->bill_amount) {
             throw new InvalidArgumentException("Uang yang diterima (Rp" . number_format($receivedAmount, 0, ',', '.') . ") tidak boleh lebih kecil dari tagihan resto (Rp" . number_format($order->bill_amount, 0, ',', '.') . ").");
         }
+
+        $txTime = $transactionTime ?? now();
 
         return DB::transaction(function () use (
             $order,
@@ -160,7 +166,8 @@ class ActiveCodOrderService
             $parkingReimbursed,
             $latitude,
             $longitude,
-            $notes
+            $notes,
+            $txTime
         ) {
             // Tentukan akun tujuan uang masuk
             if ($paymentMethod === 'cash') {
@@ -237,7 +244,7 @@ class ActiveCodOrderService
                 workDay: $order->workDay,
                 type: 'income',
                 description: $desc,
-                transactionTime: now(),
+                transactionTime: $txTime,
                 entries: $entries,
                 isEstimatedTime: false,
                 metadata: [
@@ -265,7 +272,7 @@ class ActiveCodOrderService
                 'tip_amount' => $actualTip,
                 'parking_reimbursed' => $actualParkingReimbursed,
                 'settlement_account_id' => $settlementAccount->id,
-                'delivered_at' => now(),
+                'delivered_at' => $txTime,
                 'delivered_latitude' => $latitude,
                 'delivered_longitude' => $longitude,
                 'completion_transaction_id' => $tx->id,
