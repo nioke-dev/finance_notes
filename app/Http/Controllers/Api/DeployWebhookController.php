@@ -173,9 +173,8 @@ class DeployWebhookController extends Controller
                         ],
                         [
                             'due_date' => '2026-10-24',
-                            'amount' => 150000,
-                            'principal_amount' => 150000,
-                            'fee_amount' => 0,
+                            'amount_due' => 150000,
+                            'amount_paid' => 0,
                             'status' => 'unpaid',
                         ]
                     );
