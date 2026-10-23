@@ -55,158 +55,165 @@ class DeployWebhookController extends Controller
         }
 
         if ($request->query('action') === 'sync_actual_commitments') {
-            return \Illuminate\Support\Facades\DB::transaction(function () {
-                // 1. Shift Setup & Stats
-                $workDay23 = \App\Models\WorkDay::firstOrCreate(
-                    ['work_date' => '2026-10-23'],
-                    [
-                        'day_type' => \App\Models\WorkDay::TYPE_ON_BID,
-                        'status' => \App\Models\WorkDay::STATUS_NEEDS_RECONCILIATION,
-                        'opened_at' => \Carbon\Carbon::parse('2026-10-23 08:00:00'),
-                    ]
-                );
-                $workDay23->update(['total_orders' => 16]);
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    // 1. Shift Setup & Stats
+                    $workDay23 = \App\Models\WorkDay::firstOrCreate(
+                        ['work_date' => '2026-10-23'],
+                        [
+                            'day_type' => \App\Models\WorkDay::TYPE_ON_BID,
+                            'status' => \App\Models\WorkDay::STATUS_NEEDS_RECONCILIATION,
+                            'opened_at' => \Illuminate\Support\Carbon::parse('2026-10-23 08:00:00'),
+                        ]
+                    );
+                    $workDay23->update(['total_orders' => 16]);
 
-                if ($wd20 = \App\Models\WorkDay::where('work_date', '2026-10-20')->first()) {
-                    $wd20->update(['total_orders' => 20]);
-                }
-                if ($wd21 = \App\Models\WorkDay::where('work_date', '2026-10-21')->first()) {
-                    $wd21->update(['total_orders' => 4]);
-                }
-                if ($wd22 = \App\Models\WorkDay::where('work_date', '2026-10-22')->first()) {
-                    $wd22->update(['total_orders' => 10]);
-                }
+                    if ($wd20 = \App\Models\WorkDay::where('work_date', '2026-10-20')->first()) {
+                        $wd20->update(['total_orders' => 20]);
+                    }
+                    if ($wd21 = \App\Models\WorkDay::where('work_date', '2026-10-21')->first()) {
+                        $wd21->update(['total_orders' => 4]);
+                    }
+                    if ($wd22 = \App\Models\WorkDay::where('work_date', '2026-10-22')->first()) {
+                        $wd22->update(['total_orders' => 10]);
+                    }
 
-                // 2. Denominasi Fisik Kas Rp 888.000 (121 lembar + 6 koin)
-                $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay23->id]);
-                $denom->fill([
-                    'bill_100000' => 2,
-                    'bill_50000' => 2,
-                    'bill_20000' => 7,
-                    'bill_10000' => 22,
-                    'bill_5000' => 21,
-                    'bill_2000' => 53,
-                    'bill_1000' => 14,
-                    'coin_1000' => 0,
-                    'coin_500' => 6,
-                    'coin_200' => 0,
-                    'coin_100' => 0,
-                    'damaged_notes_amount' => 0,
-                    'total_physical_amount' => 888000,
-                ]);
-                $denom->save();
-
-                // 3. Saldo Akun Kas
-                $cashAcc = \App\Models\Account::where('name', 'Cash')->orWhere('type', \App\Enums\AccountType::CASH)->first();
-                if ($cashAcc) {
-                    $oldCash = (int) $cashAcc->current_balance;
-                    $meta = $cashAcc->metadata ?? [];
-                    $meta['denominations'] = $denom->toArray();
-                    $cashAcc->update([
-                        'current_balance' => 888000,
-                        'metadata' => $meta,
+                    // 2. Denominasi Fisik Kas Rp 888.000 (121 lembar + 6 koin)
+                    $denom = \App\Models\CashDenomination::firstOrNew(['work_day_id' => $workDay23->id]);
+                    $denom->fill([
+                        'bill_100000' => 2,
+                        'bill_50000' => 2,
+                        'bill_20000' => 7,
+                        'bill_10000' => 22,
+                        'bill_5000' => 21,
+                        'bill_2000' => 53,
+                        'bill_1000' => 14,
+                        'coin_1000' => 0,
+                        'coin_500' => 6,
+                        'coin_200' => 0,
+                        'coin_100' => 0,
+                        'damaged_notes_amount' => 0,
+                        'total_physical_amount' => 888000,
                     ]);
+                    $denom->save();
 
-                    \App\Models\AuditLog::create([
-                        'auditable_type' => \App\Models\Account::class,
-                        'auditable_id' => $cashAcc->id,
-                        'action' => 'cash_balance_reconciliation',
-                        'old_values' => ['balance' => $oldCash],
-                        'new_values' => ['balance' => 888000, 'surplus' => 888000 - $oldCash],
-                        'reason' => 'Sinkronisasi fisik kas per 23 Okt: Rp 888.000 (121 lembar + 6 koin). Akumulasi penerimaan narik & COD 20-23 Okt +Rp ' . number_format(888000 - $oldCash, 0, ',', '.'),
-                    ]);
-                }
-
-                // 4. Saldo Digital
-                $digitalUpdates = [
-                    'BCA' => 805574,
-                    'ShopeePay' => 64326,
-                    'GoPay' => 27288,
-                    'GoPay Merchant' => 2000,
-                ];
-                foreach ($digitalUpdates as $name => $actualBal) {
-                    $acc = \App\Models\Account::where('name', $name)->first();
-                    if ($acc) {
-                        $oldBal = (int) $acc->current_balance;
-                        $diff = $actualBal - $oldBal;
-                        $acc->update(['current_balance' => $actualBal]);
+                    // 3. Saldo Akun Kas
+                    $cashAcc = \App\Models\Account::where('name', 'Cash')->orWhere('type', 'cash')->first();
+                    if ($cashAcc) {
+                        $oldCash = (int) $cashAcc->current_balance;
+                        $meta = $cashAcc->metadata ?? [];
+                        $meta['denominations'] = $denom->toArray();
+                        $cashAcc->update([
+                            'current_balance' => 888000,
+                            'metadata' => $meta,
+                        ]);
 
                         \App\Models\AuditLog::create([
                             'auditable_type' => \App\Models\Account::class,
-                            'auditable_id' => $acc->id,
-                            'action' => $diff >= 0 ? 'digital_reconciliation_surplus' : 'digital_reconciliation_shortage',
-                            'old_values' => ['balance' => $oldBal],
-                            'new_values' => ['balance' => $actualBal, 'difference' => $diff],
-                            'reason' => sprintf(
-                                'Rekonsiliasi saldo %s per 23 Okt: Rp %s -> Rp %s (%sRp %s pemakaian/operasional)',
-                                $name,
-                                number_format($oldBal, 0, ',', '.'),
-                                number_format($actualBal, 0, ',', '.'),
-                                $diff >= 0 ? '+' : '-',
-                                number_format(abs($diff), 0, ',', '.')
-                            ),
+                            'auditable_id' => $cashAcc->id,
+                            'action' => 'cash_balance_reconciliation',
+                            'old_values' => ['balance' => $oldCash],
+                            'new_values' => ['balance' => 888000, 'surplus' => 888000 - $oldCash],
+                            'reason' => 'Sinkronisasi fisik kas per 23 Okt: Rp 888.000 (121 lembar + 6 koin). Akumulasi penerimaan narik & COD 20-23 Okt +Rp ' . number_format(888000 - $oldCash, 0, ',', '.'),
                         ]);
                     }
-                }
 
-                // 5. Pencatatan Utang Teman (Makan Kokari Malang Rp 150.000)
-                $debtName = 'Makan All You Can Eat Kokari Malang';
-                $friendDebt = \App\Models\Debt::firstOrCreate(
-                    ['name' => $debtName],
-                    [
-                        'platform' => 'other',
-                        'borrower_name' => 'Teman',
-                        'principal_amount' => 150000,
-                        'fee_amount' => 0,
-                        'total_obligation' => 150000,
-                        'tenor_months' => 1,
-                        'status' => 'active',
-                        'started_at' => '2026-10-23',
-                    ]
-                );
+                    // 4. Saldo Digital
+                    $digitalUpdates = [
+                        'BCA' => 805574,
+                        'ShopeePay' => 64326,
+                        'GoPay' => 27288,
+                        'GoPay Merchant' => 2000,
+                    ];
+                    foreach ($digitalUpdates as $name => $actualBal) {
+                        $acc = \App\Models\Account::where('name', $name)->first();
+                        if ($acc) {
+                            $oldBal = (int) $acc->current_balance;
+                            $diff = $actualBal - $oldBal;
+                            $acc->update(['current_balance' => $actualBal]);
 
-                \App\Models\DebtInstallment::firstOrCreate(
-                    [
-                        'debt_id' => $friendDebt->id,
-                        'installment_number' => 1,
-                    ],
-                    [
-                        'due_date' => '2026-10-24',
-                        'amount' => 150000,
-                        'principal_amount' => 150000,
-                        'fee_amount' => 0,
-                        'status' => 'unpaid',
-                    ]
-                );
+                            \App\Models\AuditLog::create([
+                                'auditable_type' => \App\Models\Account::class,
+                                'auditable_id' => $acc->id,
+                                'action' => $diff >= 0 ? 'digital_reconciliation_surplus' : 'digital_reconciliation_shortage',
+                                'old_values' => ['balance' => $oldBal],
+                                'new_values' => ['balance' => $actualBal, 'difference' => $diff],
+                                'reason' => sprintf(
+                                    'Rekonsiliasi saldo %s per 23 Okt: Rp %s -> Rp %s (%sRp %s pemakaian/operasional)',
+                                    $name,
+                                    number_format($oldBal, 0, ',', '.'),
+                                    number_format($actualBal, 0, ',', '.'),
+                                    $diff >= 0 ? '+' : '-',
+                                    number_format(abs($diff), 0, ',', '.')
+                                ),
+                            ]);
+                        }
+                    }
 
-                \App\Models\Account::firstOrCreate(
-                    ['name' => 'Kewajiban Utang - Makan Kokari ke Teman'],
-                    [
-                        'type' => \App\Enums\AccountType::DEBT,
-                        'current_balance' => 150000,
-                        'initial_balance' => 150000,
-                    ]
-                );
+                    // 5. Pencatatan Utang Teman (Makan Kokari Malang Rp 150.000)
+                    $debtName = 'Makan All You Can Eat Kokari Malang';
+                    $friendDebt = \App\Models\Debt::firstOrCreate(
+                        ['name' => $debtName],
+                        [
+                            'platform' => 'other',
+                            'borrower_name' => 'Teman',
+                            'principal_amount' => 150000,
+                            'fee_amount' => 0,
+                            'total_obligation' => 150000,
+                            'tenor_months' => 1,
+                            'status' => 'active',
+                            'started_at' => '2026-10-23',
+                        ]
+                    );
 
-                // 6. Planning Sewa Hotel Wisuda Rp 250.000
-                \App\Models\FinancialGoal::updateOrCreate(
-                    ['name' => 'Sewa Hotel Wisuda (30-31 Okt)'],
-                    [
-                        'category' => 'wisuda',
-                        'priority_level' => 1,
-                        'target_amount' => 250000,
-                        'allocated_amount' => 0,
-                        'target_date' => '2026-10-30',
-                        'status' => 'active',
-                        'notes' => 'Booking kamar hotel wisuda 1 malam (Incaran: di bawah 200rb, batas atas 250rb)',
-                    ]
-                );
+                    \App\Models\DebtInstallment::firstOrCreate(
+                        [
+                            'debt_id' => $friendDebt->id,
+                            'installment_number' => 1,
+                        ],
+                        [
+                            'due_date' => '2026-10-24',
+                            'amount' => 150000,
+                            'principal_amount' => 150000,
+                            'fee_amount' => 0,
+                            'status' => 'unpaid',
+                        ]
+                    );
 
+                    \App\Models\Account::firstOrCreate(
+                        ['name' => 'Kewajiban Utang - Makan Kokari ke Teman'],
+                        [
+                            'type' => 'debt',
+                            'current_balance' => 150000,
+                            'initial_balance' => 150000,
+                        ]
+                    );
+
+                    // 6. Planning Sewa Hotel Wisuda Rp 250.000
+                    \App\Models\FinancialGoal::updateOrCreate(
+                        ['name' => 'Sewa Hotel Wisuda (30-31 Okt)'],
+                        [
+                            'category' => 'wisuda',
+                            'priority_level' => 1,
+                            'target_amount' => 250000,
+                            'allocated_amount' => 0,
+                            'target_date' => '2026-10-30',
+                            'status' => 'active',
+                            'notes' => 'Booking kamar hotel wisuda 1 malam (Incaran: di bawah 200rb, batas atas 250rb)',
+                        ]
+                    );
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Saldo riil, hutang teman Rp 150.000, dan planning hotel Rp 250.000 berhasil disinkronkan.',
+                    ]);
+                });
+            } catch (\Throwable $e) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Saldo riil, hutang teman Rp 150.000, dan planning hotel Rp 250.000 berhasil disinkronkan.',
-                ]);
-            });
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
         }
 
         if (app()->environment('testing')) {
