@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
 
-    <div class="space-y-6">
+    <div class="space-y-6 pb-28 sm:pb-8">
 
         {{-- Flash Messages (Alert Sukses / Error) --}}
         @if(session('success'))
@@ -117,6 +117,179 @@
             </form>
         </div>
 
+{{-- ================= DESKTOP SEGMENTED VIEW NAVIGATION ================= --}}
+<div id="desktop-view-nav" class="hidden sm:flex items-center justify-between bg-slate-900/90 border border-slate-700/80 rounded-2xl p-1.5 shadow-xl backdrop-blur">
+    <div class="flex items-center space-x-1.5 w-full">
+        <button 
+            type="button" 
+            onclick="switchMainView('view-home')" 
+            data-target-view="view-home" 
+            class="view-nav-btn flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center space-x-2 border bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
+        >
+            <span class="text-base">🏠</span>
+            <span>Ringkasan & Misi 30 Okt</span>
+        </button>
+
+        <button 
+            type="button" 
+            onclick="switchMainView('view-ops')" 
+            data-target-view="view-ops" 
+            class="view-nav-btn flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center space-x-2 border border-transparent text-slate-300 hover:text-white"
+        >
+            <span class="text-base">🛵</span>
+            <span>Jalanan & Fast Ops</span>
+            @if(isset($activeCodOrders) && $activeCodOrders->isNotEmpty())
+                <span class="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]">{{ $activeCodOrders->count() }} COD</span>
+            @endif
+        </button>
+
+        <button 
+            type="button" 
+            onclick="switchMainView('view-wallets')" 
+            data-target-view="view-wallets" 
+            class="view-nav-btn flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center space-x-2 border border-transparent text-slate-300 hover:text-white"
+        >
+            <span class="text-base">💳</span>
+            <span>Dompet & Utang</span>
+        </button>
+
+        <button 
+            type="button" 
+            onclick="switchMainView('view-analytics')" 
+            data-target-view="view-analytics" 
+            class="view-nav-btn flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition flex items-center justify-center space-x-2 border border-transparent text-slate-300 hover:text-white"
+        >
+            <span class="text-base">📊</span>
+            <span>Analitik & Riwayat</span>
+        </button>
+    </div>
+</div>
+
+<div id="view-home" class="main-view space-y-6">
+{{-- ================= HERO WIDGET: 🚀 MISI BEBAS UTANG 30 OKTOBER RUNWAY ================= --}}
+@php
+    $runwayLiquid = (int) ($totalDigital + $totalCash);
+    $runwayDebts = (int) ($debtFreedomData['total_debt_remaining'] ?? 0);
+    $runwayHotelGoal = $financialGoals->firstWhere('name', 'Sewa Hotel Wisuda (30-31 Okt)') ?? $financialGoals->firstWhere('title', 'Sewa Hotel Wisuda (30-31 Okt)');
+    $runwayHotelAmount = $runwayHotelGoal ? (int) $runwayHotelGoal->target_amount : 250000;
+    $runwayTotalObligations = $runwayDebts + $runwayHotelAmount;
+    $runwayDeficit = max(0, $runwayTotalObligations - $runwayLiquid);
+    $runwayDays = 5.5; // Hari efektif on-bid hingga 30 Okt siang
+    $runwayDailyTarget = (int) ceil($runwayDeficit / $runwayDays);
+    $runwayProgress = $runwayTotalObligations > 0 ? min(100, round(($runwayLiquid / $runwayTotalObligations) * 100)) : 100;
+@endphp
+
+<div id="widget-debt-freedom-runway" class="bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 border-2 border-emerald-500/50 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-4">
+        <div>
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black uppercase tracking-wider mb-1.5">
+                <span>🚀</span>
+                <span>Misi Bebas Utang 30 Oktober 2026</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                Wisuda Tenang Tanpa Beban
+            </h2>
+            <p class="text-xs text-slate-300 font-medium mt-0.5">
+                Target pelunasan 100% seluruh kewajiban pinjaman s/d Desember & akomodasi wisuda sebelum gladi bersih.
+            </p>
+        </div>
+        <div class="flex items-center space-x-2 shrink-0">
+            <span class="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-xs flex items-center space-x-1.5 shadow">
+                <span>⏱️</span>
+                <span>5.5 Hari Kerja Tersisa</span>
+            </span>
+        </div>
+    </div>
+
+    {{-- Runway Metrics Grid --}}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+        <div class="bg-slate-950/80 border border-slate-700/80 rounded-xl p-3.5">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Kewajiban</span>
+            <span class="text-lg font-black text-white block mt-0.5">Rp {{ number_format($runwayTotalObligations, 0, ',', '.') }}</span>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Hutang + Hotel Wisuda</span>
+        </div>
+
+        <div class="bg-slate-950/80 border border-emerald-500/40 rounded-xl p-3.5">
+            <span class="text-[10px] uppercase font-bold text-emerald-400 block">Aset Likuid Terkumpul</span>
+            <span class="text-lg font-black text-emerald-300 block mt-0.5">Rp {{ number_format($runwayLiquid, 0, ',', '.') }}</span>
+            <span class="text-[10px] text-emerald-400/80 block mt-0.5">{{ $runwayProgress }}% Sudah Di Tangan</span>
+        </div>
+
+        <div class="bg-slate-950/80 border border-rose-500/40 rounded-xl p-3.5">
+            <span class="text-[10px] uppercase font-bold text-rose-400 block">Defisit Sisa (Gap)</span>
+            <span class="text-lg font-black text-rose-300 block mt-0.5">Rp {{ number_format($runwayDeficit, 0, ',', '.') }}</span>
+            <span class="text-[10px] text-rose-400/80 block mt-0.5">Kekurangan uang riil</span>
+        </div>
+
+        <div class="bg-slate-950/80 border border-amber-500/40 rounded-xl p-3.5">
+            <span class="text-[10px] uppercase font-bold text-amber-400 block">Target Bersih Narik</span>
+            <span class="text-lg font-black text-amber-300 block mt-0.5">Rp {{ number_format($runwayDailyTarget, 0, ',', '.') }} <span class="text-xs font-normal">/hari</span></span>
+            <span class="text-[10px] text-amber-300/80 block mt-0.5">~12–14 order ShopeeFood</span>
+        </div>
+    </div>
+
+    {{-- Progress Bar --}}
+    <div class="space-y-1.5">
+        <div class="flex justify-between text-xs font-bold">
+            <span class="text-slate-300">Progress Kesiapan Finansial Menuju Bebas Utang</span>
+            <span class="text-emerald-400 font-black">{{ $runwayProgress }}% (Rp {{ number_format($runwayLiquid, 0, ',', '.') }} / Rp {{ number_format($runwayTotalObligations, 0, ',', '.') }})</span>
+        </div>
+        <div class="w-full bg-slate-950 rounded-full h-3.5 border border-slate-700/80 overflow-hidden p-0.5 shadow-inner">
+            <div class="bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-400 h-full rounded-full transition-all duration-500" style="width: {{ $runwayProgress }}%"></div>
+        </div>
+    </div>
+
+    {{-- Rincian Chip Beban & Motivasi Realistis --}}
+    <div class="mt-4 pt-4 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">🍲 Kokari Rp 150k</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">🏨 Hotel Wisuda Rp 250k</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">🏦 SeaBank Pinjam Rp 1.272k (s/d Des)</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">🛍️ SPayLater Rp 465k</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">🔌 TikTok Rp 31k</span>
+        </div>
+        <button type="button" onclick="switchMainView('view-ops')" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-emerald-500 to-amber-500 hover:from-emerald-400 hover:to-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition transform active:scale-95 shrink-0 flex items-center justify-center space-x-1.5">
+            <span>🛵</span>
+            <span>Mulai Narik Sekarang &rarr;</span>
+        </button>
+    </div>
+</div>
+
+{{-- ================= QUICK SHORTCUTS GRID ================= --}}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+    <button type="button" onclick="switchMainView('view-ops')" class="p-4 bg-slate-800/80 hover:bg-slate-700/80 border border-amber-500/40 rounded-2xl text-left transition group shadow-lg flex flex-col justify-between">
+        <span class="text-3xl block mb-2">🛵</span>
+        <div>
+            <span class="text-xs font-black text-white block group-hover:text-amber-400">Jalanan & Fast Ops</span>
+            <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">1-tap tip, parkir 1k/2k, talangan COD</span>
+        </div>
+    </button>
+
+    <button type="button" onclick="switchMainView('view-wallets')" class="p-4 bg-slate-800/80 hover:bg-slate-700/80 border border-indigo-500/40 rounded-2xl text-left transition group shadow-lg flex flex-col justify-between">
+        <span class="text-3xl block mb-2">💳</span>
+        <div>
+            <span class="text-xs font-black text-white block group-hover:text-indigo-400">Dompet & Utang</span>
+            <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Hitungan kas fisik, cicilan, wishlist</span>
+        </div>
+    </button>
+
+    <button type="button" onclick="switchMainView('view-analytics')" class="p-4 bg-slate-800/80 hover:bg-slate-700/80 border border-emerald-500/40 rounded-2xl text-left transition group shadow-lg flex flex-col justify-between">
+        <span class="text-3xl block mb-2">📊</span>
+        <div>
+            <span class="text-xs font-black text-white block group-hover:text-emerald-400">Analitik & Riwayat</span>
+            <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">20 Transaksi terakhir & evaluasi trip</span>
+        </div>
+    </button>
+
+    <button type="button" onclick="openModal('modal-reconcile-digital')" class="p-4 bg-slate-800/80 hover:bg-slate-700/80 border border-purple-500/40 rounded-2xl text-left transition group shadow-lg flex flex-col justify-between">
+        <span class="text-3xl block mb-2">⚡</span>
+        <div>
+            <span class="text-xs font-black text-white block group-hover:text-purple-400">Update Saldo Narik</span>
+            <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Audit saldo di jalan tanpa closing</span>
+        </div>
+    </button>
+</div>
+
         {{-- DUA KARTU KOMPARASI HARIAN: 1. OPERASIONAL DRIVER VS 2. KEUANGAN PRIBADI SEHARI-HARI --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
@@ -222,21 +395,164 @@
 
         </div>
 
-        {{-- TAB NAVIGASI: PEMISAHAN ANTARA OPERASIONAL DRIVER (ON-BID) VS KEBUTUHAN SEHARI-HARI --}}
-        <div>
-            <div class="flex border-b border-slate-700/80 space-x-2">
-                <button type="button" onclick="switchTab('tab-onbeat')" id="btn-tab-onbeat" class="tab-button px-5 py-3 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center space-x-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>🛵 Mode On-Bid: Operasional Narik ShopeeFood</span>
-                </button>
-                <button type="button" onclick="switchTab('tab-daily')" id="btn-tab-daily" class="tab-button px-5 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-300 hover:text-white font-medium flex items-center space-x-2">
-                    <span>☕</span>
-                    <span>Kebutuhan Sehari-hari (Di Luar On-Bid)</span>
-                </button>
+        {{-- Ringkasan Total Kekayaan & Safe-to-Spend (Uang Aman Jajan) --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {{-- Kartu Net Worth --}}
+            <div id="tour-net-worth" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-slate-700/90 rounded-2xl p-6 shadow-2xl relative overflow-hidden flex flex-col justify-between space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Total Kekayaan Bersih (Net Worth)</span>
+                        <h2 class="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight">
+                            Rp {{ number_format($netWorth, 0, ',', '.') }}
+                        </h2>
+                    </div>
+                    <div class="flex gap-3 text-xs font-bold">
+                        <div class="bg-slate-900/90 border border-slate-700 px-3.5 py-2.5 rounded-xl">
+                            <span class="text-slate-300 block text-[10px] uppercase font-bold">Aset Liquid (Kas + Bank)</span>
+                            <span class="text-emerald-400 font-black text-sm">Rp {{ number_format($totalDigital + $totalCash, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-700 px-3.5 py-2.5 rounded-xl">
+                            <span class="text-slate-300 block text-[10px] uppercase font-bold">Total Utang Aktif</span>
+                            <span class="text-rose-400 font-black text-sm">Rp {{ number_format($totalDebt, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-700/70 flex items-center justify-between text-xs text-slate-300">
+                    <span>Semua kas fisik dompet + seluruh rekening bank & saldo e-wallet</span>
+                    <span class="text-slate-300 font-semibold text-[11px]">&bull; Diaudit per mutasi</span>
+                </div>
             </div>
 
-            {{-- 1. TAB KONTEN ON-BID DRIVER --}}
-            <div id="tab-onbeat" class="tab-content py-4 space-y-6">
+            {{-- Kartu Safe-to-Spend (Uang Aman Jajan Driver) --}}
+            <div id="tour-safe-to-spend" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-cyan-950/40 border border-cyan-500/50 rounded-2xl p-6 shadow-2xl flex flex-col justify-between space-y-4">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-black uppercase tracking-wider text-cyan-300 flex items-center space-x-1.5">
+                            <span>🛡️</span>
+                            <span>Safe-to-Spend (Uang Aman Jajan)</span>
+                        </span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                            Anti Defisit Survival
+                        </span>
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight">
+                        Rp {{ number_format($safeToSpendData['safe_to_spend'], 0, ',', '.') }}
+                    </h2>
+                    <p class="text-xs text-slate-200 leading-relaxed mt-1">
+                        Uang yang 100% bebas Anda belanjakan untuk jajan es krim, cilok, atau makan enak <strong class="text-cyan-300">tanpa mengorbankan beras pokok, uang sabun kos, atau jadwal ganti oli motor</strong>.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-3 border-t border-slate-700/70 text-xs">
+                    <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 space-y-0.5">
+                        <span class="text-slate-300 block text-[10px] uppercase font-bold">Uang Likuid</span>
+                        <span class="text-slate-100 font-extrabold block">Rp {{ number_format($safeToSpendData['total_liquid'], 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-rose-500/30 rounded-xl p-2.5 space-y-0.5">
+                        <span class="text-rose-300 block text-[10px] uppercase font-bold">Survival (L1-3)</span>
+                        <span class="text-rose-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['total_survival_reserved'], 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-2.5 space-y-0.5">
+                        <span class="text-amber-300 block text-[10px] uppercase font-bold">Wishlist (L4-5)</span>
+                        <span class="text-amber-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['total_wants_reserved'], 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-purple-500/30 rounded-xl p-2.5 space-y-0.5">
+                        <span class="text-purple-300 block text-[10px] uppercase font-bold">Hutang Bln Ini</span>
+                        <span class="text-purple-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['debt_reserved'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-2.5 space-y-0.5 col-span-2 sm:col-span-1">
+                        <span class="text-indigo-300 block text-[10px] uppercase font-bold">Tagihan Rutin</span>
+                        <span class="text-indigo-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['subscription_reserved'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+</div>
+<div id="view-ops" class="main-view space-y-6 hidden">
+{{-- ================= FLOATING STICKY QUICK ACTION DOCK (ZERO SCROLL DRIVER COMMAND DOCK) ================= --}}
+<div class="sticky top-2 z-30 bg-slate-900/95 backdrop-blur-md border border-amber-500/50 shadow-2xl rounded-2xl p-3 sm:p-4">
+    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
+        <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="text-xs font-black uppercase tracking-wider text-amber-300">⚡ Aksi Cepat Lapangan (Zero-Scroll)</span>
+        </div>
+        <span class="text-[10px] text-slate-300 font-semibold hidden sm:inline">Akses instan 1-tap saat di atas motor atau nunggu resto</span>
+    </div>
+
+    {{-- BARIS 1: 1-TAP PARKIR & 1-TAP TIP --}}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+        {{-- 1-Tap Parkir 1k --}}
+        <form method="POST" action="/operational/parking" class="m-0">
+            @csrf
+            <input type="hidden" name="work_day_id" value="{{ $currentWorkDay?->id }}">
+            <input type="hidden" name="amount" value="1000">
+            <input type="hidden" name="source_account_id" value="{{ $driverCashAcc?->id }}">
+            <button type="submit" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+                <span>🅿️</span>
+                <span>Parkir 1k</span>
+            </button>
+        </form>
+
+        {{-- 1-Tap Parkir 2k --}}
+        <form method="POST" action="/operational/parking" class="m-0">
+            @csrf
+            <input type="hidden" name="work_day_id" value="{{ $currentWorkDay?->id }}">
+            <input type="hidden" name="amount" value="2000">
+            <input type="hidden" name="source_account_id" value="{{ $driverCashAcc?->id }}">
+            <button type="submit" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+                <span>🅿️</span>
+                <span>Parkir 2k</span>
+            </button>
+        </form>
+
+        {{-- 1-Tap Parkir Gratis Resto --}}
+        <form method="POST" action="/operational/parking" class="m-0">
+            @csrf
+            <input type="hidden" name="work_day_id" value="{{ $currentWorkDay?->id }}">
+            <input type="hidden" name="amount" value="0">
+            <input type="hidden" name="is_covered_by_resto" value="1">
+            <button type="submit" class="w-full py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 rounded-xl border border-emerald-500/50 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+                <span>🆓</span>
+                <span>Parkir Resto (Gratis)</span>
+            </button>
+        </form>
+
+        {{-- 1-Tap Tip Cepat --}}
+        <button type="button" onclick="openModal('modal-quick-tip')" class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>⚡</span>
+            <span>+ Tip Pelanggan</span>
+        </button>
+    </div>
+
+    {{-- BARIS 2: COD, BENSIN, MEMO SUARA HELM, CEK SALDO --}}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {{-- COD Express --}}
+        <button type="button" onclick="openAcceptCodModal()" class="w-full py-2 px-3 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>📦</span>
+            <span>Talangan COD</span>
+        </button>
+
+        {{-- Beli Bensin Express --}}
+        <button type="button" onclick="openModal('modal-fuel')" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>⛽</span>
+            <span>Isi Bensin</span>
+        </button>
+
+        {{-- Memo Suara Helm --}}
+        <button type="button" onclick="openVoiceRecorderModal()" class="w-full py-2 px-3 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 text-rose-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>🎙️</span>
+            <span>Memo Helm</span>
+        </button>
+
+        {{-- Update Saldo Narik --}}
+        <button type="button" onclick="openModal('modal-reconcile-digital')" class="w-full py-2 px-3 bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>🔄</span>
+            <span>Update Saldo</span>
+        </button>
+    </div>
+</div>
+
                 {{-- Shift Bar & Status Narik --}}
                 <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
                     <div class="flex items-center space-x-3.5">
@@ -359,6 +675,187 @@
                         <span class="text-[10px] bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">ShopeePay +{{ number_format($hubBonusEligibility['claimed_bonus_amount'], 0, ',', '.') }}</span>
                     </div>
                 @endif
+
+                {{-- Card Pesanan COD Aktif di Jalan (Multi-Order On-Delivery) --}}
+                @if(isset($activeCodOrders) && $activeCodOrders->isNotEmpty())
+                    <div class="bg-gradient-to-r from-emerald-950/80 via-slate-900/90 to-slate-900 border-2 border-emerald-500/60 rounded-2xl p-5 shadow-2xl space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-emerald-500/30 pb-3">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="text-2xl animate-bounce">🛵</span>
+                                <div>
+                                    <h3 class="text-sm font-extrabold text-white flex items-center space-x-2">
+                                        <span>Pesanan COD Sedang Diantar</span>
+                                        <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-xs font-black">
+                                            {{ $activeCodOrders->count() }} Order Aktif
+                                        </span>
+                                    </h3>
+                                    <p class="text-[11px] text-slate-300">Bawa dobel/tiga order? Selesaikan satu per satu dengan kalkulator kilat saat tiba di customer.</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="openAcceptCodModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center space-x-1.5 self-end sm:self-auto">
+                                <span>+</span>
+                                <span>Tambah COD Lagi (Double COD)</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                            @foreach($activeCodOrders as $cod)
+                                <div class="bg-slate-900/90 border border-slate-700/80 hover:border-emerald-500/60 rounded-xl p-4 space-y-3 transition group">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-black text-sm rounded-lg tracking-wider">
+                                                #{{ $cod->order_code }}
+                                            </span>
+                                            <div>
+                                                <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition">
+                                                    {{ $cod->merchant_name ?: 'Resto ShopeeFood' }}
+                                                </h4>
+                                                <span class="text-[10px] text-slate-300 font-medium">
+                                                    Diterima: {{ $cod->accepted_at ? $cod->accepted_at->format('H:i') : '' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onclick="openCancelCodModal('{{ $cod->id }}', '{{ $cod->order_code }}')" 
+                                            class="text-rose-400/90 hover:text-rose-300 text-xs font-bold p-1 rounded transition" 
+                                            title="Batalkan Pesanan (Resto Tutup/Dibatalkan)"
+                                        >
+                                            ✕ Batal
+                                        </button>
+                                    </div>
+
+                                    <div class="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+                                        <div>
+                                            <span class="text-[10px] text-slate-300 font-medium block">Tagihan Asli Shopee:</span>
+                                            <span class="font-bold text-slate-200">Rp {{ number_format($cod->bill_amount, 0, ',', '.') }}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-[10px] text-amber-400/90 font-semibold block">Saran Bayar (Bulat):</span>
+                                            <span class="font-black text-amber-400 text-sm">Rp {{ number_format($cod->rounded_bill_amount, 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        type="button" 
+                                        onclick="openCompleteCodModal('{{ $cod->id }}', '{{ $cod->order_code }}', '{{ addslashes($cod->merchant_name ?? '') }}', '{{ $cod->bill_amount }}', '{{ $cod->rounded_bill_amount }}')"
+                                        class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl transition shadow flex items-center justify-center space-x-2"
+                                    >
+                                        <span>🧮</span>
+                                        <span>Buka Kalkulator & Selesaikan (#{{ $cod->order_code }})</span>
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Aksi Operasional Narik</h4>
+                        <span class="text-[11px] text-slate-300 font-medium">Aksi cepat saat sedang di jalan</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-9 gap-3.5">
+                        <button type="button" onclick="openModal('modal-open-day')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🌅</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Buka Hari Baru</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Start Day</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openAcceptCodModal()" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">💵</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Order COD Baru</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Talangi ShopeePay</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="p-3.5 bg-gradient-to-br from-emerald-950/60 to-slate-900 hover:from-emerald-900/80 hover:to-slate-800 border border-emerald-500/50 hover:border-emerald-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">👛</span>
+                            <div>
+                                <span class="text-xs font-bold text-emerald-300 block group-hover:text-emerald-200">Update Kas Fisik</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Lembar/Koin Saku</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-fuel')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">⛽</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Beli Bensin</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">SPBU / Madura</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openParkingModal()" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🅿️</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Kendaraan</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Motor / Mobil</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-quick-tip')" class="p-3.5 bg-gradient-to-br from-amber-950/50 to-slate-900 hover:from-amber-900/70 hover:to-slate-800 border border-amber-500/60 hover:border-amber-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🎁</span>
+                            <div>
+                                <span class="text-xs font-bold text-amber-300 block group-hover:text-amber-200">Tip Pelanggan</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Cash / QRIS / SPay</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-update-hub-bonus')" class="p-3.5 bg-gradient-to-br from-indigo-950/60 to-slate-900 hover:from-indigo-900/80 hover:to-slate-800 border border-indigo-500/60 hover:border-indigo-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="text-2xl block mb-1">⭐</span>
+                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">20:00+</span>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-indigo-300 block group-hover:text-indigo-200">Bonus Hub</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Order & 9 Jam</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-field-incidental')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🛠️</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Biaya Lapangan</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Tambal ban / baut</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-lend-friend')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🤝</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Kas Dipinjam</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Talangan Teman</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-cash-withdraw')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🏧</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Tarik Tunai</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Bank &rarr; Dompet</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openVoiceRecorderModal()" class="p-3.5 bg-gradient-to-br from-rose-950/60 to-slate-900 hover:from-rose-900/70 hover:to-slate-800 border border-rose-500/50 hover:border-rose-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🎙️</span>
+                            <div>
+                                <span class="text-xs font-bold text-rose-300 block group-hover:text-rose-200">Intercom Helm</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Suara + GPS</span>
+                            </div>
+                        </button>
+
+                        <a href="#section-batch-table" class="p-3.5 bg-gradient-to-br from-indigo-950/80 to-slate-900 hover:from-indigo-900/80 hover:to-slate-800 border border-indigo-500/50 hover:border-indigo-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">📋</span>
+                            <div>
+                                <span class="text-xs font-bold text-indigo-300 block group-hover:text-indigo-200">Input Tabel Cepat</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Tgl 20, 21, 22</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
 
                 {{-- WIDGET REKAP FINANSIAL HARI INI: INCOME VS OUTCOME (MODE DRIVER & MODE OVERALL) --}}
                 <div id="card-daily-financial-summary" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-purple-500/40 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
@@ -594,132 +1091,6 @@
                     </div>
                 </div>
 
-                {{-- WIDGET 1: 4 ELEMEN SALDO UANG NARIK DRIVER (LIKUID RIIL) --}}
-                <div id="tour-driver-wallet" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-amber-500/40 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
-                        <div class="flex items-start sm:items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
-                                💳
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">4 Elemen Saldo Uang Narik Driver</h3>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg sm:rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 w-fit max-w-full">
-                                        Saldo Likuid Riil
-                                    </span>
-                                </div>
-                                <p class="text-xs text-slate-300 mt-0.5">
-                                    Total uang riil siap pakai yang tersebar di dompet saku & e-wallet narik Anda.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
-                            <div class="text-left sm:text-right">
-                                <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Uang Narik Siap Pakai</span>
-                                <span class="text-2xl font-black text-amber-400">Rp {{ number_format($driverTotalBalance, 0, ',', '.') }}</span>
-                            </div>
-                            <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0" title="Buka form update saldo kilat">
-                                <span>⚡</span>
-                                <span>Update di Jalan</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- Grid 4 Elemen Saldo Riil Driver --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        @foreach($driverWalletElements as $key => $elem)
-                            <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 rounded-xl p-4 flex flex-col justify-between space-y-2.5">
-                                <div>
-                                    <div class="flex justify-between items-start mb-1.5">
-                                        <span class="text-2xl">{{ $elem['icon'] }}</span>
-                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase border {{ $elem['badge_color'] }}">
-                                            {{ $elem['badge'] }}
-                                        </span>
-                                    </div>
-                                    <span class="text-xs font-bold text-white block">{{ $elem['name'] }}</span>
-                                    <span class="text-[11px] text-slate-300 leading-tight block mt-0.5">{{ $elem['desc'] }}</span>
-                                </div>
-                                <div class="pt-2.5 border-t border-slate-800 flex justify-between items-end">
-                                    <div>
-                                        <span class="text-[10px] text-slate-300 block font-semibold">Saldo Terkini:</span>
-                                        <span class="text-lg font-black {{ $elem['balance'] < 10000 ? 'text-amber-400' : 'text-slate-100' }}">
-                                            Rp {{ number_format($elem['balance'], 0, ',', '.') }}
-                                        </span>
-                                    </div>
-                                    @if($key === 'cash' || str_contains(strtolower($elem['name']), 'fisik'))
-                                        <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="text-[10px] font-extrabold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/30 transition flex items-center space-x-1">
-                                            <span>⚡</span>
-                                            <span>Update</span>
-                                        </button>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- WIDGET 2: REKAPITULASI RIWAYAT SHOPEEFOOD DRIVER HARI INI (BUKAN DOMPET UANG) --}}
-                <div class="bg-gradient-to-br from-slate-900 via-orange-950/20 to-slate-900 border border-orange-500/40 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
-                        <div class="flex items-start sm:items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
-                                🛵
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat ShopeeFood Driver Hari Ini</h3>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg sm:rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30 w-fit max-w-full">
-                                        Data Riwayat Performa (Bukan Dompet)
-                                    </span>
-                                </div>
-                                <p class="text-xs text-slate-300 mt-0.5">
-                                    Rekapitulasi data trip & pendapatan dari layar aplikasi driver (uangnya otomatis langsung masuk ke ShopeePay).
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="text-left sm:text-right">
-                            <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Pendapatan Narik</span>
-                            <span class="text-2xl font-black text-emerald-400">Rp {{ number_format($shopeeReportData['total_income'], 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-
-                    {{-- Grid 4 Metrik Riwayat Driver --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
-                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3 space-y-0.5">
-                            <span class="text-slate-300 text-[10px] uppercase font-bold block">Pesanan Selesai</span>
-                            <span class="text-base font-black text-white block">{{ $shopeeReportData['total_orders'] }} trip</span>
-                            <span class="text-[10px] text-slate-300 block">Hari ini</span>
-                        </div>
-
-                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3 space-y-0.5">
-                            <span class="text-slate-300 text-[10px] uppercase font-bold block">Ongkir / Tagihan COD</span>
-                            <span class="text-base font-black text-white block">Rp {{ number_format($shopeeReportData['regular_income'], 0, ',', '.') }}</span>
-                            <span class="text-[10px] text-slate-300 block">Tarif trip pesanan</span>
-                        </div>
-
-                        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 space-y-0.5">
-                            <span class="text-emerald-300 text-[10px] uppercase font-bold block">Tip Pelanggan (Shopee)</span>
-                            <span class="text-base font-black text-emerald-400 block">+Rp {{ number_format($shopeeReportData['tip_income'], 0, ',', '.') }}</span>
-                            <span class="text-[10px] text-slate-300 block">Ikhlas dari customer</span>
-                        </div>
-
-                        <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3 space-y-0.5">
-                            <span class="text-amber-300 text-[10px] uppercase font-bold block">Bonus / Insentif Hub</span>
-                            <span class="text-base font-black text-amber-400 block">+Rp {{ number_format($shopeeReportData['bonus_income'], 0, ',', '.') }}</span>
-                            <span class="text-[10px] text-slate-300 block">Performa harian</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 flex items-start space-x-2.5">
-                        <span class="text-base text-amber-400 mt-0.5">💡</span>
-                        <div class="leading-relaxed">
-                            <strong class="text-white">Alur Saldo Real-Time:</strong> Seluruh gaji, ongkir, dan tip dari rekap ShopeeFood Driver di atas <strong>otomatis langsung masuk detik itu juga ke saldo ShopeePay Anda</strong> (tidak ada uang yang tertahan di aplikasi driver). Panel ini hadir khusus untuk mempermudah tracking pendapatan bersih hari ini tanpa harus pusing membedah riwayat mutasi campur aduk di aplikasi ShopeePay.
-                        </div>
-                    </div>
-                </div>
-
                 {{-- WIDGET CHECKPOINT JAM NARIK & KOMPARASI SALDO HARI INI --}}
                 @if(isset($driverSnapshots) && $driverSnapshots->isNotEmpty())
                     <div class="bg-gradient-to-br from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/40 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
@@ -802,6 +1173,163 @@
                         </div>
                     </div>
                 @endif
+
+                {{-- WIDGET KOTAK HITAM & MEMO SUARA HELM HARI INI --}}
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-700/80 pb-3">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 font-bold text-base shrink-0">
+                                🎙️
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-white">Kotak Hitam & Memo Suara Helm Hari Ini</h4>
+                                <span class="text-[11px] text-slate-300 block mt-0.5">Bukti suara transaksi cepat di jalan & investigasi selisih closing malam</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 font-bold">
+                                {{ $todayVoiceMemos->count() }} Rekaman
+                            </span>
+                            <button type="button" onclick="openVoiceRecorderModal()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition shadow flex items-center space-x-1 shrink-0">
+                                <span>+ Rekam Memo</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Tab Filter Rekaman: Shift Ini vs Semua Rekaman Terkini --}}
+                    <div class="flex items-center space-x-2 border-b border-slate-700/60 pb-2">
+                        <button 
+                            type="button" 
+                            id="btn-voice-tab-current" 
+                            onclick="switchVoiceMemoTab('current')" 
+                            class="px-3 py-1 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 transition flex items-center space-x-1.5"
+                        >
+                            <span>📅 Shift Ini ({{ $currentWorkDay ? \Carbon\Carbon::parse($currentWorkDay->work_date)->format('d M') : 'Hari Ini' }})</span>
+                            <span class="px-1.5 py-0.2 rounded-full bg-slate-900 text-[10px] text-slate-300">{{ $todayVoiceMemos->count() }}</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            id="btn-voice-tab-all" 
+                            onclick="switchVoiceMemoTab('all')" 
+                            class="px-3 py-1 rounded-lg text-xs font-bold text-slate-400 border border-transparent hover:text-slate-200 transition flex items-center space-x-1.5"
+                        >
+                            <span>📁 Semua Rekaman Terkini</span>
+                            <span class="px-1.5 py-0.2 rounded-full bg-slate-900 text-[10px] text-slate-300">{{ $recentVoiceMemos->count() }}</span>
+                        </button>
+                    </div>
+
+                    {{-- KONTEN TAB 1: REKAMAN SHIFT INI --}}
+                    <div id="voice-tab-current" class="space-y-3">
+                        @if($todayVoiceMemos->isNotEmpty())
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach($todayVoiceMemos as $memo)
+                                    <x-voice-memo-player :memo="$memo" />
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-5 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-2">
+                                <span class="text-2xl block">🎧</span>
+                                <span class="text-xs font-semibold text-slate-200 block">Belum ada rekaman suara helm khusus untuk shift ini.</span>
+                                @if($recentVoiceMemos->isNotEmpty())
+                                    <span class="text-[11px] text-amber-300 block font-medium">
+                                        💡 Ada {{ $recentVoiceMemos->count() }} rekaman dari tanggal sebelumnya (Tgl 20, 21, dll).
+                                    </span>
+                                    <button type="button" onclick="switchVoiceMemoTab('all')" class="mt-2 inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition">
+                                        <span>Lihat Semua Rekaman Terkini ({{ $recentVoiceMemos->count() }}) &rarr;</span>
+                                    </button>
+                                @else
+                                    <span class="text-[11px] text-slate-400 block">Tekan tombol mikrofon di kanan bawah saat di lampu merah/menunggu resto untuk merekam cepat.</span>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- KONTEN TAB 2: SEMUA REKAMAN TERKINI (LINTAS TANGGAL) --}}
+                    <div id="voice-tab-all" class="space-y-3 hidden">
+                        @if($recentVoiceMemos->isNotEmpty())
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach($recentVoiceMemos as $memo)
+                                    <x-voice-memo-player :memo="$memo" />
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-6 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                                <span class="text-2xl block mb-1">🎧</span>
+                                <span class="text-xs font-semibold text-slate-200 block">Belum ada riwayat rekaman suara sama sekali.</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+<div id="tab-onbeat" class="tab-content hidden"></div>
+<button id="btn-tab-onbeat" class="hidden"></button>
+</div>
+<div id="view-wallets" class="main-view space-y-6 hidden">
+                {{-- WIDGET 1: 4 ELEMEN SALDO UANG NARIK DRIVER (LIKUID RIIL) --}}
+                <div id="tour-driver-wallet" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-amber-500/40 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
+                        <div class="flex items-start sm:items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
+                                💳
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">4 Elemen Saldo Uang Narik Driver</h3>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg sm:rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 w-fit max-w-full">
+                                        Saldo Likuid Riil
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-300 mt-0.5">
+                                    Total uang riil siap pakai yang tersebar di dompet saku & e-wallet narik Anda.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+                            <div class="text-left sm:text-right">
+                                <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Uang Narik Siap Pakai</span>
+                                <span class="text-2xl font-black text-amber-400">Rp {{ number_format($driverTotalBalance, 0, ',', '.') }}</span>
+                            </div>
+                            <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl transition shadow flex items-center space-x-1.5 shrink-0" title="Buka form update saldo kilat">
+                                <span>⚡</span>
+                                <span>Update di Jalan</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Grid 4 Elemen Saldo Riil Driver --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        @foreach($driverWalletElements as $key => $elem)
+                            <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 rounded-xl p-4 flex flex-col justify-between space-y-2.5">
+                                <div>
+                                    <div class="flex justify-between items-start mb-1.5">
+                                        <span class="text-2xl">{{ $elem['icon'] }}</span>
+                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase border {{ $elem['badge_color'] }}">
+                                            {{ $elem['badge'] }}
+                                        </span>
+                                    </div>
+                                    <span class="text-xs font-bold text-white block">{{ $elem['name'] }}</span>
+                                    <span class="text-[11px] text-slate-300 leading-tight block mt-0.5">{{ $elem['desc'] }}</span>
+                                </div>
+                                <div class="pt-2.5 border-t border-slate-800 flex justify-between items-end">
+                                    <div>
+                                        <span class="text-[10px] text-slate-300 block font-semibold">Saldo Terkini:</span>
+                                        <span class="text-lg font-black {{ $elem['balance'] < 10000 ? 'text-amber-400' : 'text-slate-100' }}">
+                                            Rp {{ number_format($elem['balance'], 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    @if($key === 'cash' || str_contains(strtolower($elem['name']), 'fisik'))
+                                        <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="text-[10px] font-extrabold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/30 transition flex items-center space-x-1">
+                                            <span>⚡</span>
+                                            <span>Update</span>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
 
                 {{-- Alert Rekomendasi Beban Lembaran / Koin Berlebih & Warning Kembalian --}}
                 @if(!empty($cashRecommendations))
@@ -919,568 +1447,183 @@
                     </div>
                 @endif
 
-                {{-- Card Pesanan COD Aktif di Jalan (Multi-Order On-Delivery) --}}
-                @if(isset($activeCodOrders) && $activeCodOrders->isNotEmpty())
-                    <div class="bg-gradient-to-r from-emerald-950/80 via-slate-900/90 to-slate-900 border-2 border-emerald-500/60 rounded-2xl p-5 shadow-2xl space-y-4">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-emerald-500/30 pb-3">
-                            <div class="flex items-center space-x-2.5">
-                                <span class="text-2xl animate-bounce">🛵</span>
-                                <div>
-                                    <h3 class="text-sm font-extrabold text-white flex items-center space-x-2">
-                                        <span>Pesanan COD Sedang Diantar</span>
-                                        <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-xs font-black">
-                                            {{ $activeCodOrders->count() }} Order Aktif
-                                        </span>
-                                    </h3>
-                                    <p class="text-[11px] text-slate-300">Bawa dobel/tiga order? Selesaikan satu per satu dengan kalkulator kilat saat tiba di customer.</p>
-                                </div>
-                            </div>
-                            <button type="button" onclick="openAcceptCodModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center space-x-1.5 self-end sm:self-auto">
-                                <span>+</span>
-                                <span>Tambah COD Lagi (Double COD)</span>
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                            @foreach($activeCodOrders as $cod)
-                                <div class="bg-slate-900/90 border border-slate-700/80 hover:border-emerald-500/60 rounded-xl p-4 space-y-3 transition group">
-                                    <div class="flex justify-between items-start">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-black text-sm rounded-lg tracking-wider">
-                                                #{{ $cod->order_code }}
-                                            </span>
-                                            <div>
-                                                <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition">
-                                                    {{ $cod->merchant_name ?: 'Resto ShopeeFood' }}
-                                                </h4>
-                                                <span class="text-[10px] text-slate-300 font-medium">
-                                                    Diterima: {{ $cod->accepted_at ? $cod->accepted_at->format('H:i') : '' }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            onclick="openCancelCodModal('{{ $cod->id }}', '{{ $cod->order_code }}')" 
-                                            class="text-rose-400/90 hover:text-rose-300 text-xs font-bold p-1 rounded transition" 
-                                            title="Batalkan Pesanan (Resto Tutup/Dibatalkan)"
-                                        >
-                                            ✕ Batal
-                                        </button>
-                                    </div>
-
-                                    <div class="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
-                                        <div>
-                                            <span class="text-[10px] text-slate-300 font-medium block">Tagihan Asli Shopee:</span>
-                                            <span class="font-bold text-slate-200">Rp {{ number_format($cod->bill_amount, 0, ',', '.') }}</span>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="text-[10px] text-amber-400/90 font-semibold block">Saran Bayar (Bulat):</span>
-                                            <span class="font-black text-amber-400 text-sm">Rp {{ number_format($cod->rounded_bill_amount, 0, ',', '.') }}</span>
-                                        </div>
-                                    </div>
-
-                                    <button 
-                                        type="button" 
-                                        onclick="openCompleteCodModal('{{ $cod->id }}', '{{ $cod->order_code }}', '{{ addslashes($cod->merchant_name ?? '') }}', '{{ $cod->bill_amount }}', '{{ $cod->rounded_bill_amount }}')"
-                                        class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl transition shadow flex items-center justify-center space-x-2"
-                                    >
-                                        <span>🧮</span>
-                                        <span>Buka Kalkulator & Selesaikan (#{{ $cod->order_code }})</span>
-                                    </button>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Aksi Operasional Narik</h4>
-                        <span class="text-[11px] text-slate-300 font-medium">Aksi cepat saat sedang di jalan</span>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-9 gap-3.5">
-                        <button type="button" onclick="openModal('modal-open-day')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🌅</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Buka Hari Baru</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Start Day</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openAcceptCodModal()" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">💵</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Order COD Baru</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Talangi ShopeePay</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-quick-cash-denominations')" class="p-3.5 bg-gradient-to-br from-emerald-950/60 to-slate-900 hover:from-emerald-900/80 hover:to-slate-800 border border-emerald-500/50 hover:border-emerald-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">👛</span>
-                            <div>
-                                <span class="text-xs font-bold text-emerald-300 block group-hover:text-emerald-200">Update Kas Fisik</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Lembar/Koin Saku</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-fuel')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">⛽</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Beli Bensin</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">SPBU / Madura</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openParkingModal()" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🅿️</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Parkir Kendaraan</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Motor / Mobil</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-quick-tip')" class="p-3.5 bg-gradient-to-br from-amber-950/50 to-slate-900 hover:from-amber-900/70 hover:to-slate-800 border border-amber-500/60 hover:border-amber-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🎁</span>
-                            <div>
-                                <span class="text-xs font-bold text-amber-300 block group-hover:text-amber-200">Tip Pelanggan</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Cash / QRIS / SPay</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-update-hub-bonus')" class="p-3.5 bg-gradient-to-br from-indigo-950/60 to-slate-900 hover:from-indigo-900/80 hover:to-slate-800 border border-indigo-500/60 hover:border-indigo-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
-                            <div class="flex items-center justify-between w-full">
-                                <span class="text-2xl block mb-1">⭐</span>
-                                <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">20:00+</span>
-                            </div>
-                            <div>
-                                <span class="text-xs font-bold text-indigo-300 block group-hover:text-indigo-200">Bonus Hub</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Order & 9 Jam</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-field-incidental')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🛠️</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Biaya Lapangan</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Tambal ban / baut</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-lend-friend')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🤝</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Kas Dipinjam</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Talangan Teman</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-cash-withdraw')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🏧</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-emerald-400">Tarik Tunai</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Bank &rarr; Dompet</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openVoiceRecorderModal()" class="p-3.5 bg-gradient-to-br from-rose-950/60 to-slate-900 hover:from-rose-900/70 hover:to-slate-800 border border-rose-500/50 hover:border-rose-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🎙️</span>
-                            <div>
-                                <span class="text-xs font-bold text-rose-300 block group-hover:text-rose-200">Intercom Helm</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Suara + GPS</span>
-                            </div>
-                        </button>
-
-                        <a href="#section-batch-table" class="p-3.5 bg-gradient-to-br from-indigo-950/80 to-slate-900 hover:from-indigo-900/80 hover:to-slate-800 border border-indigo-500/50 hover:border-indigo-400 rounded-xl text-left transition group shadow-lg flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">📋</span>
-                            <div>
-                                <span class="text-xs font-bold text-indigo-300 block group-hover:text-indigo-200">Input Tabel Cepat</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Tgl 20, 21, 22</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                {{-- WIDGET KOTAK HITAM & MEMO SUARA HELM HARI INI --}}
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-700/80 pb-3">
-                        <div class="flex items-center space-x-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 font-bold text-base shrink-0">
-                                🎙️
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-white">Kotak Hitam & Memo Suara Helm Hari Ini</h4>
-                                <span class="text-[11px] text-slate-300 block mt-0.5">Bukti suara transaksi cepat di jalan & investigasi selisih closing malam</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 font-bold">
-                                {{ $todayVoiceMemos->count() }} Rekaman
-                            </span>
-                            <button type="button" onclick="openVoiceRecorderModal()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition shadow flex items-center space-x-1 shrink-0">
-                                <span>+ Rekam Memo</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- Tab Filter Rekaman: Shift Ini vs Semua Rekaman Terkini --}}
-                    <div class="flex items-center space-x-2 border-b border-slate-700/60 pb-2">
-                        <button 
-                            type="button" 
-                            id="btn-voice-tab-current" 
-                            onclick="switchVoiceMemoTab('current')" 
-                            class="px-3 py-1 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 transition flex items-center space-x-1.5"
-                        >
-                            <span>📅 Shift Ini ({{ $currentWorkDay ? \Carbon\Carbon::parse($currentWorkDay->work_date)->format('d M') : 'Hari Ini' }})</span>
-                            <span class="px-1.5 py-0.2 rounded-full bg-slate-900 text-[10px] text-slate-300">{{ $todayVoiceMemos->count() }}</span>
-                        </button>
-                        <button 
-                            type="button" 
-                            id="btn-voice-tab-all" 
-                            onclick="switchVoiceMemoTab('all')" 
-                            class="px-3 py-1 rounded-lg text-xs font-bold text-slate-400 border border-transparent hover:text-slate-200 transition flex items-center space-x-1.5"
-                        >
-                            <span>📁 Semua Rekaman Terkini</span>
-                            <span class="px-1.5 py-0.2 rounded-full bg-slate-900 text-[10px] text-slate-300">{{ $recentVoiceMemos->count() }}</span>
-                        </button>
-                    </div>
-
-                    {{-- KONTEN TAB 1: REKAMAN SHIFT INI --}}
-                    <div id="voice-tab-current" class="space-y-3">
-                        @if($todayVoiceMemos->isNotEmpty())
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                @foreach($todayVoiceMemos as $memo)
-                                    <x-voice-memo-player :memo="$memo" />
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="text-center py-5 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-2">
-                                <span class="text-2xl block">🎧</span>
-                                <span class="text-xs font-semibold text-slate-200 block">Belum ada rekaman suara helm khusus untuk shift ini.</span>
-                                @if($recentVoiceMemos->isNotEmpty())
-                                    <span class="text-[11px] text-amber-300 block font-medium">
-                                        💡 Ada {{ $recentVoiceMemos->count() }} rekaman dari tanggal sebelumnya (Tgl 20, 21, dll).
-                                    </span>
-                                    <button type="button" onclick="switchVoiceMemoTab('all')" class="mt-2 inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition">
-                                        <span>Lihat Semua Rekaman Terkini ({{ $recentVoiceMemos->count() }}) &rarr;</span>
-                                    </button>
-                                @else
-                                    <span class="text-[11px] text-slate-400 block">Tekan tombol mikrofon di kanan bawah saat di lampu merah/menunggu resto untuk merekam cepat.</span>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-
-                    {{-- KONTEN TAB 2: SEMUA REKAMAN TERKINI (LINTAS TANGGAL) --}}
-                    <div id="voice-tab-all" class="space-y-3 hidden">
-                        @if($recentVoiceMemos->isNotEmpty())
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                @foreach($recentVoiceMemos as $memo)
-                                    <x-voice-memo-player :memo="$memo" />
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="text-center py-6 bg-slate-900/60 rounded-xl border border-slate-700/50">
-                                <span class="text-2xl block mb-1">🎧</span>
-                                <span class="text-xs font-semibold text-slate-200 block">Belum ada riwayat rekaman suara sama sekali.</span>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            {{-- 2. TAB KONTEN KEBUTUHAN SEHARI-HARI LENGKAP --}}
-            <div id="tab-daily" class="tab-content py-4 space-y-4 hidden">
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi Layaknya Manusia</h4>
-                        <span class="text-[11px] text-slate-300 font-medium">Belanja, sarapan, belanja Shopee SPayLater, pinjaman, transfer</span>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3.5">
-                        <button type="button" onclick="openModal('modal-expense')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🍜</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Belanja</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Sarapan, jajan, rokok</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-personal-income')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">💰</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pemasukan Luar</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Jual barang / project</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-field-incidental')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🛠️</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Biaya Serba-serbi</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Insidental / darurat</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-spaylater-purchase')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🛍️</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Belanja PayLater</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">SPayLater / TikTok</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-apply-loan')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🏦</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pinjam Uang</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">SeaBank / SPinjam</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-pay-installment')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">💳</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Bayar Cicilan</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Tutup tagihan</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-transfer')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🔄</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Transfer Saldo</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Pindah rekening / ATM</span>
-                            </div>
-                        </button>
-
-                        <button type="button" onclick="openModal('modal-lend-friend')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
-                            <span class="text-2xl block mb-1">🤝</span>
-                            <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Kas Dipinjam</span>
-                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Talangan Teman</span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Ringkasan Total Kekayaan & Safe-to-Spend (Uang Aman Jajan) --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {{-- Kartu Net Worth --}}
-            <div id="tour-net-worth" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-slate-700/90 rounded-2xl p-6 shadow-2xl relative overflow-hidden flex flex-col justify-between space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Total Kekayaan Bersih (Net Worth)</span>
-                        <h2 class="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight">
-                            Rp {{ number_format($netWorth, 0, ',', '.') }}
-                        </h2>
-                    </div>
-                    <div class="flex gap-3 text-xs font-bold">
-                        <div class="bg-slate-900/90 border border-slate-700 px-3.5 py-2.5 rounded-xl">
-                            <span class="text-slate-300 block text-[10px] uppercase font-bold">Aset Liquid (Kas + Bank)</span>
-                            <span class="text-emerald-400 font-black text-sm">Rp {{ number_format($totalDigital + $totalCash, 0, ',', '.') }}</span>
-                        </div>
-                        <div class="bg-slate-900/90 border border-slate-700 px-3.5 py-2.5 rounded-xl">
-                            <span class="text-slate-300 block text-[10px] uppercase font-bold">Total Utang Aktif</span>
-                            <span class="text-rose-400 font-black text-sm">Rp {{ number_format($totalDebt, 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="pt-3 border-t border-slate-700/70 flex items-center justify-between text-xs text-slate-300">
-                    <span>Semua kas fisik dompet + seluruh rekening bank & saldo e-wallet</span>
-                    <span class="text-slate-300 font-semibold text-[11px]">&bull; Diaudit per mutasi</span>
-                </div>
-            </div>
-
-            {{-- Kartu Safe-to-Spend (Uang Aman Jajan Driver) --}}
-            <div id="tour-safe-to-spend" class="bg-gradient-to-br from-slate-900 via-slate-800/95 to-cyan-950/40 border border-cyan-500/50 rounded-2xl p-6 shadow-2xl flex flex-col justify-between space-y-4">
+        {{-- Grid Kartu Akun Driver & Tambah Rekening / Dompet Baru --}}
+        <div id="tour-accounts-grid" class="space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-black uppercase tracking-wider text-cyan-300 flex items-center space-x-1.5">
-                            <span>🛡️</span>
-                            <span>Safe-to-Spend (Uang Aman Jajan)</span>
-                        </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                            Anti Defisit Survival
-                        </span>
-                    </div>
-                    <h2 class="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight">
-                        Rp {{ number_format($safeToSpendData['safe_to_spend'], 0, ',', '.') }}
-                    </h2>
-                    <p class="text-xs text-slate-200 leading-relaxed mt-1">
-                        Uang yang 100% bebas Anda belanjakan untuk jajan es krim, cilok, atau makan enak <strong class="text-cyan-300">tanpa mengorbankan beras pokok, uang sabun kos, atau jadwal ganti oli motor</strong>.
-                    </p>
+                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">Daftar Akun Keuangan & Rekening Bank</h3>
+                    <p class="text-xs text-slate-300 mt-0.5">Kelola dompet fisik, rekening bank (BCA, SeaBank), atau e-wallet (GoPay, ShopeePay).</p>
                 </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-3 border-t border-slate-700/70 text-xs">
-                    <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 space-y-0.5">
-                        <span class="text-slate-300 block text-[10px] uppercase font-bold">Uang Likuid</span>
-                        <span class="text-slate-100 font-extrabold block">Rp {{ number_format($safeToSpendData['total_liquid'], 0, ',', '.') }}</span>
-                    </div>
-                    <div class="bg-slate-900/90 border border-rose-500/30 rounded-xl p-2.5 space-y-0.5">
-                        <span class="text-rose-300 block text-[10px] uppercase font-bold">Survival (L1-3)</span>
-                        <span class="text-rose-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['total_survival_reserved'], 0, ',', '.') }}</span>
-                    </div>
-                    <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-2.5 space-y-0.5">
-                        <span class="text-amber-300 block text-[10px] uppercase font-bold">Wishlist (L4-5)</span>
-                        <span class="text-amber-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['total_wants_reserved'], 0, ',', '.') }}</span>
-                    </div>
-                    <div class="bg-slate-900/90 border border-purple-500/30 rounded-xl p-2.5 space-y-0.5">
-                        <span class="text-purple-300 block text-[10px] uppercase font-bold">Hutang Bln Ini</span>
-                        <span class="text-purple-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['debt_reserved'] ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-2.5 space-y-0.5 col-span-2 sm:col-span-1">
-                        <span class="text-indigo-300 block text-[10px] uppercase font-bold">Tagihan Rutin</span>
-                        <span class="text-indigo-400 font-extrabold block">-Rp {{ number_format($safeToSpendData['subscription_reserved'] ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- TARGET BELANJA SURVIVAL & WISHLIST PRIORITAS (NEEDS VS WANTS) --}}
-        <div id="tour-financial-goals" class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-4">
-                <div class="flex items-start sm:items-center space-x-3 w-full sm:w-auto">
-                    <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
-                        🎯
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                            <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Target Belanja Survival & Wishlist Prioritas</h3>
-                            <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg sm:rounded-full w-fit max-w-full">5 Level Skala Prioritas</span>
-                        </div>
-                        <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">Pisahkan kebutuhan primer hidup (Pangan, Mandi, Ganti Oli, Holder HP) dari keinginan santai.</p>
-                    </div>
-                </div>
-                <button type="button" onclick="openModal('modal-add-goal')" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center justify-center space-x-2 shrink-0">
-                    <span class="w-5 h-5 rounded-full bg-white shadow-md flex items-center justify-center text-xs text-slate-950 font-black shrink-0 border border-white">➕</span>
-                    <span>Tambah Target Belanja</span>
-                </button>
-            </div>
-
-            @if($financialGoals->isEmpty())
-                <div class="py-10 text-center bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
-                    <span class="text-4xl block mb-2">🛒</span>
-                    <h4 class="text-sm font-extrabold text-white">Belum Ada Target Belanja / Wishlist Aktif</h4>
-                    <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                        Buat target belanja seperti <strong class="text-amber-300">Ganti Oli Mesin Honda MPX2</strong>, <strong class="text-amber-300">Holder HP Motor</strong>, atau <strong class="text-amber-300">Beras & Telur</strong> agar uang jajan Anda terkendali dengan aman.
-                    </p>
-                    <button type="button" onclick="openModal('modal-add-goal')" class="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition">
-                        + Buat Target Pertama Sekarang
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="/wallets" class="px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <span>💼</span>
+                        <span>Kelola Wadah & Arsip</span>
+                    </a>
+                    <button type="button" onclick="openDeductAccountModal()" class="px-3.5 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <span>🔻</span>
+                        <span>Kurangi Saldo Wadah</span>
                     </button>
+                    <button type="button" onclick="openManageDeductionsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition flex items-center space-x-1.5 shadow">
+                        <span>⚙️</span>
+                        <span>Potongan Bulanan</span>
+                    </button>
+                    <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-300 border border-purple-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <span>📲</span>
+                        <span>Sinkron Saldo & QRIS</span>
+                    </button>
+                    <button type="button" onclick="openModal('modal-add-account')" class="px-3.5 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 border border-blue-500/50 text-xs font-bold transition flex items-center space-x-1.5">
+                        <span>➕</span>
+                        <span>Tambah Rekening Baru</span>
+                    </button>
+                    <button type="button" onclick="openModal('modal-init-account')" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                        <span>💰</span>
+                        <span>Atur Saldo Awal</span>
+                    </button>
+                    <button type="button" onclick="openDeductAccountModal()" class="px-3.5 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Kurangi saldo wadah untuk admin bank, debit, bunga, dll">
+                        <span>🔻</span>
+                        <span>Kurangi Saldo</span>
+                    </button>
+                    <button type="button" onclick="openManageDeductionsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition flex items-center space-x-1.5" title="Kelola jadwal pemotongan bulanan per rekening">
+                        <span>⚙️</span>
+                        <span>Jadwal Potongan</span>
+                    </button>
+                    <button type="button" onclick="openModal('modal-correct-account')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition">
+                        📝 Koreksi Audit
+                    </button>
+                    @if(config('app.trial_mode', false))
+                        <button type="button" onclick="openModal('modal-reset-trial-data')" class="px-3.5 py-2 rounded-xl bg-rose-600/40 hover:bg-rose-600/60 text-rose-200 border border-rose-500/60 text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Reset semua data ke kondisi fresh seeder">
+                            <span>🔄</span>
+                            <span>Reset Data Uji Coba</span>
+                        </button>
+                    @endif
                 </div>
-            @else
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    @foreach($financialGoals as $goal)
-                        @php
-                            $progress = $goal->target_amount > 0 ? min(100, round(($goal->allocated_amount / $goal->target_amount) * 100)) : 0;
-                            $priorityBadgeClass = match($goal->priority_level) {
-                                1 => 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-                                2 => 'bg-orange-500/20 text-orange-300 border-orange-500/40',
-                                3 => 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-                                4 => 'bg-blue-500/20 text-blue-300 border-blue-500/40',
-                                default => 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-                            };
-                            $isFunded = $goal->allocated_amount >= $goal->target_amount;
-                        @endphp
-                        <div class="bg-slate-900/90 border border-slate-700/90 hover:border-slate-500 rounded-2xl p-5 flex flex-col justify-between shadow-lg transition space-y-4">
-                            <div>
-                                <div class="flex items-start justify-between gap-2 mb-2">
-                                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border {{ $priorityBadgeClass }}">
-                                        {{ $goal->getPriorityLabel() }}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                @foreach($accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])) as $acc)
+                    @php 
+                        $isAsset = in_array($acc->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET, \App\Enums\AccountType::RECEIVABLE]);
+                        $isLocked = $acc->initial_balance > 0;
+                    @endphp
+                    <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 rounded-2xl p-5 flex flex-col justify-between shadow-lg transition space-y-3">
+                        <div class="space-y-3">
+                            <div class="flex items-start justify-between gap-3 w-full">
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-xs font-extrabold uppercase text-slate-200 tracking-wider block leading-snug">
+                                        {{ $acc->name }}
                                     </span>
-                                    @if($goal->target_date)
-                                        <span class="text-[11px] text-slate-300 font-semibold">
-                                            📅 {{ $goal->target_date->format('d M Y') }}
+                                    <span class="text-xl font-black text-white mt-2 block tracking-tight">
+                                        Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
+                                    </span>
+                                    @if($isAsset)
+                                        <span class="text-xs text-slate-300 font-medium block mt-0.5">
+                                            Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-slate-400 font-medium block mt-0.5">
+                                            Akumulasi Berjalan
                                         </span>
                                     @endif
                                 </div>
 
-                                <h4 class="text-sm font-extrabold text-white mb-1 leading-snug">{{ $goal->name }}</h4>
-                                @if($goal->notes)
-                                    <p class="text-xs text-slate-300 mb-3">{{ $goal->notes }}</p>
-                                @endif
-
-                                {{-- Progress Nominal & Bar --}}
-                                <div class="space-y-2 my-3">
-                                    <div class="flex justify-between items-baseline text-xs">
-                                        <span class="text-slate-300 text-[11px]">Terkumpul: <strong class="text-emerald-400 font-black text-sm">Rp {{ number_format($goal->allocated_amount, 0, ',', '.') }}</strong></span>
-                                        <span class="text-slate-200 font-extrabold">Rp {{ number_format($goal->target_amount, 0, ',', '.') }}</span>
-                                    </div>
-                                    <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-700">
-                                        <div class="h-3 rounded-full transition-all duration-500 {{ $isFunded ? 'bg-emerald-500' : 'bg-amber-500' }}" style="width: {{ $progress }}%"></div>
-                                    </div>
-                                    <div class="flex justify-between items-center text-xs text-slate-300">
-                                        <span class="font-bold">{{ $progress }}% tercapai</span>
-                                        @if($isFunded)
-                                            <span class="text-emerald-400 font-black">✓ Siap Dibeli Sekarang!</span>
+                                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                    <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 uppercase border border-slate-700 tracking-wide">
+                                        {{ $acc->type->value ?? $acc->type }}
+                                    </span>
+                                    @if($isAsset)
+                                        @if($isLocked)
+                                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold whitespace-nowrap" title="Saldo Awal Terkunci">
+                                                🔒 Locked
+                                            </span>
                                         @else
-                                            <span class="font-medium">Kurang: Rp {{ number_format(max(0, $goal->target_amount - $goal->allocated_amount), 0, ',', '.') }}</span>
+                                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap" title="Belum Diinisialisasi">
+                                                ⚠️ Unset
+                                            </span>
                                         @endif
-                                    </div>
+                                    @endif
                                 </div>
                             </div>
 
-                            {{-- Action Buttons: Quick Allocate 10k/20k & Realisasi Belanja --}}
-                            <div class="pt-3 border-t border-slate-800 space-y-2.5">
-                                <div class="flex items-center space-x-2">
-                                    {{-- Tombol Cepat Sisihkan 10k --}}
-                                    <form method="POST" action="/operational/goals/{{ $goal->id }}/allocate" class="flex-1">
-                                        @csrf
-                                        <input type="hidden" name="amount" value="10000">
-                                        <button type="submit" class="w-full py-2 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-black transition text-center shadow" title="Sisihkan Rp10.000 ke target ini">
-                                            +10k
-                                        </button>
-                                    </form>
+                            {{-- Daftar Jadwal Potongan Rutin Wadah (Jika Ada) --}}
+                            @if($isAsset && $acc->activeDeductions && $acc->activeDeductions->isNotEmpty())
+                                <div class="space-y-1.5 pt-1">
+                                    @foreach($acc->activeDeductions as $ded)
+                                        <div class="flex items-center justify-between text-[11px] bg-slate-800/90 rounded-lg px-2.5 py-1.5 border border-slate-700/80">
+                                            <div class="truncate mr-2">
+                                                <span class="text-rose-300 font-semibold">{{ $ded->name }}</span>: 
+                                                <span class="text-white font-bold">Rp {{ number_format($ded->amount, 0, ',', '.') }}</span>
+                                                <span class="text-slate-400 text-[10px] block">Tiap tgl {{ $ded->deduction_day }}</span>
+                                            </div>
+                                            <div>
+                                                @if(!$ded->isDeductedThisMonth())
+                                                    <form method="POST" action="/operational/account-deduction/{{ $ded->id }}/execute" onsubmit="return confirm('Eksekusi pemotongan {{ $ded->name }} sebesar Rp {{ number_format($ded->amount, 0, ',', '.') }} dari {{ $acc->name }} sekarang?')">
+                                                        @csrf
+                                                        <button type="submit" class="text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-bold transition whitespace-nowrap flex items-center gap-1" title="Potong saldo bulan ini sekarang">
+                                                            ⚡ Potong
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-[9px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                                        ✓ Lunas Bln Ini
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
 
-                                    {{-- Tombol Cepat Sisihkan 20k --}}
-                                    <form method="POST" action="/operational/goals/{{ $goal->id }}/allocate" class="flex-1">
-                                        @csrf
-                                        <input type="hidden" name="amount" value="20000">
-                                        <button type="submit" class="w-full py-2 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-black transition text-center shadow" title="Sisihkan Rp20.000 ke target ini">
-                                            +20k
-                                        </button>
-                                    </form>
-
-                                    {{-- Tombol Sisihkan Custom --}}
-                                    <button type="button" onclick="openAllocateGoalModal({{ $goal->id }}, '{{ addslashes($goal->name) }}', {{ $goal->target_amount - $goal->allocated_amount }})" class="flex-1 py-2 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-black transition text-center shadow">
-                                        +Custom
+                        <div class="pt-3 border-t border-slate-800 w-full flex flex-col gap-2 text-xs">
+                            @if($isAsset)
+                                <div class="flex items-center gap-1.5 w-full">
+                                    <button type="button" onclick="openDeductAccountModal({{ $acc->id }}, '{{ addslashes($acc->name) }}', {{ $acc->current_balance }})" class="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-rose-950/40 text-slate-200 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition" title="Kurangi saldo wadah ini untuk biaya admin, bunga, atau potongan lain">
+                                        <span>🔻</span>
+                                        <span>Kurangi Saldo</span>
+                                    </button>
+                                    <button type="button" onclick="openManageDeductionsModal({{ $acc->id }})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-[11px] font-bold transition" title="Atur jadwal potongan bulanan wadah ini">
+                                        ⚙️
                                     </button>
                                 </div>
+                            @endif
 
-                                {{-- Tombol Realisasikan Belanja di Toko/Bengkel --}}
-                                <button type="button" onclick="openAchieveGoalModal({{ $goal->id }}, '{{ addslashes($goal->name) }}', {{ $goal->target_amount }})" class="w-full py-2.5 px-3 {{ $isFunded ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold' }} rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow">
-                                    <span>🛒</span>
-                                    <span>Sudah Dibeli / Realisasikan</span>
+                            @if($acc->type === \App\Enums\AccountType::CASH)
+                                <button type="button" onclick="openModal('modal-view-cash-denomination')" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-extrabold flex items-center justify-between transition group shadow">
+                                    <span class="flex items-center space-x-1.5">
+                                        <span>👛</span>
+                                        <span>Lihat Rincian Lembaran Kas</span>
+                                    </span>
+                                    <span class="group-hover:translate-x-0.5 transition">&rarr;</span>
                                 </button>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-
-            {{-- Target yang telah selesai / terbeli --}}
-            @if($achievedGoals->isNotEmpty())
-                <div class="pt-2">
-                    <details class="group">
-                        <summary class="cursor-pointer text-xs font-extrabold text-slate-300 hover:text-white flex items-center space-x-2 select-none">
-                            <span class="group-open:rotate-90 transition transform">▶</span>
-                            <span>Riwayat Target yang Sudah Terbeli ({{ $achievedGoals->count() }})</span>
-                        </summary>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-3">
-                            @foreach($achievedGoals as $achieved)
-                                <div class="bg-slate-900/80 border border-emerald-500/40 rounded-xl p-3.5 flex justify-between items-center text-xs">
-                                    <div>
-                                        <span class="text-white font-extrabold block">{{ $achieved->name }}</span>
-                                        <span class="text-[11px] text-slate-300 font-medium">Dibeli: {{ $achieved->achieved_at ? $achieved->achieved_at->format('d M Y') : '-' }}</span>
-                                    </div>
-                                    <span class="text-emerald-400 font-black text-sm">Rp {{ number_format($achieved->allocated_amount, 0, ',', '.') }}</span>
+                            @else
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-slate-300 font-medium">Status: <span class="text-emerald-400 font-bold">Aktif</span></span>
+                                    @if($acc->current_balance == 0)
+                                        @if(!$acc->ledgerEntries()->exists())
+                                            <form method="POST" action="/operational/account/{{ $acc->id }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN wadah {{ $acc->name }}? Wadah ini belum memiliki riwayat transaksi apa pun.')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="px-2 py-1 bg-rose-950/40 hover:bg-rose-950/70 text-rose-300 border border-rose-500/40 rounded-lg text-xs font-semibold transition" title="Hapus permanen karena belum ada catatan transaksi">
+                                                    🗑️ Hapus Wadah
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="/operational/account/{{ $acc->id }}/toggle-active" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan/menutup rekening {{ $acc->name }}?')">
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1 bg-slate-800 hover:bg-amber-600/30 text-slate-300 hover:text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition" title="Arsipkan / Tutup Rekening">
+                                                    📦 Tutup Rekening
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @else
+                                        <span class="text-xs text-slate-300 font-medium" title="Rekening hanya bisa ditutup jika saldo Rp0">🔒 Saldo Aktif</span>
+                                    @endif
                                 </div>
-                            @endforeach
+                            @endif
                         </div>
-                    </details>
-                </div>
-            @endif
+                    </div>
+                @endforeach
+            </div>
         </div>
 
         {{-- ================= MISI BEBAS HUTANG 31 OKTOBER (CLOSING BULAN INI LUNAS!) ================= --}}
@@ -1681,184 +1824,289 @@
             @endif
         </div>
 
-        {{-- Grid Kartu Akun Driver & Tambah Rekening / Dompet Baru --}}
-        <div id="tour-accounts-grid" class="space-y-4">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
-                <div>
-                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">Daftar Akun Keuangan & Rekening Bank</h3>
-                    <p class="text-xs text-slate-300 mt-0.5">Kelola dompet fisik, rekening bank (BCA, SeaBank), atau e-wallet (GoPay, ShopeePay).</p>
+        {{-- TARGET BELANJA SURVIVAL & WISHLIST PRIORITAS (NEEDS VS WANTS) --}}
+        <div id="tour-financial-goals" class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-4">
+                <div class="flex items-start sm:items-center space-x-3 w-full sm:w-auto">
+                    <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0 aspect-square mt-0.5 sm:mt-0">
+                        🎯
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Target Belanja Survival & Wishlist Prioritas</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg sm:rounded-full w-fit max-w-full">5 Level Skala Prioritas</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">Pisahkan kebutuhan primer hidup (Pangan, Mandi, Ganti Oli, Holder HP) dari keinginan santai.</p>
+                    </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <a href="/wallets" class="px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
-                        <span>💼</span>
-                        <span>Kelola Wadah & Arsip</span>
-                    </a>
-                    <button type="button" onclick="openDeductAccountModal()" class="px-3.5 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
-                        <span>🔻</span>
-                        <span>Kurangi Saldo Wadah</span>
-                    </button>
-                    <button type="button" onclick="openManageDeductionsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition flex items-center space-x-1.5 shadow">
-                        <span>⚙️</span>
-                        <span>Potongan Bulanan</span>
-                    </button>
-                    <button type="button" onclick="openModal('modal-reconcile-digital')" class="px-3.5 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-300 border border-purple-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
-                        <span>📲</span>
-                        <span>Sinkron Saldo & QRIS</span>
-                    </button>
-                    <button type="button" onclick="openModal('modal-add-account')" class="px-3.5 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 border border-blue-500/50 text-xs font-bold transition flex items-center space-x-1.5">
-                        <span>➕</span>
-                        <span>Tambah Rekening Baru</span>
-                    </button>
-                    <button type="button" onclick="openModal('modal-init-account')" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow">
-                        <span>💰</span>
-                        <span>Atur Saldo Awal</span>
-                    </button>
-                    <button type="button" onclick="openDeductAccountModal()" class="px-3.5 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/50 text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Kurangi saldo wadah untuk admin bank, debit, bunga, dll">
-                        <span>🔻</span>
-                        <span>Kurangi Saldo</span>
-                    </button>
-                    <button type="button" onclick="openManageDeductionsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition flex items-center space-x-1.5" title="Kelola jadwal pemotongan bulanan per rekening">
-                        <span>⚙️</span>
-                        <span>Jadwal Potongan</span>
-                    </button>
-                    <button type="button" onclick="openModal('modal-correct-account')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition">
-                        📝 Koreksi Audit
-                    </button>
-                    @if(config('app.trial_mode', false))
-                        <button type="button" onclick="openModal('modal-reset-trial-data')" class="px-3.5 py-2 rounded-xl bg-rose-600/40 hover:bg-rose-600/60 text-rose-200 border border-rose-500/60 text-xs font-bold transition flex items-center space-x-1.5 shadow" title="Reset semua data ke kondisi fresh seeder">
-                            <span>🔄</span>
-                            <span>Reset Data Uji Coba</span>
-                        </button>
-                    @endif
-                </div>
+                <button type="button" onclick="openModal('modal-add-goal')" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center justify-center space-x-2 shrink-0">
+                    <span class="w-5 h-5 rounded-full bg-white shadow-md flex items-center justify-center text-xs text-slate-950 font-black shrink-0 border border-white">➕</span>
+                    <span>Tambah Target Belanja</span>
+                </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                @foreach($accounts->filter(fn($a) => in_array($a->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET])) as $acc)
-                    @php 
-                        $isAsset = in_array($acc->type, [\App\Enums\AccountType::CASH, \App\Enums\AccountType::BANK, \App\Enums\AccountType::EWALLET, \App\Enums\AccountType::RECEIVABLE]);
-                        $isLocked = $acc->initial_balance > 0;
-                    @endphp
-                    <div class="bg-slate-900/90 border border-slate-700/80 hover:border-slate-500 rounded-2xl p-5 flex flex-col justify-between shadow-lg transition space-y-3">
-                        <div class="space-y-3">
-                            <div class="flex items-start justify-between gap-3 w-full">
-                                <div class="flex-1 min-w-0">
-                                    <span class="text-xs font-extrabold uppercase text-slate-200 tracking-wider block leading-snug">
-                                        {{ $acc->name }}
+            @if($financialGoals->isEmpty())
+                <div class="py-10 text-center bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
+                    <span class="text-4xl block mb-2">🛒</span>
+                    <h4 class="text-sm font-extrabold text-white">Belum Ada Target Belanja / Wishlist Aktif</h4>
+                    <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                        Buat target belanja seperti <strong class="text-amber-300">Ganti Oli Mesin Honda MPX2</strong>, <strong class="text-amber-300">Holder HP Motor</strong>, atau <strong class="text-amber-300">Beras & Telur</strong> agar uang jajan Anda terkendali dengan aman.
+                    </p>
+                    <button type="button" onclick="openModal('modal-add-goal')" class="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition">
+                        + Buat Target Pertama Sekarang
+                    </button>
+                </div>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    @foreach($financialGoals as $goal)
+                        @php
+                            $progress = $goal->target_amount > 0 ? min(100, round(($goal->allocated_amount / $goal->target_amount) * 100)) : 0;
+                            $priorityBadgeClass = match($goal->priority_level) {
+                                1 => 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+                                2 => 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+                                3 => 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                                4 => 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+                                default => 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+                            };
+                            $isFunded = $goal->allocated_amount >= $goal->target_amount;
+                        @endphp
+                        <div class="bg-slate-900/90 border border-slate-700/90 hover:border-slate-500 rounded-2xl p-5 flex flex-col justify-between shadow-lg transition space-y-4">
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border {{ $priorityBadgeClass }}">
+                                        {{ $goal->getPriorityLabel() }}
                                     </span>
-                                    <span class="text-xl font-black text-white mt-2 block tracking-tight">
-                                        Rp {{ number_format($acc->current_balance, 0, ',', '.') }}
-                                    </span>
-                                    @if($isAsset)
-                                        <span class="text-xs text-slate-300 font-medium block mt-0.5">
-                                            Modal Awal: Rp {{ number_format($acc->initial_balance, 0, ',', '.') }}
-                                        </span>
-                                    @else
-                                        <span class="text-xs text-slate-400 font-medium block mt-0.5">
-                                            Akumulasi Berjalan
+                                    @if($goal->target_date)
+                                        <span class="text-[11px] text-slate-300 font-semibold">
+                                            📅 {{ $goal->target_date->format('d M Y') }}
                                         </span>
                                     @endif
                                 </div>
 
-                                <div class="flex flex-col items-end gap-1.5 shrink-0">
-                                    <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 uppercase border border-slate-700 tracking-wide">
-                                        {{ $acc->type->value ?? $acc->type }}
-                                    </span>
-                                    @if($isAsset)
-                                        @if($isLocked)
-                                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold whitespace-nowrap" title="Saldo Awal Terkunci">
-                                                🔒 Locked
-                                            </span>
+                                <h4 class="text-sm font-extrabold text-white mb-1 leading-snug">{{ $goal->name }}</h4>
+                                @if($goal->notes)
+                                    <p class="text-xs text-slate-300 mb-3">{{ $goal->notes }}</p>
+                                @endif
+
+                                {{-- Progress Nominal & Bar --}}
+                                <div class="space-y-2 my-3">
+                                    <div class="flex justify-between items-baseline text-xs">
+                                        <span class="text-slate-300 text-[11px]">Terkumpul: <strong class="text-emerald-400 font-black text-sm">Rp {{ number_format($goal->allocated_amount, 0, ',', '.') }}</strong></span>
+                                        <span class="text-slate-200 font-extrabold">Rp {{ number_format($goal->target_amount, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-700">
+                                        <div class="h-3 rounded-full transition-all duration-500 {{ $isFunded ? 'bg-emerald-500' : 'bg-amber-500' }}" style="width: {{ $progress }}%"></div>
+                                    </div>
+                                    <div class="flex justify-between items-center text-xs text-slate-300">
+                                        <span class="font-bold">{{ $progress }}% tercapai</span>
+                                        @if($isFunded)
+                                            <span class="text-emerald-400 font-black">✓ Siap Dibeli Sekarang!</span>
                                         @else
-                                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap" title="Belum Diinisialisasi">
-                                                ⚠️ Unset
-                                            </span>
+                                            <span class="font-medium">Kurang: Rp {{ number_format(max(0, $goal->target_amount - $goal->allocated_amount), 0, ',', '.') }}</span>
                                         @endif
-                                    @endif
+                                    </div>
                                 </div>
                             </div>
 
-                            {{-- Daftar Jadwal Potongan Rutin Wadah (Jika Ada) --}}
-                            @if($isAsset && $acc->activeDeductions && $acc->activeDeductions->isNotEmpty())
-                                <div class="space-y-1.5 pt-1">
-                                    @foreach($acc->activeDeductions as $ded)
-                                        <div class="flex items-center justify-between text-[11px] bg-slate-800/90 rounded-lg px-2.5 py-1.5 border border-slate-700/80">
-                                            <div class="truncate mr-2">
-                                                <span class="text-rose-300 font-semibold">{{ $ded->name }}</span>: 
-                                                <span class="text-white font-bold">Rp {{ number_format($ded->amount, 0, ',', '.') }}</span>
-                                                <span class="text-slate-400 text-[10px] block">Tiap tgl {{ $ded->deduction_day }}</span>
-                                            </div>
-                                            <div>
-                                                @if(!$ded->isDeductedThisMonth())
-                                                    <form method="POST" action="/operational/account-deduction/{{ $ded->id }}/execute" onsubmit="return confirm('Eksekusi pemotongan {{ $ded->name }} sebesar Rp {{ number_format($ded->amount, 0, ',', '.') }} dari {{ $acc->name }} sekarang?')">
-                                                        @csrf
-                                                        <button type="submit" class="text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-bold transition whitespace-nowrap flex items-center gap-1" title="Potong saldo bulan ini sekarang">
-                                                            ⚡ Potong
-                                                        </button>
-                                                    </form>
-                                                @else
-                                                    <span class="text-[9px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                                        ✓ Lunas Bln Ini
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
+                            {{-- Action Buttons: Quick Allocate 10k/20k & Realisasi Belanja --}}
+                            <div class="pt-3 border-t border-slate-800 space-y-2.5">
+                                <div class="flex items-center space-x-2">
+                                    {{-- Tombol Cepat Sisihkan 10k --}}
+                                    <form method="POST" action="/operational/goals/{{ $goal->id }}/allocate" class="flex-1">
+                                        @csrf
+                                        <input type="hidden" name="amount" value="10000">
+                                        <button type="submit" class="w-full py-2 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-black transition text-center shadow" title="Sisihkan Rp10.000 ke target ini">
+                                            +10k
+                                        </button>
+                                    </form>
+
+                                    {{-- Tombol Cepat Sisihkan 20k --}}
+                                    <form method="POST" action="/operational/goals/{{ $goal->id }}/allocate" class="flex-1">
+                                        @csrf
+                                        <input type="hidden" name="amount" value="20000">
+                                        <button type="submit" class="w-full py-2 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-black transition text-center shadow" title="Sisihkan Rp20.000 ke target ini">
+                                            +20k
+                                        </button>
+                                    </form>
+
+                                    {{-- Tombol Sisihkan Custom --}}
+                                    <button type="button" onclick="openAllocateGoalModal({{ $goal->id }}, '{{ addslashes($goal->name) }}', {{ $goal->target_amount - $goal->allocated_amount }})" class="flex-1 py-2 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-black transition text-center shadow">
+                                        +Custom
+                                    </button>
                                 </div>
-                            @endif
+
+                                {{-- Tombol Realisasikan Belanja di Toko/Bengkel --}}
+                                <button type="button" onclick="openAchieveGoalModal({{ $goal->id }}, '{{ addslashes($goal->name) }}', {{ $goal->target_amount }})" class="w-full py-2.5 px-3 {{ $isFunded ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold' }} rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow">
+                                    <span>🛒</span>
+                                    <span>Sudah Dibeli / Realisasikan</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Target yang telah selesai / terbeli --}}
+            @if($achievedGoals->isNotEmpty())
+                <div class="pt-2">
+                    <details class="group">
+                        <summary class="cursor-pointer text-xs font-extrabold text-slate-300 hover:text-white flex items-center space-x-2 select-none">
+                            <span class="group-open:rotate-90 transition transform">▶</span>
+                            <span>Riwayat Target yang Sudah Terbeli ({{ $achievedGoals->count() }})</span>
+                        </summary>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-3">
+                            @foreach($achievedGoals as $achieved)
+                                <div class="bg-slate-900/80 border border-emerald-500/40 rounded-xl p-3.5 flex justify-between items-center text-xs">
+                                    <div>
+                                        <span class="text-white font-extrabold block">{{ $achieved->name }}</span>
+                                        <span class="text-[11px] text-slate-300 font-medium">Dibeli: {{ $achieved->achieved_at ? $achieved->achieved_at->format('d M Y') : '-' }}</span>
+                                    </div>
+                                    <span class="text-emerald-400 font-black text-sm">Rp {{ number_format($achieved->allocated_amount, 0, ',', '.') }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                </div>
+            @endif
+        </div>
+
+            <div id="tab-daily" class="tab-content py-4 space-y-4 hidden">
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi Layaknya Manusia</h4>
+                        <span class="text-[11px] text-slate-300 font-medium">Belanja, sarapan, belanja Shopee SPayLater, pinjaman, transfer</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3.5">
+                        <button type="button" onclick="openModal('modal-expense')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🍜</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Belanja</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Sarapan, jajan, rokok</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-personal-income')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">💰</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pemasukan Luar</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Jual barang / project</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-field-incidental')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🛠️</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Biaya Serba-serbi</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Insidental / darurat</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-spaylater-purchase')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🛍️</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Belanja PayLater</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">SPayLater / TikTok</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-apply-loan')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🏦</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Pinjam Uang</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">SeaBank / SPinjam</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-pay-installment')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">💳</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Bayar Cicilan</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Tutup tagihan</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-transfer')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🔄</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Transfer Saldo</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Pindah rekening / ATM</span>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="openModal('modal-lend-friend')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                            <span class="text-2xl block mb-1">🤝</span>
+                            <div>
+                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Kas Dipinjam</span>
+                                <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Talangan Teman</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+<div id="tab-daily" class="tab-content hidden"></div>
+<button id="btn-tab-daily" class="hidden"></button>
+</div>
+<div id="view-analytics" class="main-view space-y-6 hidden">
+                {{-- WIDGET 2: REKAPITULASI RIWAYAT SHOPEEFOOD DRIVER HARI INI (BUKAN DOMPET UANG) --}}
+                <div class="bg-gradient-to-br from-slate-900 via-orange-950/20 to-slate-900 border border-orange-500/40 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700/80 pb-3">
+                        <div class="flex items-start sm:items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-xl shrink-0 aspect-square mt-0.5 sm:mt-0">
+                                🛵
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                    <h3 class="text-sm font-extrabold uppercase tracking-wider text-white">Riwayat ShopeeFood Driver Hari Ini</h3>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg sm:rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30 w-fit max-w-full">
+                                        Data Riwayat Performa (Bukan Dompet)
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-300 mt-0.5">
+                                    Rekapitulasi data trip & pendapatan dari layar aplikasi driver (uangnya otomatis langsung masuk ke ShopeePay).
+                                </p>
+                            </div>
                         </div>
 
-                        <div class="pt-3 border-t border-slate-800 w-full flex flex-col gap-2 text-xs">
-                            @if($isAsset)
-                                <div class="flex items-center gap-1.5 w-full">
-                                    <button type="button" onclick="openDeductAccountModal({{ $acc->id }}, '{{ addslashes($acc->name) }}', {{ $acc->current_balance }})" class="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-rose-950/40 text-slate-200 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition" title="Kurangi saldo wadah ini untuk biaya admin, bunga, atau potongan lain">
-                                        <span>🔻</span>
-                                        <span>Kurangi Saldo</span>
-                                    </button>
-                                    <button type="button" onclick="openManageDeductionsModal({{ $acc->id }})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-[11px] font-bold transition" title="Atur jadwal potongan bulanan wadah ini">
-                                        ⚙️
-                                    </button>
-                                </div>
-                            @endif
-
-                            @if($acc->type === \App\Enums\AccountType::CASH)
-                                <button type="button" onclick="openModal('modal-view-cash-denomination')" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-extrabold flex items-center justify-between transition group shadow">
-                                    <span class="flex items-center space-x-1.5">
-                                        <span>👛</span>
-                                        <span>Lihat Rincian Lembaran Kas</span>
-                                    </span>
-                                    <span class="group-hover:translate-x-0.5 transition">&rarr;</span>
-                                </button>
-                            @else
-                                <div class="flex items-center justify-between w-full">
-                                    <span class="text-slate-300 font-medium">Status: <span class="text-emerald-400 font-bold">Aktif</span></span>
-                                    @if($acc->current_balance == 0)
-                                        @if(!$acc->ledgerEntries()->exists())
-                                            <form method="POST" action="/operational/account/{{ $acc->id }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN wadah {{ $acc->name }}? Wadah ini belum memiliki riwayat transaksi apa pun.')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="px-2 py-1 bg-rose-950/40 hover:bg-rose-950/70 text-rose-300 border border-rose-500/40 rounded-lg text-xs font-semibold transition" title="Hapus permanen karena belum ada catatan transaksi">
-                                                    🗑️ Hapus Wadah
-                                                </button>
-                                            </form>
-                                        @else
-                                            <form method="POST" action="/operational/account/{{ $acc->id }}/toggle-active" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan/menutup rekening {{ $acc->name }}?')">
-                                                @csrf
-                                                <button type="submit" class="px-2.5 py-1 bg-slate-800 hover:bg-amber-600/30 text-slate-300 hover:text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold transition" title="Arsipkan / Tutup Rekening">
-                                                    📦 Tutup Rekening
-                                                </button>
-                                            </form>
-                                        @endif
-                                    @else
-                                        <span class="text-xs text-slate-300 font-medium" title="Rekening hanya bisa ditutup jika saldo Rp0">🔒 Saldo Aktif</span>
-                                    @endif
-                                </div>
-                            @endif
+                        <div class="text-left sm:text-right">
+                            <span class="text-[10px] uppercase font-bold text-slate-300 block">Total Pendapatan Narik</span>
+                            <span class="text-2xl font-black text-emerald-400">Rp {{ number_format($shopeeReportData['total_income'], 0, ',', '.') }}</span>
                         </div>
                     </div>
-                @endforeach
-            </div>
-        </div>
+
+                    {{-- Grid 4 Metrik Riwayat Driver --}}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
+                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3 space-y-0.5">
+                            <span class="text-slate-300 text-[10px] uppercase font-bold block">Pesanan Selesai</span>
+                            <span class="text-base font-black text-white block">{{ $shopeeReportData['total_orders'] }} trip</span>
+                            <span class="text-[10px] text-slate-300 block">Hari ini</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3 space-y-0.5">
+                            <span class="text-slate-300 text-[10px] uppercase font-bold block">Ongkir / Tagihan COD</span>
+                            <span class="text-base font-black text-white block">Rp {{ number_format($shopeeReportData['regular_income'], 0, ',', '.') }}</span>
+                            <span class="text-[10px] text-slate-300 block">Tarif trip pesanan</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 space-y-0.5">
+                            <span class="text-emerald-300 text-[10px] uppercase font-bold block">Tip Pelanggan (Shopee)</span>
+                            <span class="text-base font-black text-emerald-400 block">+Rp {{ number_format($shopeeReportData['tip_income'], 0, ',', '.') }}</span>
+                            <span class="text-[10px] text-slate-300 block">Ikhlas dari customer</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3 space-y-0.5">
+                            <span class="text-amber-300 text-[10px] uppercase font-bold block">Bonus / Insentif Hub</span>
+                            <span class="text-base font-black text-amber-400 block">+Rp {{ number_format($shopeeReportData['bonus_income'], 0, ',', '.') }}</span>
+                            <span class="text-[10px] text-slate-300 block">Performa harian</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 flex items-start space-x-2.5">
+                        <span class="text-base text-amber-400 mt-0.5">💡</span>
+                        <div class="leading-relaxed">
+                            <strong class="text-white">Alur Saldo Real-Time:</strong> Seluruh gaji, ongkir, dan tip dari rekap ShopeeFood Driver di atas <strong>otomatis langsung masuk detik itu juga ke saldo ShopeePay Anda</strong> (tidak ada uang yang tertahan di aplikasi driver). Panel ini hadir khusus untuk mempermudah tracking pendapatan bersih hari ini tanpa harus pusing membedah riwayat mutasi campur aduk di aplikasi ShopeePay.
+                        </div>
+                    </div>
+                </div>
 
         {{-- TABEL INPUT TRANSAKSI MULTI-TANGGAL (REKAP BUKU / CATATAN LAPANGAN) --}}
         <div id="section-batch-table" class="bg-slate-900/90 border-2 border-indigo-500/50 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
@@ -2034,8 +2282,66 @@
             </div>
         @endif
 
-    </div>
+</div>
+{{-- ================= STICKY MOBILE BOTTOM NAVIGATION BAR ================= --}}
+<nav id="mobile-bottom-nav" class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-xl px-2 py-2 shadow-2xl flex items-center justify-around">
+    {{-- Tab 1: Ringkasan --}}
+    <button 
+        type="button" 
+        onclick="switchMainView('view-home')" 
+        data-mobile-target-view="view-home" 
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-emerald-400 font-black transition"
+    >
+        <span class="text-xl">🏠</span>
+        <span class="text-[10px] tracking-tight mt-0.5">Ringkasan</span>
+        <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5"></span>
+    </button>
 
+    {{-- Tab 2: Jalanan (Fast Ops) --}}
+    <button 
+        type="button" 
+        onclick="switchMainView('view-ops')" 
+        data-mobile-target-view="view-ops" 
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 font-medium transition relative"
+    >
+        <div class="relative">
+            <span class="text-xl">🛵</span>
+            @if(isset($activeCodOrders) && $activeCodOrders->isNotEmpty())
+                <span class="absolute -top-1 -right-2 w-3.5 h-3.5 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full flex items-center justify-center animate-pulse">
+                    {{ $activeCodOrders->count() }}
+                </span>
+            @endif
+        </div>
+        <span class="text-[10px] tracking-tight mt-0.5">Jalanan</span>
+        <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5 hidden"></span>
+    </button>
+
+    {{-- Tab 3: Dompet & Utang --}}
+    <button 
+        type="button" 
+        onclick="switchMainView('view-wallets')" 
+        data-mobile-target-view="view-wallets" 
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 font-medium transition"
+    >
+        <span class="text-xl">💳</span>
+        <span class="text-[10px] tracking-tight mt-0.5">Dompet</span>
+        <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5 hidden"></span>
+    </button>
+
+    {{-- Tab 4: Analitik & Riwayat --}}
+    <button 
+        type="button" 
+        onclick="switchMainView('view-analytics')" 
+        data-mobile-target-view="view-analytics" 
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 font-medium transition"
+    >
+        <span class="text-xl">📊</span>
+        <span class="text-[10px] tracking-tight mt-0.5">Analitik</span>
+        <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5 hidden"></span>
+    </button>
+</nav>
+
+    </div>
     {{-- ================= MODALS SECTION ================= --}}
 
     {{-- 1. Modal Buka Shift Narik (1 Klik Cepat) --}}
@@ -8213,40 +8519,67 @@
             }
         }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-button').forEach(el => {
-                el.classList.remove('border-emerald-500', 'text-emerald-400', 'border-indigo-500', 'text-indigo-400');
+                function switchMainView(viewId) {
+            document.querySelectorAll('.main-view').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.view-nav-btn').forEach(el => {
+                el.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/50', 'active-view');
                 el.classList.add('border-transparent', 'text-slate-300');
             });
+            document.querySelectorAll('.mobile-nav-btn').forEach(el => {
+                el.classList.remove('text-emerald-400', 'font-black');
+                el.classList.add('text-slate-400', 'font-medium');
+                const dot = el.querySelector('.mobile-active-dot');
+                if (dot) dot.classList.add('hidden');
+            });
 
-            const targetTab = document.getElementById(tabId);
-            if (targetTab) {
-                targetTab.classList.remove('hidden');
-                localStorage.setItem('dashboard_active_tab', tabId);
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                localStorage.setItem('driver_active_main_view', viewId);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
+            // Desktop Nav Highlight
+            const desktopBtns = document.querySelectorAll(`[data-target-view="${viewId}"]`);
+            desktopBtns.forEach(btn => {
+                btn.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/50', 'active-view');
+                btn.classList.remove('border-transparent', 'text-slate-300');
+            });
+
+            // Mobile Nav Highlight
+            const mobileBtns = document.querySelectorAll(`[data-mobile-target-view="${viewId}"]`);
+            mobileBtns.forEach(btn => {
+                btn.classList.add('text-emerald-400', 'font-black');
+                btn.classList.remove('text-slate-400', 'font-medium');
+                const dot = btn.querySelector('.mobile-active-dot');
+                if (dot) dot.classList.remove('hidden');
+            });
+        }
+
+        // Backward compatibility for switchTab
+        function switchTab(tabId) {
             if (tabId === 'tab-onbeat') {
-                const btn = document.getElementById('btn-tab-onbeat');
-                if (btn) {
-                    btn.classList.add('border-emerald-500', 'text-emerald-400');
-                    btn.classList.remove('border-transparent', 'text-slate-300');
-                }
-            } else {
-                const btn = document.getElementById('btn-tab-daily');
-                if (btn) {
-                    btn.classList.add('border-indigo-500', 'text-indigo-400');
-                    btn.classList.remove('border-transparent', 'text-slate-300');
-                }
+                switchMainView('view-ops');
+            } else if (tabId === 'tab-daily') {
+                switchMainView('view-wallets');
             }
         }
 
-        // Restore active tab upon page load or reload
+        // Restore active main view upon page load or reload
         document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewParam = urlParams.get('view');
             const hash = window.location.hash ? window.location.hash.substring(1) : null;
-            const savedTab = hash || localStorage.getItem('dashboard_active_tab');
-            if (savedTab && document.getElementById(savedTab)) {
-                switchTab(savedTab);
+            let targetView = viewParam || hash || localStorage.getItem('driver_active_main_view') || 'view-home';
+            
+            // Map legacy hash tab names
+            if (targetView === 'tab-onbeat') targetView = 'view-ops';
+            if (targetView === 'tab-daily') targetView = 'view-wallets';
+            
+            if (document.getElementById(targetView)) {
+                switchMainView(targetView);
+            } else {
+                switchMainView('view-home');
             }
         });
 

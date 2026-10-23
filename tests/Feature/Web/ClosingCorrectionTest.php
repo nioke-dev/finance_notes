@@ -179,4 +179,75 @@ class ClosingCorrectionTest extends TestCase
         $this->assertEquals(200000, $this->cashAccount->fresh()->current_balance);
         $this->assertEquals(488000, $this->bankAccount->fresh()->current_balance);
     }
+
+    public function test_user_can_adjust_cash_discrepancy_with_dynamic_multi_row_items(): void
+    {
+        // Initial cash balance is 200.000
+        // Physical cash is 160.000 (shortage of 40.000)
+        \App\Models\CashDenomination::create([
+            'work_day_id' => $this->workDay->id,
+            'bill_100000' => 1,
+            'bill_50000' => 1,
+            'bill_10000' => 1,
+            'total_physical_amount' => 160000,
+        ]);
+
+        $response = $this->post("/closing/{$this->workDay->id}/adjust-discrepancy", [
+            'items' => [
+                [
+                    'category' => 'parking',
+                    'description' => 'Parkir resto siang',
+                    'amount' => 4000,
+                ],
+                [
+                    'category' => 'expense',
+                    'description' => 'Makan tempe & tahu',
+                    'amount' => 16000,
+                ],
+                [
+                    'category' => 'fuel',
+                    'description' => 'Bensin eceran sawojajar',
+                    'amount' => 20000,
+                ],
+            ],
+            'reason' => 'Rincian transaksi riil penyesuaian selisih',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Cash balance should now match physical cash: 160.000
+        $this->assertEquals(160000, $this->cashAccount->fresh()->current_balance);
+
+        // Transactions were created for each item
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'description' => '[Penyesuaian Closing] Parkir resto siang',
+        ]);
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'description' => '[Penyesuaian Closing] Makan tempe & tahu',
+        ]);
+        $this->assertDatabaseHas('transactions', [
+            'work_day_id' => $this->workDay->id,
+            'description' => '[Penyesuaian Closing] Bensin eceran sawojajar',
+        ]);
+
+        // Verify ledger entries for cash account
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $this->cashAccount->id,
+            'entry_type' => \App\Enums\EntryType::CREDIT->value,
+            'amount' => 4000,
+        ]);
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $this->cashAccount->id,
+            'entry_type' => \App\Enums\EntryType::CREDIT->value,
+            'amount' => 16000,
+        ]);
+        $this->assertDatabaseHas('ledger_entries', [
+            'account_id' => $this->cashAccount->id,
+            'entry_type' => \App\Enums\EntryType::CREDIT->value,
+            'amount' => 20000,
+        ]);
+    }
 }

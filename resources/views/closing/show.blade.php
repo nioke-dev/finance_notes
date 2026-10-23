@@ -1031,25 +1031,32 @@
         }
     </script>
 
-    {{-- Modal Penyesuaian Selisih Kas Hilang / Tak Terlacak --}}
-    <div id="modal-adjust-discrepancy" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+    {{-- Modal Penyesuaian Selisih Kas Fisik (Dynamic Multi-Row Breakdown) --}}
+    <div id="modal-adjust-discrepancy" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
                     <span class="text-xl">⚖️</span>
-                    <h3 class="text-base font-bold text-white">Sesuaikan Selisih Kas Fisik</h3>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-bold text-white">Sesuaikan Selisih Kas Fisik</h3>
+                        <span class="text-[11px] text-slate-300 font-medium block">Pecah selisih ke transaksi riil atau catat uang tercecer</span>
+                    </div>
                 </div>
-                <button type="button" onclick="closeModal('modal-adjust-discrepancy')" class="text-slate-300 hover:text-white font-bold">&times;</button>
+                <button type="button" onclick="closeModal('modal-adjust-discrepancy')" class="text-slate-300 hover:text-white font-bold text-lg">&times;</button>
             </div>
 
             @php 
                 $cashAccModal = collect($reconciliationReport['accounts'] ?? [])->firstWhere('account_name', 'Cash'); 
                 $discModal = $cashAccModal['discrepancy'] ?? 0;
+                $targetAbsDisc = abs($discModal);
             @endphp
 
-            <form method="POST" action="/closing/{{ $workDay->id }}/adjust-discrepancy" class="space-y-4">
+            <form method="POST" action="/closing/{{ $workDay->id }}/adjust-discrepancy" class="space-y-4" id="form-adjust-discrepancy">
                 @csrf
-                <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-1.5">
+                <input type="hidden" id="modal-target-discrepancy" value="{{ $targetAbsDisc }}">
+                <input type="hidden" id="modal-is-shortage" value="{{ $discModal < 0 ? '1' : '0' }}">
+
+                <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-1.5">
                     <div class="flex justify-between">
                         <span class="text-slate-300 font-medium">Saldo Menurut Sistem:</span>
                         <span class="font-bold text-white">Rp {{ number_format($cashAccModal['ledger_balance'] ?? 0, 0, ',', '.') }}</span>
@@ -1059,30 +1066,83 @@
                         <span class="font-bold text-white">Rp {{ number_format($cashAccModal['actual_balance'] ?? 0, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between border-t border-slate-700 pt-1.5 font-bold">
-                        <span class="text-amber-400">Selisih yang Disesuaikan:</span>
-                        <span class="{{ $discModal < 0 ? 'text-rose-400' : 'text-emerald-400' }}">
-                            {{ $discModal < 0 ? '-Rp ' . number_format(abs($discModal), 0, ',', '.') . ' (Uang Kurang/Hilang)' : '+Rp ' . number_format($discModal, 0, ',', '.') . ' (Uang Lebih)' }}
+                        <span class="text-amber-400">Total Selisih:</span>
+                        <span id="label-total-disc-target" class="{{ $discModal < 0 ? 'text-rose-400' : 'text-emerald-400' }}">
+                            {{ $discModal < 0 ? '-Rp ' . number_format($targetAbsDisc, 0, ',', '.') . ' (Kurang/Belum Dicatat)' : '+Rp ' . number_format($targetAbsDisc, 0, ',', '.') . ' (Lebih)' }}
                         </span>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">
-                        Alasan / Catatan Audit Selisih <span class="text-rose-400">*</span>
+                {{-- Mode Pilihan: Multi-Row Transaksi Dinamis vs Catatan Global --}}
+                <div class="flex border-b border-slate-700/80 space-x-2 text-xs">
+                    <button type="button" onclick="switchAdjustMode('multi-row')" id="btn-adj-multi" class="px-3 py-1.5 font-bold border-b-2 border-amber-500 text-amber-300 flex items-center space-x-1">
+                        <span>📋 Pecah ke Transaksi Riil</span>
+                    </button>
+                    <button type="button" onclick="switchAdjustMode('lump-sum')" id="btn-adj-lump" class="px-3 py-1.5 font-semibold text-slate-400 hover:text-white flex items-center space-x-1">
+                        <span>📝 Catatan Global Tercecer</span>
+                    </button>
+                </div>
+
+                {{-- KONTEN MODE 1: DYNAMIC MULTI-ROW BREAKDOWN --}}
+                <div id="section-adj-multi-row" class="space-y-3">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-300 font-medium">Rincikan barang yang belum sempat Anda catat:</span>
+                        <button type="button" onclick="addClosingDiscrepancyRow()" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                            <span>+ Tambah Baris</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-2 max-h-56 overflow-y-auto pr-1" id="container-closing-breakdown-rows">
+                        {{-- Baris pertama default --}}
+                        <div class="closing-breakdown-row grid grid-cols-12 gap-2 items-center bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
+                            <div class="col-span-4">
+                                <select name="items[0][category]" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                    <option value="parking">🅿️ Parkir</option>
+                                    <option value="expense" selected>🍜 Makan/Minum</option>
+                                    <option value="fuel">⛽ Bensin</option>
+                                    <option value="field_incidental">🚨 Tambal/Darurat</option>
+                                    <option value="other">📦 Lain-lain</option>
+                                </select>
+                            </div>
+                            <div class="col-span-4">
+                                <input type="text" name="items[0][description]" placeholder="Contoh: Tempe & tahu" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500">
+                            </div>
+                            <div class="col-span-3">
+                                <input type="number" name="items[0][amount]" value="{{ $targetAbsDisc > 0 ? $targetAbsDisc : 0 }}" min="1" required class="row-adj-amount w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white text-right focus:outline-none focus:border-amber-500 font-mono" oninput="calcClosingDiscrepancySum()">
+                            </div>
+                            <div class="col-span-1 text-center">
+                                <button type="button" onclick="removeClosingDiscrepancyRow(this)" class="text-slate-400 hover:text-rose-400 font-bold text-sm" title="Hapus baris">&times;</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Live Real-time Balancer Summary --}}
+                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Total Terurai: <strong id="label-closing-breakdown-sum" class="text-white font-mono">Rp 0</strong></span>
+                        <span id="badge-closing-balance-status" class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            Sisa: Rp 0
+                        </span>
+                    </div>
+                </div>
+
+                {{-- KONTEN MODE 2: LUMP-SUM CATATAN GLOBAL --}}
+                <div id="section-adj-lump-sum" class="space-y-2 hidden">
+                    <label class="block text-xs font-bold text-slate-300">
+                        Alasan / Catatan Audit Selisih Kas <span class="text-rose-400">*</span>
                     </label>
                     <textarea 
                         name="reason" 
-                        required 
+                        id="input-adj-reason"
                         rows="3" 
                         placeholder="Contoh: Uang koin Rp2.000 jatuh di jalan saat bayar parkir atau lupa minta kembalian di warung..."
                         class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
                     ></textarea>
-                    <span class="text-[10px] text-slate-300 font-medium block mt-1">
-                        Wajib diisi minimal 5 karakter. Catatan ini disimpan permanen di riwayat audit.
+                    <span class="text-[10px] text-slate-300 font-medium block">
+                        Catatan audit permanen untuk menjelaskan selisih uang kas fisik yang tidak terlacak.
                     </span>
                 </div>
 
-                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
                     <button type="button" onclick="closeModal('modal-adjust-discrepancy')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">
                         Batal
                     </button>
@@ -1093,6 +1153,105 @@
             </form>
         </div>
     </div>
+
+    <script>
+        let closingRowIndex = 1;
+
+        function switchAdjustMode(mode) {
+            const secMulti = document.getElementById('section-adj-multi-row');
+            const secLump = document.getElementById('section-adj-lump-sum');
+            const btnMulti = document.getElementById('btn-adj-multi');
+            const btnLump = document.getElementById('btn-adj-lump');
+            const reasonInput = document.getElementById('input-adj-reason');
+
+            if (mode === 'multi-row') {
+                secMulti.classList.remove('hidden');
+                secLump.classList.add('hidden');
+                btnMulti.className = 'px-3 py-1.5 font-bold border-b-2 border-amber-500 text-amber-300 flex items-center space-x-1';
+                btnLump.className = 'px-3 py-1.5 font-semibold text-slate-400 hover:text-white flex items-center space-x-1';
+                if (reasonInput) reasonInput.required = false;
+            } else {
+                secMulti.classList.add('hidden');
+                secLump.classList.remove('hidden');
+                btnLump.className = 'px-3 py-1.5 font-bold border-b-2 border-amber-500 text-amber-300 flex items-center space-x-1';
+                btnMulti.className = 'px-3 py-1.5 font-semibold text-slate-400 hover:text-white flex items-center space-x-1';
+                if (reasonInput) reasonInput.required = true;
+            }
+        }
+
+        function addClosingDiscrepancyRow() {
+            const container = document.getElementById('container-closing-breakdown-rows');
+            if (!container) return;
+
+            const div = document.createElement('div');
+            div.className = 'closing-breakdown-row grid grid-cols-12 gap-2 items-center bg-slate-950/70 p-2.5 rounded-xl border border-slate-800';
+            div.innerHTML = `
+                <div class="col-span-4">
+                    <select name="items[${closingRowIndex}][category]" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                        <option value="parking">🅿️ Parkir</option>
+                        <option value="expense">🍜 Makan/Minum</option>
+                        <option value="fuel">⛽ Bensin</option>
+                        <option value="field_incidental">🚨 Tambal/Darurat</option>
+                        <option value="other">📦 Lain-lain</option>
+                    </select>
+                </div>
+                <div class="col-span-4">
+                    <input type="text" name="items[${closingRowIndex}][description]" placeholder="Keterangan..." required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="col-span-3">
+                    <input type="number" name="items[${closingRowIndex}][amount]" value="0" min="1" required class="row-adj-amount w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white text-right focus:outline-none focus:border-amber-500 font-mono" oninput="calcClosingDiscrepancySum()">
+                </div>
+                <div class="col-span-1 text-center">
+                    <button type="button" onclick="removeClosingDiscrepancyRow(this)" class="text-slate-400 hover:text-rose-400 font-bold text-sm" title="Hapus baris">&times;</button>
+                </div>
+            `;
+            container.appendChild(div);
+            closingRowIndex++;
+            calcClosingDiscrepancySum();
+        }
+
+        function removeClosingDiscrepancyRow(btn) {
+            const row = btn.closest('.closing-breakdown-row');
+            if (row) {
+                row.remove();
+                calcClosingDiscrepancySum();
+            }
+        }
+
+        function calcClosingDiscrepancySum() {
+            const inputs = document.querySelectorAll('.row-adj-amount');
+            let sum = 0;
+            inputs.forEach(inp => {
+                sum += parseInt(inp.value) || 0;
+            });
+
+            const targetDisc = parseInt(document.getElementById('modal-target-discrepancy')?.value) || 0;
+            const diff = targetDisc - sum;
+
+            const sumLabel = document.getElementById('label-closing-breakdown-sum');
+            if (sumLabel) {
+                sumLabel.innerText = 'Rp ' + sum.toLocaleString('id-ID');
+            }
+
+            const badge = document.getElementById('badge-closing-balance-status');
+            if (badge) {
+                if (diff === 0) {
+                    badge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                    badge.innerText = '✓ Pas & Seimbang (Rp 0)';
+                } else if (diff > 0) {
+                    badge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                    badge.innerText = 'Sisa Selisih: Rp ' + diff.toLocaleString('id-ID');
+                } else {
+                    badge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30';
+                    badge.innerText = 'Kelebihan: +Rp ' + Math.abs(diff).toLocaleString('id-ID');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            calcClosingDiscrepancySum();
+        });
+    </script>
 
     {{-- Modal Koreksi Transaksi Kas di Tempat --}}
     <div id="modal-correct-closing-tx" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">

@@ -373,20 +373,25 @@ class ClosingWebController extends Controller
     }
 
     /**
-     * Sesuaikan Kas Hilang / Lebih Tak Terlacak
+     * Sesuaikan Kas Hilang / Lebih Tak Terlacak (Mendukung Dynamic Multi-Row Itemized Breakdown)
      */
     public function adjustDiscrepancy(
         Request $request,
         int $id,
-        \App\Services\DiscrepancyResolutionService $resolutionService
+        \App\Services\DiscrepancyResolutionService $resolutionService,
+        \App\Services\LedgerService $ledgerService
     ): RedirectResponse {
         $workDay = WorkDay::findOrFail($id);
 
         $validated = $request->validate([
-            'reason' => 'required|string|min:5',
+            'reason' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.category' => 'required_with:items|string',
+            'items.*.description' => 'required_with:items|string',
+            'items.*.amount' => 'required_with:items|integer|min:1',
         ]);
 
-        $cashAccount = Account::where('name', 'Cash')->firstOrFail();
+        $cashAccount = Account::where('name', 'Cash')->orWhere('type', \App\Enums\AccountType::CASH)->firstOrFail();
         $physicalRecord = CashDenomination::where('work_day_id', $workDay->id)->first();
         $physicalCashActual = $physicalRecord ? (int) $physicalRecord->total_physical_amount : 0;
         $discrepancy = $physicalCashActual - (int) $cashAccount->current_balance;
@@ -395,14 +400,101 @@ class ClosingWebController extends Controller
             return redirect()->back()->with('error', 'Saldo kas sudah seimbang (selisih Rp0), tidak perlu penyesuaian.');
         }
 
-        $resolutionService->adjustUnresolvedCashDiscrepancy(
-            workDay: $workDay,
-            cashAccount: $cashAccount,
-            discrepancy: $discrepancy,
-            reason: $validated['reason']
-        );
+        $items = $validated['items'] ?? [];
 
-        return redirect()->back()->with('success', 'Penyesuaian selisih kas fisik berhasil dicatat. Saldo kas kini telah seimbang dan siap difinalisasi!');
+        \Illuminate\Support\Facades\DB::transaction(function () use (
+            $workDay,
+            $cashAccount,
+            $physicalCashActual,
+            $discrepancy,
+            $validated,
+            $items,
+            $resolutionService,
+            $ledgerService
+        ) {
+            if (!empty($items)) {
+                $isShortage = $discrepancy < 0; // Kas fisik lebih sedikit = ada pengeluaran kas belum dicatat
+                foreach ($items as $item) {
+                    $itemAmount = (int) $item['amount'];
+                    $cat = $item['category'];
+                    $desc = trim($item['description']);
+
+                    if ($isShortage) {
+                        $targetExpenseAcc = Account::where('name', 'like', "%{$cat}%")
+                            ->orWhere('name', 'Beban Operasional')
+                            ->orWhere('type', \App\Enums\AccountType::EXPENSE)
+                            ->first();
+
+                        $ledgerService->recordTransaction(
+                            workDay: $workDay,
+                            type: 'expense',
+                            description: "[Penyesuaian Closing] {$desc}",
+                            transactionTime: $workDay->opened_at ? $workDay->opened_at->copy()->setTime(21, 30, 0) : now(),
+                            entries: [
+                                [
+                                    'account_id' => $targetExpenseAcc->id,
+                                    'entry_type' => \App\Enums\EntryType::DEBIT,
+                                    'amount' => $itemAmount,
+                                ],
+                                [
+                                    'account_id' => $cashAccount->id,
+                                    'entry_type' => \App\Enums\EntryType::CREDIT,
+                                    'amount' => $itemAmount,
+                                ],
+                            ],
+                            metadata: [
+                                'category' => $cat,
+                                'resolution_type' => 'closing_itemized_breakdown',
+                            ]
+                        );
+                    } else {
+                        $targetIncomeAcc = Account::where('type', \App\Enums\AccountType::INCOME)->first();
+
+                        $ledgerService->recordTransaction(
+                            workDay: $workDay,
+                            type: 'income',
+                            description: "[Penyesuaian Closing] {$desc}",
+                            transactionTime: $workDay->opened_at ? $workDay->opened_at->copy()->setTime(21, 30, 0) : now(),
+                            entries: [
+                                [
+                                    'account_id' => $cashAccount->id,
+                                    'entry_type' => \App\Enums\EntryType::DEBIT,
+                                    'amount' => $itemAmount,
+                                ],
+                                [
+                                    'account_id' => $targetIncomeAcc->id,
+                                    'entry_type' => \App\Enums\EntryType::CREDIT,
+                                    'amount' => $itemAmount,
+                                ],
+                            ],
+                            metadata: [
+                                'category' => $cat,
+                                'resolution_type' => 'closing_itemized_breakdown',
+                            ]
+                        );
+                    }
+                }
+            }
+
+            // Cek sisa selisih setelah itemized breakdown
+            $cashAccount->refresh();
+            $remainingDiscrepancy = $physicalCashActual - (int) $cashAccount->current_balance;
+
+            if ($remainingDiscrepancy !== 0) {
+                $reason = !empty($validated['reason'])
+                    ? trim($validated['reason'])
+                    : ($remainingDiscrepancy < 0 ? 'Sisa uang kas receh kurang / hilang tercecer saat narik' : 'Sisa kelebihan kas receh tidak teridentifikasi');
+
+                $resolutionService->adjustUnresolvedCashDiscrepancy(
+                    workDay: $workDay,
+                    cashAccount: $cashAccount,
+                    discrepancy: $remainingDiscrepancy,
+                    reason: $reason
+                );
+            }
+        });
+
+        return redirect()->back()->with('success', 'Rincian transaksi penyesuaian kas fisik berhasil dibukukan. Saldo kas kini telah seimbang dan siap difinalisasi!');
     }
 
     /**
