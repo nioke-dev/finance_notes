@@ -112,6 +112,44 @@ class DeployWebhookController extends Controller
             }
         }
 
+        if ($request->query('action') === 'clean_duplicate_closing_txs') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    foreach ([69, 70] as $txId) {
+                        $tx = \App\Models\Transaction::with('entries')->find($txId);
+                        if ($tx) {
+                            foreach ($tx->entries as $entry) {
+                                $account = \App\Models\Account::find($entry->account_id);
+                                if ($account) {
+                                    if ($entry->entry_type === \App\Enums\EntryType::DEBIT) {
+                                        $account->decrement('current_balance', $entry->amount);
+                                    } else {
+                                        $account->increment('current_balance', $entry->amount);
+                                    }
+                                }
+                                $entry->delete();
+                            }
+                            $tx->delete();
+                        }
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'accounts' => [
+                            'Cash' => \App\Models\Account::where('name', 'Cash')->value('current_balance'),
+                            'ShopeePay' => \App\Models\Account::where('name', 'ShopeePay')->value('current_balance'),
+                            'GoPay Merchant' => \App\Models\Account::where('name', 'GoPay Merchant')->value('current_balance'),
+                            'BCA' => \App\Models\Account::where('name', 'BCA')->value('current_balance'),
+                            'GoPay' => \App\Models\Account::where('name', 'GoPay')->value('current_balance'),
+                            'e-Money' => \App\Models\Account::where('name', 'e-Money')->value('current_balance'),
+                        ],
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'open_shift') {
             try {
                 $targetDate = $request->query('date', now()->toDateString());
