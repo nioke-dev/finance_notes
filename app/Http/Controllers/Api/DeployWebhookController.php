@@ -112,6 +112,37 @@ class DeployWebhookController extends Controller
             }
         }
 
+        if ($request->query('action') === 'open_shift') {
+            try {
+                $targetDate = $request->query('date', now()->toDateString());
+                $workDay = \App\Models\WorkDay::firstOrCreate(
+                    ['work_date' => $targetDate],
+                    [
+                        'day_type' => \App\Models\WorkDay::TYPE_ON_BID,
+                        'status' => \App\Models\WorkDay::STATUS_NEEDS_RECONCILIATION,
+                        'opened_at' => \Illuminate\Support\Carbon::parse("{$targetDate} 00:01:00"),
+                    ]
+                );
+
+                \App\Models\AuditLog::create([
+                    'auditable_type' => \App\Models\WorkDay::class,
+                    'auditable_id' => $workDay->id,
+                    'action' => 'open_shift_command',
+                    'new_values' => ['status' => $workDay->status, 'work_date' => $targetDate],
+                    'reason' => "Shift {$targetDate} dibuka otomatis via secret command coding agent atas instruksi driver.",
+                    'created_at' => now(),
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Shift {$targetDate} berhasil dibuka secara resmi tanpa perlu klik manual di aplikasi.",
+                    'work_day' => $workDay,
+                ]);
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'sync_current_cash_denominations') {
             try {
                 $workDay = \App\Models\WorkDay::where('work_date', '2026-10-24')->firstOrFail();
