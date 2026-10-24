@@ -92,6 +92,42 @@ class DeployWebhookController extends Controller
             }
         }
 
+        if ($request->query('action') === 'add_shopee_tip') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                    $workDay = \App\Models\WorkDay::where('work_date', '2026-10-24')->firstOrFail();
+                    $shopeePay = \App\Models\Account::where('name', 'ShopeePay')->firstOrFail();
+                    $tipAccount = \App\Models\Account::firstOrCreate(
+                        ['name' => 'Tip Pelanggan ShopeeFood'],
+                        ['type' => \App\Enums\AccountType::INCOME, 'is_active' => true]
+                    );
+
+                    $amount = (int) $request->input('amount', $request->query('amount', 2000));
+                    $ledgerService = app(\App\Services\LedgerService::class);
+                    $tx = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'income',
+                        description: 'Tambahan Tip Pelanggan ShopeeFood (Masuk ke ShopeePay)',
+                        transactionTime: now(),
+                        entries: [
+                            ['account_id' => $shopeePay->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => $amount],
+                            ['account_id' => $tipAccount->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => $amount],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['source' => 'ShopeeFood Driver App Tip Susulan']
+                    );
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Tambahan tip Rp 2.000 berhasil dicatat ke ShopeePay.',
+                        'shopee_pay_balance' => $shopeePay->fresh()->current_balance,
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'save_closing_24_oct') {
             try {
                 return \Illuminate\Support\Facades\DB::transaction(function () {
