@@ -112,6 +112,32 @@ class DeployWebhookController extends Controller
             }
         }
 
+        if ($request->query('action') === 'sync_current_cash_denominations') {
+            try {
+                $workDay = \App\Models\WorkDay::where('work_date', '2026-10-24')->firstOrFail();
+                $denom = \App\Models\CashDenomination::updateOrCreate(
+                    ['work_day_id' => $workDay->id],
+                    [
+                        'bill_100000' => 1,
+                        'bill_50000' => 3,
+                        'bill_20000' => 10,
+                        'bill_10000' => 23,
+                        'bill_5000' => 25,
+                        'bill_2000' => 54,
+                        'bill_1000' => 11,
+                        'coin_1000' => 2,
+                        'coin_500' => 0,
+                        'coin_200' => 0,
+                        'coin_100' => 0,
+                        'total_physical_amount' => 926000,
+                    ]
+                );
+                return response()->json(['success' => true, 'denomination' => $denom]);
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'add_shopee_tip') {
             try {
                 return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
