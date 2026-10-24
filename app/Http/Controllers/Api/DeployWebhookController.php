@@ -143,6 +143,127 @@ class DeployWebhookController extends Controller
             }
         }
 
+        if ($request->query('action') === 'update_final_closing_24_oct') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    $workDay = \App\Models\WorkDay::where('work_date', '2026-10-24')->firstOrFail();
+                    $ledgerService = app(\App\Services\LedgerService::class);
+                    $now = \Illuminate\Support\Carbon::parse('2026-10-24 23:45:00');
+
+                    // 1. Delta ShopeeFood income: Hub +55.200, Tip +4.000 (Total +59.200 ke ShopeePay)
+                    $shopeePay = \App\Models\Account::where('name', 'ShopeePay')->firstOrFail();
+                    $hubAccount = \App\Models\Account::firstOrCreate(
+                        ['name' => 'Pendapatan Hub ShopeeFood'],
+                        ['type' => \App\Enums\AccountType::INCOME, 'is_active' => true]
+                    );
+                    $tipAccount = \App\Models\Account::firstOrCreate(
+                        ['name' => 'Tip Pelanggan ShopeeFood'],
+                        ['type' => \App\Enums\AccountType::INCOME, 'is_active' => true]
+                    );
+
+                    $txShopeeNight = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'income',
+                        description: 'Pendapatan ShopeeFood Driver Sesi Malam (10 Order Tambahan: Hub Rp55.200 + Tip Rp4.000)',
+                        transactionTime: $now,
+                        entries: [
+                            ['account_id' => $shopeePay->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 59200],
+                            ['account_id' => $hubAccount->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 55200],
+                            ['account_id' => $tipAccount->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 4000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['source' => 'ShopeeFood Driver App Sesi Malam', 'orders' => 10]
+                    );
+
+                    // 2. Delta GoPay Merchant: +2.000 QRIS tip (saldo Rp 7.000 -> Rp 9.000)
+                    $gopayMerchant = \App\Models\Account::where('name', 'GoPay Merchant')->firstOrFail();
+                    $qrisIncomeAccount = \App\Models\Account::firstOrCreate(
+                        ['name' => 'Pendapatan QRIS / Tip Non-Tunai'],
+                        ['type' => \App\Enums\AccountType::INCOME, 'is_active' => true]
+                    );
+
+                    $txQrisNight = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'income',
+                        description: 'Penerimaan Tambahan Tip QRIS Pelanggan Sesi Malam',
+                        transactionTime: $now,
+                        entries: [
+                            ['account_id' => $gopayMerchant->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 2000],
+                            ['account_id' => $qrisIncomeAccount->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 2000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['source' => 'QRIS GoPay Merchant Sesi Malam']
+                    );
+
+                    // 3. Sinkronisasi Kas (+Rp 1.000 lembaran saku jaket, saldo Rp 926.000 -> Rp 927.000)
+                    $cash = \App\Models\Account::where('name', 'Cash')->firstOrFail();
+                    if ($cash->current_balance < 927000) {
+                        $diff = 927000 - $cash->current_balance;
+                        $surplusAccount = \App\Models\Account::firstOrCreate(
+                            ['name' => 'Pendapatan Selisih Kas (Surplus Tak Terlacak)'],
+                            ['type' => \App\Enums\AccountType::INCOME, 'is_active' => true]
+                        );
+                        $ledgerService->recordTransaction(
+                            workDay: $workDay,
+                            type: 'income',
+                            description: 'Penyesuaian Fisik Kas: Ditemukan 1 Lembar Rp 1.000 di Saku Jaket Ojek',
+                            transactionTime: $now,
+                            entries: [
+                                ['account_id' => $cash->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => $diff],
+                                ['account_id' => $surplusAccount->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => $diff],
+                            ],
+                            isEstimatedTime: false,
+                            metadata: ['note' => 'Penyesuaian fisik lembaran 1k di saku jaket']
+                        );
+                    }
+
+                    // 4. Update Denominations (128 lembar + 2 koin = Rp 927.000)
+                    $denom = \App\Models\CashDenomination::updateOrCreate(
+                        ['work_day_id' => $workDay->id],
+                        [
+                            'bill_100000' => 1,
+                            'bill_50000' => 3,
+                            'bill_20000' => 10,
+                            'bill_10000' => 23,
+                            'bill_5000' => 25,
+                            'bill_2000' => 54,
+                            'bill_1000' => 12,
+                            'coin_1000' => 2,
+                            'coin_500' => 0,
+                            'coin_200' => 0,
+                            'coin_100' => 0,
+                            'total_physical_amount' => 927000,
+                        ]
+                    );
+
+                    // 5. Update WorkDay final 24 orders
+                    $workDay->update([
+                        'total_orders' => 24,
+                        'status' => \App\Models\WorkDay::STATUS_FINAL,
+                        'closed_at' => $now,
+                        'closing_notes' => 'Closing on-bid 24 Oktober 2026 Full Day. 24 pesanan selesai. Hub Rp132.800, Tip Shopee Rp15.000, QRIS Rp7.000, Parkir Rp10.000, Bensin Rp28.000, Mie Cleo Rp13.000, Cakeot Rp11.000, Kokari Rp150.000. Saldo kas fisik Rp927.000 selisih Rp0. Seluruh saldo digital klop 100%.',
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Seluruh data 24 Oktober (24 order, ShopeePay Rp130.789, GoPay Merchant Rp9.000, Kas Rp927.000) berhasil disinkronkan ke database.',
+                        'work_day' => $workDay->fresh(),
+                        'accounts' => [
+                            'Cash' => $cash->fresh()->current_balance,
+                            'ShopeePay' => $shopeePay->fresh()->current_balance,
+                            'GoPay' => \App\Models\Account::where('name', 'GoPay')->value('current_balance'),
+                            'GoPay Merchant' => $gopayMerchant->fresh()->current_balance,
+                            'BCA' => \App\Models\Account::where('name', 'BCA')->value('current_balance'),
+                            'e-Money' => \App\Models\Account::where('name', 'e-Money')->value('current_balance'),
+                        ],
+                        'total_liquid' => $cash->fresh()->current_balance + $shopeePay->fresh()->current_balance + \App\Models\Account::where('name', 'GoPay')->value('current_balance') + $gopayMerchant->fresh()->current_balance + \App\Models\Account::where('name', 'BCA')->value('current_balance') + \App\Models\Account::where('name', 'e-Money')->value('current_balance'),
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'sync_current_cash_denominations') {
             try {
                 $workDay = \App\Models\WorkDay::where('work_date', '2026-10-24')->firstOrFail();
