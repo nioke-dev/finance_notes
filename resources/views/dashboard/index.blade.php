@@ -3,7 +3,27 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
 
-    <div class="space-y-6 pb-28 sm:pb-8">
+    <style>
+        /* Navigasi Responsif Desktop vs Mobile */
+        @media (min-width: 768px) {
+            #mobile-bottom-nav {
+                display: none !important;
+            }
+            #desktop-view-nav {
+                display: flex !important;
+            }
+        }
+        @media (max-width: 767.98px) {
+            #desktop-view-nav {
+                display: none !important;
+            }
+            #mobile-bottom-nav {
+                display: flex !important;
+            }
+        }
+    </style>
+
+    <div class="space-y-5 pb-28 md:pb-8">
 
         {{-- Flash Messages (Alert Sukses / Error) --}}
         @if(session('success'))
@@ -50,28 +70,56 @@
             </div>
         @endif
 
-        {{-- Banner Pengingat Hari Gantung / Belum Finalisasi --}}
+        {{-- Banner Pengingat Hari Gantung / Belum Finalisasi (Ringkas & Terintegrasi) --}}
         @if($unfinalizedDays->isNotEmpty() && !($isLateNightHours && $yesterdayUnfinalized))
-            <div class="space-y-3">
-                @foreach($unfinalizedDays as $unfinalized)
-                    <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div class="flex items-center space-x-3">
-                            <span class="text-amber-400 text-xl">⚠️</span>
-                            <div>
-                                <h4 class="text-sm font-bold text-amber-200">
-                                    Hari Kerja Belum Difinalisasi: {{ $unfinalized->work_date->translatedFormat('d M Y') }}
+            @if($unfinalizedDays->count() === 1)
+                @php $unfinalized = $unfinalizedDays->first(); @endphp
+                <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-amber-400 text-xl">⚠️</span>
+                        <div>
+                            <h4 class="text-sm font-bold text-amber-200">
+                                Hari Kerja Belum Difinalisasi: {{ $unfinalized->work_date->translatedFormat('d M Y') }}
+                            </h4>
+                            <p class="text-xs text-amber-300/80 mt-0.5">
+                                Ada shift lampau yang belum closing atau masih ada selisih audit. Anda tetap bisa buka hari baru jika opname fisik kas sudah disimpan.
+                            </p>
+                        </div>
+                    </div>
+                    <a href="/closing/{{ $unfinalized->id }}" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition shadow">
+                        Investigasi Sekarang &rarr;
+                    </a>
+                </div>
+            @else
+                <div class="bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/60 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0">
+                            ⚠️
+                        </div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h4 class="text-sm font-black text-amber-200">
+                                    {{ $unfinalizedDays->count() }} Hari Kerja Belum Difinalisasi
                                 </h4>
-                                <p class="text-xs text-amber-300/80 mt-0.5">
-                                    Ada shift lampau yang belum closing atau masih ada selisih audit. Anda tetap bisa buka hari baru jika opname fisik kas sudah disimpan.
-                                </p>
+                                <span class="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-300 rounded-md border border-amber-500/30">
+                                    Shift Lampau
+                                </span>
+                            </div>
+                            <div class="text-xs text-slate-300 mt-1 flex flex-wrap items-center gap-1.5">
+                                <span class="text-slate-400">Pilih shift:</span>
+                                @foreach($unfinalizedDays as $unfinalized)
+                                    <a href="/closing/{{ $unfinalized->id }}" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white border border-slate-700 text-[11px] font-bold transition">
+                                        {{ $unfinalized->work_date->translatedFormat('d M') }} &rarr;
+                                    </a>
+                                @endforeach
                             </div>
                         </div>
-                        <a href="/closing/{{ $unfinalized->id }}" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition shadow">
-                            Investigasi Sekarang &rarr;
-                        </a>
                     </div>
-                @endforeach
-            </div>
+                    <a href="/closing/{{ $unfinalizedDays->last()->id }}" class="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition shadow flex items-center justify-center shrink-0">
+                        Investigasi Sekarang &rarr;
+                    </a>
+                </div>
+            @endif
         @endif
 
         {{-- Banner Panduan: Hari Kerja Belum Dibuka --}}
@@ -102,23 +150,21 @@
             </div>
         @endif
 
-        {{-- FILTER TANGGAL HARIAN & HEADER AKTIVITAS --}}
-        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <span class="text-2xl">📅</span>
-                <div>
-                    <h3 class="text-sm font-bold text-white">Evaluasi & Filter Aktivitas Harian</h3>
-                    <p class="text-xs text-slate-300 font-medium">Pilih tanggal untuk melihat perbandingan pendapatan driver vs keuangan pribadi hari tersebut.</p>
-                </div>
+        {{-- FILTER TANGGAL HARIAN & HEADER AKTIVITAS (COMPACT) --}}
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl px-4 py-2.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div class="flex items-center space-x-2 text-xs text-slate-300">
+                <span>📅</span>
+                <span class="font-bold text-white">Evaluasi & Filter Aktivitas Harian</span>
+                <span class="text-slate-400 hidden sm:inline">&bull; Pilih tanggal evaluasi per shift</span>
             </div>
             <form method="GET" action="/dashboard" class="flex items-center space-x-2 w-full sm:w-auto">
-                <input type="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <button type="submit" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl">Filter</button>
+                <input type="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <button type="submit" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg">Filter</button>
             </form>
         </div>
 
 {{-- ================= DESKTOP SEGMENTED VIEW NAVIGATION ================= --}}
-<div id="desktop-view-nav" class="hidden sm:flex items-center justify-between bg-slate-900/90 border border-slate-700/80 rounded-2xl p-1.5 shadow-xl backdrop-blur">
+<div id="desktop-view-nav" class="hidden md:flex items-center justify-between bg-slate-900/95 border border-slate-700/80 rounded-2xl p-1.5 shadow-xl backdrop-blur sticky top-16 z-30">
     <div class="flex items-center space-x-1.5 w-full">
         <button 
             type="button" 
@@ -2284,7 +2330,7 @@
 
 </div>
 {{-- ================= STICKY MOBILE BOTTOM NAVIGATION BAR ================= --}}
-<nav id="mobile-bottom-nav" class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-xl px-2 py-2 shadow-2xl flex items-center justify-around">
+<nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-xl px-2 py-2 shadow-2xl flex items-center justify-around">
     {{-- Tab 1: Ringkasan --}}
     <button 
         type="button" 
