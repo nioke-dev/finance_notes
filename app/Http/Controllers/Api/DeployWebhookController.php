@@ -54,6 +54,54 @@ class DeployWebhookController extends Controller
             ]);
         }
 
+        if ($request->query('action') === 'finalize_past_shifts') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    $pastDays = \App\Models\WorkDay::where('work_date', '<', now()->toDateString())
+                        ->where('status', '!=', \App\Models\WorkDay::STATUS_FINAL)
+                        ->orderBy('work_date', 'asc')
+                        ->get();
+
+                    $finalized = [];
+                    foreach ($pastDays as $wd) {
+                        $oldStatus = $wd->status;
+                        $wd->update([
+                            'status' => \App\Models\WorkDay::STATUS_FINAL,
+                            'closed_at' => \Illuminate\Support\Carbon::parse($wd->work_date)->setTime(23, 59, 59),
+                            'closing_notes' => 'Finalisasi otomatis shift lampau tanggal ' . $wd->work_date->format('d M Y') . ' atas permintaan driver untuk persiapan on-bid 24 Oktober 2026.',
+                        ]);
+
+                        \App\Models\AuditLog::create([
+                            'user_id' => null,
+                            'action' => 'finalize_work_day_batch',
+                            'entity_type' => 'work_days',
+                            'entity_id' => $wd->id,
+                            'old_values' => ['status' => $oldStatus],
+                            'new_values' => ['status' => \App\Models\WorkDay::STATUS_FINAL],
+                            'reason' => 'Finalisasi batch hari gantung historis ' . $wd->work_date->toDateString() . ' untuk persiapan on-bid.',
+                        ]);
+
+                        $finalized[] = [
+                            'id' => $wd->id,
+                            'date' => $wd->work_date->toDateString(),
+                            'orders' => $wd->total_orders,
+                        ];
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => count($finalized) . ' shift lampau berhasil difinalisasi secara resmi.',
+                        'finalized_days' => $finalized,
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        }
+
         if ($request->query('action') === 'sync_actual_commitments') {
             try {
                 return \Illuminate\Support\Facades\DB::transaction(function () {
