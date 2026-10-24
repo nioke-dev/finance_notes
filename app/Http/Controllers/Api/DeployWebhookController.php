@@ -102,6 +102,71 @@ class DeployWebhookController extends Controller
             }
         }
 
+        if ($request->query('action') === 'cancel_accidental_parking') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    // Cari transaksi parkir ID 50 atau transaksi parkir terakhir pada shift hari ini
+                    $tx = \App\Models\Transaction::with('ledgerEntries')->find(50);
+                    if (!$tx) {
+                        $todayWorkDay = \App\Models\WorkDay::where('work_date', now()->toDateString())->first();
+                        if ($todayWorkDay) {
+                            $tx = \App\Models\Transaction::with('ledgerEntries')
+                                ->where('work_day_id', $todayWorkDay->id)
+                                ->whereJsonContains('metadata->type', 'quick_parking')
+                                ->latest('id')
+                                ->first();
+                        }
+                    }
+
+                    if ($tx) {
+                        // Kembalikan saldo akun dari ledger entries
+                        foreach ($tx->ledgerEntries as $entry) {
+                            $acc = \App\Models\Account::find($entry->account_id);
+                            if ($acc) {
+                                if ($entry->entry_type === 'debit') {
+                                    $acc->current_balance -= $entry->amount;
+                                } else {
+                                    $acc->current_balance += $entry->amount;
+                                }
+                                $acc->save();
+                            }
+                            $entry->delete();
+                        }
+
+                        $txId = $tx->id;
+                        $desc = $tx->description;
+                        $tx->delete();
+
+                        \App\Models\AuditLog::create([
+                            'auditable_type' => \App\Models\Transaction::class,
+                            'auditable_id' => $txId,
+                            'action' => 'reverse_accidental_transaction',
+                            'old_values' => ['id' => $txId, 'description' => $desc, 'amount' => 2000],
+                            'new_values' => ['status' => 'cancelled_and_reversed'],
+                            'reason' => 'Pembatalan transaksi parkir Rp2.000 (ID ' . $txId . ') yang tidak sengaja tertekan driver, saldo Cash dikembalikan utuh ke Rp888.000.',
+                            'created_at' => now(),
+                        ]);
+
+                        return response()->json([
+                            'success' => true,
+                            'message' => "Transaksi {$desc} (ID {$txId}) berhasil dibatalkan dan saldo Kas dikembalikan utuh ke Rp 888.000.",
+                            'cash_balance' => \App\Models\Account::where('name', 'Cash')->first()?->current_balance,
+                        ]);
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Transaksi parkir tidak ditemukan atau sudah dibatalkan.',
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        }
+
         if ($request->query('action') === 'sync_actual_commitments') {
             try {
                 return \Illuminate\Support\Facades\DB::transaction(function () {

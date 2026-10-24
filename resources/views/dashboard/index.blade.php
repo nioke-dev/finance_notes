@@ -526,43 +526,25 @@
         <span class="text-[10px] text-slate-300 font-semibold hidden sm:inline">Akses instan 1-tap saat di atas motor atau nunggu resto</span>
     </div>
 
-    {{-- BARIS 1: 1-TAP PARKIR & 1-TAP TIP --}}
+    {{-- BARIS 1: 1-TAP PARKIR DENGAN KONFIRMASI WADAH & 1-TAP TIP --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
         {{-- 1-Tap Parkir 1k --}}
-        <form method="POST" action="/operational/parking" class="m-0">
-            @csrf
-            <input type="hidden" name="work_day_id" value="{{ $currentWorkDay?->id }}">
-            <input type="hidden" name="amount" value="1000">
-            <input type="hidden" name="source_account_id" value="{{ $driverCashAcc?->id }}">
-            <button type="submit" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
-                <span>🅿️</span>
-                <span>Parkir 1k</span>
-            </button>
-        </form>
+        <button type="button" onclick="triggerQuickParkingConfirm(1000)" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>🅿️</span>
+            <span>Parkir 1k</span>
+        </button>
 
         {{-- 1-Tap Parkir 2k --}}
-        <form method="POST" action="/operational/parking" class="m-0">
-            @csrf
-            <input type="hidden" name="work_day_id" value="{{ $currentWorkDay?->id }}">
-            <input type="hidden" name="amount" value="2000">
-            <input type="hidden" name="source_account_id" value="{{ $driverCashAcc?->id }}">
-            <button type="submit" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
-                <span>🅿️</span>
-                <span>Parkir 2k</span>
-            </button>
-        </form>
+        <button type="button" onclick="triggerQuickParkingConfirm(2000)" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>🅿️</span>
+            <span>Parkir 2k</span>
+        </button>
 
         {{-- 1-Tap Parkir Gratis Resto --}}
-        <form method="POST" action="/operational/parking" class="m-0">
-            @csrf
-            <input type="hidden" name="work_day_id" value="{{ $currentWorkDay?->id }}">
-            <input type="hidden" name="amount" value="0">
-            <input type="hidden" name="is_covered_by_resto" value="1">
-            <button type="submit" class="w-full py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 rounded-xl border border-emerald-500/50 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
-                <span>🆓</span>
-                <span>Parkir Resto (Gratis)</span>
-            </button>
-        </form>
+        <button type="button" onclick="triggerQuickParkingConfirm(0, true)" class="w-full py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 rounded-xl border border-emerald-500/50 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+            <span>🆓</span>
+            <span>Parkir Resto (Gratis)</span>
+        </button>
 
         {{-- 1-Tap Tip Cepat --}}
         <button type="button" onclick="openModal('modal-quick-tip')" class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
@@ -2389,6 +2371,76 @@
 
     </div>
     {{-- ================= MODALS SECTION ================= --}}
+
+    {{-- Modal Konfirmasi Cepat Parkir dengan Pilihan Wadah Pembayaran --}}
+    <div id="modal-quick-parking-confirm" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-amber-500/50 max-w-sm w-full rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0">
+                    🅿️
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white" id="quick-parking-title">Catat Biaya Parkir</h3>
+                    <p class="text-xs text-slate-300">Pilih sumber dana & konfirmasi</p>
+                </div>
+            </div>
+
+            <form method="POST" action="/operational/parking" id="form-quick-parking-confirm">
+                @csrf
+                <input type="hidden" name="work_day_id" value="{{ $currentWorkDay?->id }}">
+                <input type="hidden" name="amount" id="quick-parking-amount" value="2000">
+                <input type="hidden" name="is_covered_by_resto" id="quick-parking-covered" value="0">
+                <input type="hidden" name="vehicle_type" value="motor">
+
+                <div class="bg-slate-950/80 border border-slate-700/80 rounded-xl p-3 text-center space-y-1 mb-3">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Nominal Biaya:</span>
+                    <span class="text-2xl font-black text-amber-400 block" id="quick-parking-amount-display">Rp 2.000</span>
+                </div>
+
+                <div id="quick-parking-wallet-section" class="space-y-2 mb-4">
+                    <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Bayar Menggunakan:</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="source_account_id" value="{{ $driverCashAcc?->id }}" checked class="peer sr-only">
+                            <div class="p-2.5 rounded-xl border border-slate-700 peer-checked:border-amber-400 peer-checked:bg-amber-500/20 text-center transition hover:border-slate-500">
+                                <span class="text-base block">💵</span>
+                                <span class="text-[10px] font-bold text-white block mt-0.5">Cash</span>
+                            </div>
+                        </label>
+
+                        @if(isset($driverShopeePayAcc) && $driverShopeePayAcc)
+                            <label class="cursor-pointer">
+                                <input type="radio" name="source_account_id" value="{{ $driverShopeePayAcc->id }}" class="peer sr-only">
+                                <div class="p-2.5 rounded-xl border border-slate-700 peer-checked:border-orange-400 peer-checked:bg-orange-500/20 text-center transition hover:border-slate-500">
+                                    <span class="text-base block">🟠</span>
+                                    <span class="text-[10px] font-bold text-white block mt-0.5">ShopeePay</span>
+                                </div>
+                            </label>
+                        @endif
+
+                        @if(isset($driverGoPayAcc) && $driverGoPayAcc)
+                            <label class="cursor-pointer">
+                                <input type="radio" name="source_account_id" value="{{ $driverGoPayAcc->id }}" class="peer sr-only">
+                                <div class="p-2.5 rounded-xl border border-slate-700 peer-checked:border-emerald-400 peer-checked:bg-emerald-500/20 text-center transition hover:border-slate-500">
+                                    <span class="text-base block">🟢</span>
+                                    <span class="text-[10px] font-bold text-white block mt-0.5">GoPay</span>
+                                </div>
+                            </label>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-quick-parking-confirm')" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition text-center">
+                        Batal
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs transition shadow text-center">
+                        ✓ Catat Parkir
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     {{-- 1. Modal Buka Shift Narik (1 Klik Cepat) --}}
     <div id="modal-open-day" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
@@ -8565,7 +8617,30 @@
             }
         }
 
-                function switchMainView(viewId) {
+        function triggerQuickParkingConfirm(amount, isCovered = false) {
+            const amtInput = document.getElementById('quick-parking-amount');
+            const coveredInput = document.getElementById('quick-parking-covered');
+            const dispAmt = document.getElementById('quick-parking-amount-display');
+            const walletSection = document.getElementById('quick-parking-wallet-section');
+            const title = document.getElementById('quick-parking-title');
+
+            if (amtInput) amtInput.value = amount;
+            if (coveredInput) coveredInput.value = isCovered ? '1' : '0';
+
+            if (isCovered) {
+                if (dispAmt) dispAmt.innerText = 'Gratis (Rp 0)';
+                if (title) title.innerText = 'Parkir Ditanggung Resto';
+                if (walletSection) walletSection.classList.add('hidden');
+            } else {
+                if (dispAmt) dispAmt.innerText = 'Rp ' + amount.toLocaleString('id-ID');
+                if (title) title.innerText = 'Catat Parkir Motor';
+                if (walletSection) walletSection.classList.remove('hidden');
+            }
+
+            openModal('modal-quick-parking-confirm');
+        }
+
+        function switchMainView(viewId) {
             document.querySelectorAll('.main-view').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.view-nav-btn').forEach(el => {
                 el.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/50', 'active-view');
