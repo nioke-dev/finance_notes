@@ -59,7 +59,7 @@ class DeployWebhookController extends Controller
                     $amount = (int) $request->input('amount', $request->query('amount', 11000));
                     $desc = $request->input('description', $request->query('description', 'Makan di Cakeot'));
                     $timeStr = $request->input('transaction_time', $request->query('transaction_time', '2026-10-24 13:15:00'));
-                    $txTime = \Carbon\Carbon::parse($timeStr);
+                    $txTime = \Illuminate\Support\Carbon::parse($timeStr);
 
                     $ledgerService = app(\App\Services\LedgerService::class);
                     $tx = $ledgerService->recordTransaction(
