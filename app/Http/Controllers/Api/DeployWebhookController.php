@@ -35,6 +35,26 @@ class DeployWebhookController extends Controller
             ]);
         }
 
+        if ($request->query('action') === 'inspect_cash_breakdown') {
+            $workDay = \App\Models\WorkDay::where('work_date', '2026-10-24')->first();
+            $denomination = $workDay ? \App\Models\CashDenomination::where('work_day_id', $workDay->id)->first() : null;
+            $tx68 = \App\Models\Transaction::with('entries.account')->find(68);
+            $tx67 = \App\Models\Transaction::with('entries.account')->find(67);
+            $tx64 = \App\Models\Transaction::with('entries.account')->find(64);
+            $recentTxs = \App\Models\Transaction::with('entries.account')->where('work_day_id', $workDay?->id)->latest('id')->take(12)->get();
+
+            return response()->json([
+                'success' => true,
+                'work_day' => $workDay,
+                'denomination' => $denomination,
+                'tx68' => $tx68,
+                'tx67' => $tx67,
+                'tx64' => $tx64,
+                'recent_txs' => $recentTxs,
+                'cash_balance' => \App\Models\Account::where('name', 'Cash')->value('current_balance'),
+            ]);
+        }
+
         if ($request->query('action') === 'record_expense') {
             try {
                 return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
