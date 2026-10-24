@@ -35,6 +35,63 @@ class DeployWebhookController extends Controller
             ]);
         }
 
+        if ($request->query('action') === 'record_expense') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                    $accName = $request->input('account', $request->query('account', 'BCA'));
+                    $acc = \App\Models\Account::where('name', $accName)->firstOrFail();
+                    $workDay = \App\Models\WorkDay::where('work_date', '2026-10-24')->first() 
+                        ?? \App\Models\WorkDay::firstOrCreate(
+                            ['work_date' => '2026-10-24'],
+                            ['day_type' => \App\Models\WorkDay::TYPE_ON_BID, 'status' => \App\Models\WorkDay::STATUS_NEEDS_RECONCILIATION, 'opened_at' => now()]
+                        );
+
+                    $expenseAccount = \App\Models\Account::firstOrCreate(
+                        ['name' => 'Beban Kebutuhan Sehari-hari'],
+                        [
+                            'type' => \App\Enums\AccountType::EXPENSE,
+                            'current_balance' => 0,
+                            'initial_balance' => 0,
+                            'is_active' => true,
+                        ]
+                    );
+
+                    $amount = (int) $request->input('amount', $request->query('amount', 11000));
+                    $desc = $request->input('description', $request->query('description', 'Makan di Cakeot'));
+                    $timeStr = $request->input('transaction_time', $request->query('transaction_time', '2026-10-24 13:15:00'));
+                    $txTime = \Carbon\Carbon::parse($timeStr);
+
+                    $ledgerService = app(\App\Services\LedgerService::class);
+                    $tx = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'expense',
+                        description: $desc,
+                        transactionTime: $txTime,
+                        entries: [
+                            ['account_id' => $acc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => $amount],
+                            ['account_id' => $expenseAccount->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => $amount],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['type' => 'personal_lifestyle_expense', 'outlet' => 'Cakeot', 'source' => $accName]
+                    );
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => "Pengeluaran {$desc} Rp " . number_format($amount, 0, ',', '.') . " via {$accName} berhasil dicatat.",
+                        'transaction' => [
+                            'id' => $tx->id,
+                            'description' => $tx->description,
+                            'amount' => $amount,
+                            'time' => $tx->transaction_time->toIso8601String(),
+                        ],
+                        'account_balance_after' => $acc->fresh()->current_balance,
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'setup_shifts') {
             $created = [];
             foreach (['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'] as $d) {

@@ -136,6 +136,7 @@ class DashboardModularUxTest extends TestCase
         $response->assertSee('Parkir 2k');
         $response->assertSee('Parkir Resto (Gratis)');
         $response->assertSee('+ Tip Pelanggan');
+        $response->assertSee('Makan & Belanja', false);
         $response->assertSee('Talangan COD');
         $response->assertSee('Isi Bensin');
         $response->assertSee('Memo Helm');
@@ -191,5 +192,31 @@ class DashboardModularUxTest extends TestCase
 
         // 4. Floating back to top above bottom bar
         $response->assertSee('bottom-24', false);
+    }
+
+    public function test_driver_can_record_personal_expense_such_as_lunch(): void
+    {
+        $workDay = WorkDay::create([
+            'work_date' => now()->toDateString(),
+            'status' => WorkDay::STATUS_NEEDS_RECONCILIATION,
+        ]);
+
+        $bca = Account::where('name', 'BCA')->firstOrFail();
+        $initialBca = $bca->current_balance;
+
+        $response = $this->post('/operational/personal-expense', [
+            'work_day_id' => $workDay->id,
+            'source_account_id' => $bca->id,
+            'amount' => 11000,
+            'description' => 'Makan di Cakeot',
+            'transaction_time' => now()->format('Y-m-d H:i:s'),
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertEquals($initialBca - 11000, $bca->fresh()->current_balance);
+
+        $expenseAcc = Account::where('name', 'Beban Kebutuhan Sehari-hari')->first();
+        $this->assertNotNull($expenseAcc);
+        $this->assertEquals(11000, $expenseAcc->current_balance);
     }
 }

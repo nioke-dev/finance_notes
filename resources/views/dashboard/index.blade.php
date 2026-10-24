@@ -327,11 +327,11 @@
         </div>
     </button>
 
-    <button type="button" onclick="openModal('modal-reconcile-digital')" class="p-4 bg-slate-800/80 hover:bg-slate-700/80 border border-purple-500/40 rounded-2xl text-left transition group shadow-lg flex flex-col justify-between">
-        <span class="text-3xl block mb-2">⚡</span>
+    <button type="button" onclick="openModal('modal-expense')" class="p-4 bg-gradient-to-br from-slate-900 via-rose-950/40 to-slate-900 hover:from-rose-900/50 hover:to-slate-800 border border-rose-500/50 hover:border-rose-400 rounded-2xl text-left transition group shadow-lg flex flex-col justify-between active:scale-95 touch-manipulation">
+        <span class="text-3xl block mb-2">🍜</span>
         <div>
-            <span class="text-xs font-black text-white block group-hover:text-purple-400">Update Saldo Narik</span>
-            <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Audit saldo di jalan tanpa closing</span>
+            <span class="text-xs font-black text-rose-300 block group-hover:text-rose-200">Makan & Belanja</span>
+            <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Catat sarapan, makan siang, jajan</span>
         </div>
     </button>
 </div>
@@ -553,12 +553,12 @@
         </button>
     </div>
 
-    {{-- BARIS 2: COD, BENSIN, MEMO SUARA HELM, CEK SALDO --}}
+    {{-- BARIS 2: MAKAN, BENSIN, COD, MEMO HELM --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {{-- COD Express --}}
-        <button type="button" onclick="openAcceptCodModal()" class="w-full min-h-[44px] py-2.5 px-3 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
-            <span>📦</span>
-            <span>Talangan COD</span>
+        {{-- Makan & Belanja --}}
+        <button type="button" onclick="openModal('modal-expense')" class="w-full min-h-[44px] py-2.5 px-3 bg-gradient-to-r from-rose-950/80 to-slate-900 hover:from-rose-900/90 hover:to-slate-800 border border-rose-500/50 hover:border-rose-400 text-rose-200 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
+            <span>🍜</span>
+            <span>Makan & Belanja</span>
         </button>
 
         {{-- Beli Bensin Express --}}
@@ -567,16 +567,16 @@
             <span>Isi Bensin</span>
         </button>
 
-        {{-- Memo Suara Helm --}}
-        <button type="button" onclick="openVoiceRecorderModal()" class="w-full min-h-[44px] py-2.5 px-3 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 text-rose-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
-            <span>🎙️</span>
-            <span>Memo Helm</span>
+        {{-- COD Express --}}
+        <button type="button" onclick="openAcceptCodModal()" class="w-full min-h-[44px] py-2.5 px-3 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
+            <span>📦</span>
+            <span>Talangan COD</span>
         </button>
 
-        {{-- Update Saldo Narik --}}
-        <button type="button" onclick="openModal('modal-reconcile-digital')" class="w-full min-h-[44px] py-2.5 px-3 bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
-            <span>🔄</span>
-            <span>Update Saldo</span>
+        {{-- Memo Suara Helm --}}
+        <button type="button" onclick="openVoiceRecorderModal()" class="w-full min-h-[44px] py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
+            <span>🎙️</span>
+            <span>Memo Helm</span>
         </button>
     </div>
 </div>
@@ -1998,17 +1998,20 @@
             @endif
         </div>
 
-            <div id="tab-daily" class="tab-content py-4 space-y-4 hidden">
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+            <div id="tab-daily" class="py-2 space-y-4">
+                <div class="bg-slate-800/80 border border-indigo-500/40 rounded-2xl p-5 shadow-xl">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi Layaknya Manusia</h4>
-                        <span class="text-[11px] text-slate-300 font-medium">Belanja, sarapan, belanja Shopee SPayLater, pinjaman, transfer</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base">🍜</span>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Kebutuhan Hidup & Finansial Pribadi</h4>
+                        </div>
+                        <span class="text-[11px] text-slate-300 font-medium">Makan, belanja PayLater, pinjaman, transfer</span>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3.5">
-                        <button type="button" onclick="openModal('modal-expense')" class="p-3.5 bg-slate-900/80 hover:bg-slate-700/70 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px]">
+                        <button type="button" onclick="openModal('modal-expense')" class="p-3.5 bg-slate-900/90 hover:bg-slate-700/80 border border-rose-500/40 hover:border-rose-400 rounded-xl text-left transition group flex flex-col justify-between min-h-[96px] shadow-lg active:scale-95 touch-manipulation">
                             <span class="text-2xl block mb-1">🍜</span>
                             <div>
-                                <span class="text-xs font-bold text-white block group-hover:text-indigo-400">Makan & Belanja</span>
+                                <span class="text-xs font-bold text-white block group-hover:text-rose-400">Makan & Belanja</span>
                                 <span class="text-[10px] text-slate-300 font-medium leading-tight block mt-0.5">Sarapan, jajan, rokok</span>
                             </div>
                         </button>
