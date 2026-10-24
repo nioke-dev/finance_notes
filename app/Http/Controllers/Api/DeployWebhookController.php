@@ -72,13 +72,13 @@ class DeployWebhookController extends Controller
                         ]);
 
                         \App\Models\AuditLog::create([
-                            'user_id' => null,
+                            'auditable_type' => \App\Models\WorkDay::class,
+                            'auditable_id' => $wd->id,
                             'action' => 'finalize_work_day_batch',
-                            'entity_type' => 'work_days',
-                            'entity_id' => $wd->id,
                             'old_values' => ['status' => $oldStatus],
                             'new_values' => ['status' => \App\Models\WorkDay::STATUS_FINAL],
                             'reason' => 'Finalisasi batch hari gantung historis ' . $wd->work_date->toDateString() . ' untuk persiapan on-bid.',
+                            'created_at' => now(),
                         ]);
 
                         $finalized[] = [
