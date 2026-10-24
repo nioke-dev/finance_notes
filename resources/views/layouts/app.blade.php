@@ -2,7 +2,7 @@
 <html lang="id" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>{{ $title ?? 'Keuangan Pribadi & ShopeeFood Driver' }}</title>
     <meta name="theme-color" content="#0F172A">
     <meta name="mobile-web-app-capable" content="yes">
@@ -104,16 +104,17 @@
         {{ $slot }}
     </main>
 
-    {{-- Mobile Bottom Navigation Bar (Khusus Smartphone & Layar Sentuh) --}}
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 py-2 flex items-center justify-around shadow-2xl safe-area-pb">
-        <a href="/dashboard" class="flex flex-col items-center justify-center py-1 px-2 transition min-w-[56px] {{ request()->is('dashboard') ? 'text-emerald-400 font-bold' : 'text-slate-300 hover:text-emerald-400' }}">
+    {{-- Mobile Bottom Navigation Bar (Khusus Smartphone & Layar Sentuh di Luar Dashboard) --}}
+    @if(!request()->is('dashboard'))
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom,0.5rem))] flex items-center justify-around shadow-2xl safe-area-pb select-none">
+        <a href="/dashboard" class="flex flex-col items-center justify-center py-1.5 px-2 min-h-[48px] transition min-w-[56px] active:scale-95 touch-manipulation {{ request()->is('dashboard') ? 'text-emerald-400 font-bold' : 'text-slate-300 hover:text-emerald-400' }}">
             <svg class="w-5 h-5 mb-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
             <span class="text-[10px] tracking-tight">Dashboard</span>
         </a>
 
-        <a href="/wallets" class="flex flex-col items-center justify-center py-1 px-1.5 transition min-w-[52px] {{ request()->is('wallets*') ? 'text-emerald-400 font-bold' : 'text-slate-300 hover:text-emerald-400' }}">
+        <a href="/wallets" class="flex flex-col items-center justify-center py-1.5 px-1.5 min-h-[48px] transition min-w-[52px] active:scale-95 touch-manipulation {{ request()->is('wallets*') ? 'text-emerald-400 font-bold' : 'text-slate-300 hover:text-emerald-400' }}">
             <svg class="w-5 h-5 mb-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
             </svg>
@@ -121,7 +122,7 @@
         </a>
 
         {{-- Center Voice Recorder Action Pill --}}
-        <button type="button" onclick="window.triggerVoiceRecorder && window.triggerVoiceRecorder()" class="flex flex-col items-center justify-center -mt-5 bg-gradient-to-tr from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white rounded-full w-12 h-12 shadow-lg shadow-rose-950/70 border-2 border-slate-900 transition transform active:scale-95 shrink-0" title="Rekam Suara Cepat (Intercom Helm)">
+        <button type="button" onclick="window.triggerVoiceRecorder && window.triggerVoiceRecorder()" class="flex flex-col items-center justify-center -mt-5 bg-gradient-to-tr from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white rounded-full w-12 h-12 shadow-lg shadow-rose-950/70 border-2 border-slate-900 transition transform active:scale-90 shrink-0 touch-manipulation" title="Rekam Suara Cepat (Intercom Helm)">
             <svg class="w-6 h-6 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
@@ -129,27 +130,28 @@
             <span class="sr-only">Voice Memo Helm</span>
         </button>
 
-        <a href="/debts" class="flex flex-col items-center justify-center py-1 px-2 transition min-w-[56px] {{ request()->is('debts*') ? 'text-cyan-400 font-bold' : 'text-slate-300 hover:text-cyan-400' }}">
+        <a href="/debts" class="flex flex-col items-center justify-center py-1.5 px-2 min-h-[48px] transition min-w-[56px] active:scale-95 touch-manipulation {{ request()->is('debts*') ? 'text-cyan-400 font-bold' : 'text-slate-300 hover:text-cyan-400' }}">
             <svg class="w-5 h-5 mb-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <span class="text-[10px] tracking-tight">Utang</span>
         </a>
 
-        <a href="/analytics/driver" class="flex flex-col items-center justify-center py-1 px-2 transition min-w-[56px] {{ request()->is('analytics*') ? 'text-indigo-400 font-bold' : 'text-slate-300 hover:text-indigo-400' }}">
+        <a href="/analytics/driver" class="flex flex-col items-center justify-center py-1.5 px-2 min-h-[48px] transition min-w-[56px] active:scale-95 touch-manipulation {{ request()->is('analytics*') ? 'text-indigo-400 font-bold' : 'text-slate-300 hover:text-indigo-400' }}">
             <svg class="w-5 h-5 mb-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
             <span class="text-[10px] tracking-tight">Analitik</span>
         </a>
     </nav>
+    @endif
 
     <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-400 hidden md:block">
         Keuangan Pribadi & ShopeeFood Driver Malang &bull; Presisi Finansial Rp1
     </footer>
 
     {{-- PWA Install Banner (Otomatis muncul jika browser mendukung install Web App) --}}
-    <div id="pwa-install-banner" class="hidden fixed bottom-20 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 bg-slate-900/95 border border-emerald-500/50 rounded-2xl p-3 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3 max-w-sm animate-fade-in">
+    <div id="pwa-install-banner" class="hidden fixed bottom-24 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 bg-slate-900/95 border border-emerald-500/50 rounded-2xl p-3 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3 max-w-sm animate-fade-in">
         <div class="flex items-center space-x-3">
             <img src="/icons/icon-192x192.png" alt="Driver Finance" class="w-10 h-10 rounded-xl border border-emerald-500/40 shrink-0 shadow">
             <div>
@@ -231,7 +233,7 @@
     @endif
 
     {{-- Floating Back to Top Button --}}
-    <button id="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hidden fixed bottom-20 right-4 md:bottom-8 md:right-8 z-30 p-2.5 rounded-full bg-slate-800/95 text-emerald-400 border border-slate-700/80 shadow-2xl backdrop-blur transition hover:bg-slate-700 active:scale-90" title="Kembali ke Atas">
+    <button id="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hidden fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40 p-2.5 rounded-full bg-slate-800/95 text-emerald-400 border border-slate-700/80 shadow-2xl backdrop-blur transition hover:bg-slate-700 active:scale-90 touch-manipulation" title="Kembali ke Atas">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
         </svg>

@@ -23,7 +23,7 @@
         }
     </style>
 
-    <div class="space-y-5 pb-28 md:pb-8">
+    <div class="space-y-5 pb-36 md:pb-8">
 
         {{-- Flash Messages (Alert Sukses / Error) --}}
         @if(session('success'))
@@ -529,25 +529,25 @@
     {{-- BARIS 1: 1-TAP PARKIR DENGAN KONFIRMASI WADAH & 1-TAP TIP --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
         {{-- 1-Tap Parkir 1k --}}
-        <button type="button" onclick="triggerQuickParkingConfirm(1000)" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="triggerQuickParkingConfirm(1000)" class="w-full min-h-[44px] py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>🅿️</span>
             <span>Parkir 1k</span>
         </button>
 
         {{-- 1-Tap Parkir 2k --}}
-        <button type="button" onclick="triggerQuickParkingConfirm(2000)" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="triggerQuickParkingConfirm(2000)" class="w-full min-h-[44px] py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 hover:border-amber-400 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>🅿️</span>
             <span>Parkir 2k</span>
         </button>
 
         {{-- 1-Tap Parkir Gratis Resto --}}
-        <button type="button" onclick="triggerQuickParkingConfirm(0, true)" class="w-full py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 rounded-xl border border-emerald-500/50 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="triggerQuickParkingConfirm(0, true)" class="w-full min-h-[44px] py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 rounded-xl border border-emerald-500/50 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>🆓</span>
             <span>Parkir Resto (Gratis)</span>
         </button>
 
         {{-- 1-Tap Tip Cepat --}}
-        <button type="button" onclick="openModal('modal-quick-tip')" class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="openModal('modal-quick-tip')" class="w-full min-h-[44px] py-2.5 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>⚡</span>
             <span>+ Tip Pelanggan</span>
         </button>
@@ -556,25 +556,25 @@
     {{-- BARIS 2: COD, BENSIN, MEMO SUARA HELM, CEK SALDO --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {{-- COD Express --}}
-        <button type="button" onclick="openAcceptCodModal()" class="w-full py-2 px-3 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="openAcceptCodModal()" class="w-full min-h-[44px] py-2.5 px-3 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>📦</span>
             <span>Talangan COD</span>
         </button>
 
         {{-- Beli Bensin Express --}}
-        <button type="button" onclick="openModal('modal-fuel')" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="openModal('modal-fuel')" class="w-full min-h-[44px] py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>⛽</span>
             <span>Isi Bensin</span>
         </button>
 
         {{-- Memo Suara Helm --}}
-        <button type="button" onclick="openVoiceRecorderModal()" class="w-full py-2 px-3 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 text-rose-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="openVoiceRecorderModal()" class="w-full min-h-[44px] py-2.5 px-3 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 text-rose-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>🎙️</span>
             <span>Memo Helm</span>
         </button>
 
         {{-- Update Saldo Narik --}}
-        <button type="button" onclick="openModal('modal-reconcile-digital')" class="w-full py-2 px-3 bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow">
+        <button type="button" onclick="openModal('modal-reconcile-digital')" class="w-full min-h-[44px] py-2.5 px-3 bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-300 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 touch-manipulation select-none shadow">
             <span>🔄</span>
             <span>Update Saldo</span>
         </button>
@@ -2312,16 +2312,16 @@
 
 </div>
 {{-- ================= STICKY MOBILE BOTTOM NAVIGATION BAR ================= --}}
-<nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-xl px-2 py-2 shadow-2xl flex items-center justify-around">
+<nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-xl px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom,0.5rem))] shadow-2xl flex items-center justify-around select-none">
     {{-- Tab 1: Ringkasan --}}
     <button 
         type="button" 
         onclick="switchMainView('view-home')" 
         data-mobile-target-view="view-home" 
-        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-emerald-400 font-black transition"
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1.5 min-h-[48px] text-emerald-400 font-black transition active:scale-95 touch-manipulation"
     >
         <span class="text-xl">🏠</span>
-        <span class="text-[10px] tracking-tight mt-0.5">Ringkasan</span>
+        <span class="text-[11px] tracking-tight mt-0.5 font-bold">Ringkasan</span>
         <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5"></span>
     </button>
 
@@ -2330,17 +2330,17 @@
         type="button" 
         onclick="switchMainView('view-ops')" 
         data-mobile-target-view="view-ops" 
-        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 font-medium transition relative"
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1.5 min-h-[48px] text-slate-400 font-medium transition active:scale-95 touch-manipulation relative"
     >
         <div class="relative">
             <span class="text-xl">🛵</span>
             @if(isset($activeCodOrders) && $activeCodOrders->isNotEmpty())
-                <span class="absolute -top-1 -right-2 w-3.5 h-3.5 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full flex items-center justify-center animate-pulse">
+                <span class="absolute -top-1 -right-2.5 w-4 h-4 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full flex items-center justify-center animate-pulse">
                     {{ $activeCodOrders->count() }}
                 </span>
             @endif
         </div>
-        <span class="text-[10px] tracking-tight mt-0.5">Jalanan</span>
+        <span class="text-[11px] tracking-tight mt-0.5 font-bold">Jalanan</span>
         <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5 hidden"></span>
     </button>
 
@@ -2349,10 +2349,10 @@
         type="button" 
         onclick="switchMainView('view-wallets')" 
         data-mobile-target-view="view-wallets" 
-        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 font-medium transition"
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1.5 min-h-[48px] text-slate-400 font-medium transition active:scale-95 touch-manipulation"
     >
         <span class="text-xl">💳</span>
-        <span class="text-[10px] tracking-tight mt-0.5">Dompet</span>
+        <span class="text-[11px] tracking-tight mt-0.5 font-bold">Dompet</span>
         <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5 hidden"></span>
     </button>
 
@@ -2361,10 +2361,10 @@
         type="button" 
         onclick="switchMainView('view-analytics')" 
         data-mobile-target-view="view-analytics" 
-        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 font-medium transition"
+        class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1.5 min-h-[48px] text-slate-400 font-medium transition active:scale-95 touch-manipulation"
     >
         <span class="text-xl">📊</span>
-        <span class="text-[10px] tracking-tight mt-0.5">Analitik</span>
+        <span class="text-[11px] tracking-tight mt-0.5 font-bold">Analitik</span>
         <span class="mobile-active-dot w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5 hidden"></span>
     </button>
 </nav>
@@ -2373,8 +2373,8 @@
     {{-- ================= MODALS SECTION ================= --}}
 
     {{-- Modal Konfirmasi Cepat Parkir dengan Pilihan Wadah Pembayaran --}}
-    <div id="modal-quick-parking-confirm" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-amber-500/50 max-w-sm w-full rounded-2xl p-5 shadow-2xl space-y-4">
+    <div id="modal-quick-parking-confirm" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-900 border border-amber-500/50 max-w-sm w-full rounded-2xl p-5 shadow-2xl space-y-4 my-auto max-h-[90vh] overflow-y-auto">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0">
                     🅿️

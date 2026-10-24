@@ -171,4 +171,25 @@ class DashboardModularUxTest extends TestCase
 
         $responseGratis->assertSessionHas('success');
     }
+
+    public function test_dashboard_enforces_driver_mobile_ready_ergonomics(): void
+    {
+        $response = $this->get('/dashboard');
+
+        $response->assertStatus(200);
+
+        // 1. Viewport fit cover & mobile scaling lock
+        $response->assertSee('name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"', false);
+
+        // 2. Exactly one bottom bar on dashboard (no overlapping navbars)
+        $response->assertSee('id="mobile-bottom-nav"', false);
+        $response->assertDontSee('safe-area-pb select-none', false);
+
+        // 3. Touch target sizing & zero-lag touch manipulation on quick dock
+        $response->assertSee('min-h-[44px]', false);
+        $response->assertSee('touch-manipulation', false);
+
+        // 4. Floating back to top above bottom bar
+        $response->assertSee('bottom-24', false);
+    }
 }
