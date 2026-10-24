@@ -153,12 +153,13 @@ class DeployWebhookController extends Controller
         if ($request->query('action') === 'open_shift') {
             try {
                 $targetDate = $request->query('date', now()->toDateString());
+                $time = $request->query('time', now()->toTimeString());
                 $workDay = \App\Models\WorkDay::firstOrCreate(
                     ['work_date' => $targetDate],
                     [
                         'day_type' => \App\Models\WorkDay::TYPE_ON_BID,
                         'status' => \App\Models\WorkDay::STATUS_NEEDS_RECONCILIATION,
-                        'opened_at' => \Illuminate\Support\Carbon::parse("{$targetDate} 00:01:00"),
+                        'opened_at' => \Illuminate\Support\Carbon::parse("{$targetDate} {$time}"),
                     ]
                 );
 
