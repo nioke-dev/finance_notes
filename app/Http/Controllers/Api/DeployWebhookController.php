@@ -42,6 +42,87 @@ class DeployWebhookController extends Controller
             ]);
         }
 
+        if ($request->query('action') === 'record_mie_and_vprime') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    $workDay = \App\Models\WorkDay::where('work_date', '2026-10-25')->firstOrFail();
+                    $cashAcc = \App\Models\Account::where('name', 'Cash')->firstOrFail();
+                    $expenseAcc = \App\Models\Account::where('name', 'Beban Kebutuhan Sehari-hari')->firstOrFail();
+                    $incomeAcc = \App\Models\Account::where('name', 'Pendapatan Lain-lain / Pribadi')->firstOrFail();
+                    $ledgerService = app(\App\Services\LedgerService::class);
+
+                    // 1. Catat Beli Mie Sedaap 2 pcs (Rp 7.000)
+                    $txMie = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'expense',
+                        description: 'Beli Mie Sedaap 2 pcs (Rp 7.000)',
+                        transactionTime: \Illuminate\Support\Carbon::parse('2026-10-25 22:50:00'),
+                        entries: [
+                            ['account_id' => $expenseAcc->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 7000],
+                            ['account_id' => $cashAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 7000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: [
+                            'type' => 'personal_lifestyle_expense',
+                            'item' => 'Mie Sedaap 2 pcs',
+                            'cash_breakdown' => [
+                                'paid' => ['bill_5000' => 1, 'bill_2000' => 1],
+                                'change' => [],
+                            ],
+                        ]
+                    );
+
+                    // 2. Catat Penjualan Vprime (Rp 200.000)
+                    $txVprime = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'income',
+                        description: 'Penjualan Barang Pribadi: Vprime (Rp 200.000)',
+                        transactionTime: \Illuminate\Support\Carbon::parse('2026-10-25 13:30:00'),
+                        entries: [
+                            ['account_id' => $cashAcc->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 200000],
+                            ['account_id' => $incomeAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 200000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: [
+                            'type' => 'personal_asset_sale',
+                            'item' => 'Vprime',
+                            'cash_breakdown' => [
+                                'received' => ['bill_50000' => 4],
+                            ],
+                        ]
+                    );
+
+                    \App\Models\AuditLog::create([
+                        'auditable_type' => \App\Models\Transaction::class,
+                        'auditable_id' => $txMie->id,
+                        'action' => 'record_expense',
+                        'new_values' => ['description' => $txMie->description, 'amount' => 7000, 'paid' => '1x5k + 1x2k'],
+                        'reason' => 'Pencatatan pengeluaran beli Mie Sedaap 2 pcs Rp 7.000 tunai atas permintaan driver.',
+                        'created_at' => now(),
+                    ]);
+
+                    \App\Models\AuditLog::create([
+                        'auditable_type' => \App\Models\Transaction::class,
+                        'auditable_id' => $txVprime->id,
+                        'action' => 'record_income',
+                        'new_values' => ['description' => $txVprime->description, 'amount' => 200000, 'received' => '4x50k'],
+                        'reason' => 'Pencatatan pemasukan penjualan barang pribadi Vprime Rp 200.000 tunai atas permintaan driver.',
+                        'created_at' => now(),
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Transaksi Beli Mie Sedaap (Rp 7.000) dan Penjualan Vprime (Rp 200.000) berhasil dicatat.',
+                        'tx_mie_id' => $txMie->id,
+                        'tx_vprime_id' => $txVprime->id,
+                        'cash_balance' => $cashAcc->fresh()->current_balance,
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'inspect_closing') {
             return response()->json([
                 'success' => true,
