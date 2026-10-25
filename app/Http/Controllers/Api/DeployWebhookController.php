@@ -24,6 +24,18 @@ class DeployWebhookController extends Controller
             ], 403);
         }
 
+        if ($request->query('action') === 'inspect_work_day_12_txs') {
+            $txs = \App\Models\Transaction::with('entries.account')
+                ->where('work_day_id', 12)
+                ->orderBy('id', 'asc')
+                ->get();
+            return response()->json([
+                'success' => true,
+                'count' => $txs->count(),
+                'transactions' => $txs,
+            ]);
+        }
+
         if ($request->query('action') === 'find_duplicate_cod') {
             $codOrders = \App\Models\ActiveCodOrder::with(['workDay', 'initialTransaction.entries.account', 'completionTransaction.entries.account'])
                 ->latest('id')
