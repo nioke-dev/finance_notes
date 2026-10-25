@@ -42,6 +42,56 @@ class DeployWebhookController extends Controller
             ]);
         }
 
+        if ($request->query('action') === 'inspect_debts_and_record_daikatsu') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    $workDay = \App\Models\WorkDay::where('work_date', '2026-10-25')->firstOrFail();
+                    $gopayAcc = \App\Models\Account::where('name', 'GoPay')->firstOrFail();
+                    $expenseAcc = \App\Models\Account::where('name', 'Beban Kebutuhan Sehari-hari')->firstOrFail();
+                    $ledgerService = app(\App\Services\LedgerService::class);
+
+                    // Catat Beli Katsu Mayo di Daikatsu (Rp 15.000 via GoPay)
+                    $txDaikatsu = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'expense',
+                        description: 'Makan di Daikatsu: Katsu Mayo (Rp 15.000)',
+                        transactionTime: \Illuminate\Support\Carbon::parse('2026-10-25 18:30:00'),
+                        entries: [
+                            ['account_id' => $expenseAcc->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 15000],
+                            ['account_id' => $gopayAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 15000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: [
+                            'type' => 'personal_lifestyle_expense',
+                            'item' => 'Katsu Mayo Daikatsu',
+                            'source' => 'GoPay',
+                        ]
+                    );
+
+                    \App\Models\AuditLog::create([
+                        'auditable_type' => \App\Models\Transaction::class,
+                        'auditable_id' => $txDaikatsu->id,
+                        'action' => 'record_expense',
+                        'new_values' => ['description' => $txDaikatsu->description, 'amount' => 15000, 'source' => 'GoPay'],
+                        'reason' => 'Pencatatan pengeluaran makan di Daikatsu Rp 15.000 via GoPay atas permintaan driver.',
+                        'created_at' => now(),
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'tx_daikatsu' => $txDaikatsu,
+                        'gopay_balance' => $gopayAcc->fresh()->current_balance,
+                        'debts' => \App\Models\Debt::with('installments')->get(),
+                        'unpaid_installments' => \App\Models\DebtInstallment::with('debt')->where('status', 'unpaid')->orderBy('due_date')->get(),
+                        'debt_accounts' => \App\Models\Account::where('type', \App\Enums\AccountType::DEBT)->get(),
+                        'goals' => \App\Models\FinancialGoal::all(),
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'record_mie_and_vprime') {
             try {
                 return \Illuminate\Support\Facades\DB::transaction(function () {
