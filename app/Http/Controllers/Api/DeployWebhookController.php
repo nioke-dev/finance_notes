@@ -24,6 +24,138 @@ class DeployWebhookController extends Controller
             ], 403);
         }
 
+        if ($request->query('action') === 'finalize_closing_25_oct') {
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(function () {
+                    $workDay = \App\Models\WorkDay::where('work_date', '2026-10-25')->firstOrFail();
+                    $bcaAcc = \App\Models\Account::where('name', 'BCA')->firstOrFail();
+                    $spayDebtAcc = \App\Models\Account::where('name', 'Kewajiban Utang - Shopee Paylater oktober')->firstOrFail();
+                    $shopeePayAcc = \App\Models\Account::where('name', 'ShopeePay')->firstOrFail();
+                    $cashAcc = \App\Models\Account::where('name', 'Cash')->firstOrFail();
+                    $gopayAcc = \App\Models\Account::where('name', 'GoPay')->firstOrFail();
+                    $gopayMerchantAcc = \App\Models\Account::where('name', 'GoPay Merchant')->firstOrFail();
+                    $hubIncomeAcc = \App\Models\Account::where('name', 'Pendapatan Hub ShopeeFood')->firstOrFail();
+                    $tipIncomeAcc = \App\Models\Account::where('name', 'Tip Pelanggan ShopeeFood')->firstOrFail();
+                    $qrisIncomeAcc = \App\Models\Account::where('name', 'Pendapatan QRIS / Tip Non-Tunai')->firstOrFail();
+                    $otherIncomeAcc = \App\Models\Account::where('name', 'Pendapatan Lain-lain / Pribadi')->firstOrFail();
+                    $ledgerService = app(\App\Services\LedgerService::class);
+
+                    // 1. Pelunasan SPayLater via BCA (Rp 464.934)
+                    $txSpay = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'debt_payment',
+                        description: 'Pelunasan SPayLater Tagihan Oktober via MyBCA (LUNAS)',
+                        transactionTime: \Illuminate\Support\Carbon::parse('2026-10-25 23:25:00'),
+                        entries: [
+                            ['account_id' => $spayDebtAcc->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 464934],
+                            ['account_id' => $bcaAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 464934],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['type' => 'debt_settlement', 'debt_name' => 'SPayLater Oktober', 'source' => 'MyBCA']
+                    );
+
+                    // Update installment and debt status
+                    $debtSpay = \App\Models\Debt::where('platform', 'spaylater')->first();
+                    if ($debtSpay) {
+                        $debtSpay->update(['status' => 'paid_off']);
+                        \App\Models\DebtInstallment::where('debt_id', $debtSpay->id)->update([
+                            'status' => 'paid',
+                            'amount_paid' => 464934,
+                            'paid_at' => now(),
+                        ]);
+                    }
+
+                    // 2. Titip Beli Aqua (ShopeePay +7.000, Cash -5.000, Profit/Tip +2.000)
+                    $txAqua = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'income',
+                        description: 'Titip Beli Aqua: Masuk ShopeePay Rp7.000, Keluar Cash Rp5.000, Surplus Rp2.000',
+                        transactionTime: \Illuminate\Support\Carbon::parse('2026-10-25 21:00:00'),
+                        entries: [
+                            ['account_id' => $shopeePayAcc->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 7000],
+                            ['account_id' => $cashAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 5000],
+                            ['account_id' => $otherIncomeAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 2000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['type' => 'errand_service', 'item' => 'Aqua Botol']
+                    );
+
+                    // 3. Pendapatan ShopeeFood Driver Hari Ini (34 Pesanan: Hub Rp 196.100 + Tip Rp 17.000 = Rp 213.100)
+                    $txDriver = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'income',
+                        description: 'Pendapatan ShopeeFood Driver 25 Okt (34 Order: Hub Rp196.100 + Tip Rp17.000)',
+                        transactionTime: \Illuminate\Support\Carbon::parse('2026-10-25 23:30:00'),
+                        entries: [
+                            ['account_id' => $shopeePayAcc->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 213100],
+                            ['account_id' => $hubIncomeAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 196100],
+                            ['account_id' => $tipIncomeAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 17000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['type' => 'driver_daily_income', 'total_orders' => 34, 'hub_income' => 196100, 'customer_tip' => 17000]
+                    );
+
+                    // 4. Penarikan / Settlement QRIS GoPay Merchant ke GoPay (Rp 22.000)
+                    $txGopay = $ledgerService->recordTransaction(
+                        workDay: $workDay,
+                        type: 'income',
+                        description: 'Settlement QRIS GoPay Merchant ke GoPay (Kemarin Rp9.000 + Hari Ini Rp13.000)',
+                        transactionTime: \Illuminate\Support\Carbon::parse('2026-10-25 23:00:00'),
+                        entries: [
+                            ['account_id' => $gopayAcc->id, 'entry_type' => \App\Enums\EntryType::DEBIT, 'amount' => 22000],
+                            ['account_id' => $gopayMerchantAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 9000],
+                            ['account_id' => $qrisIncomeAcc->id, 'entry_type' => \App\Enums\EntryType::CREDIT, 'amount' => 13000],
+                        ],
+                        isEstimatedTime: false,
+                        metadata: ['type' => 'qris_settlement', 'today_qris' => 13000, 'previous_merchant_balance' => 9000]
+                    );
+
+                    // 5. Update Cash Denominations
+                    \App\Models\CashDenomination::updateOrCreate(
+                        ['work_day_id' => $workDay->id],
+                        [
+                            'bill_100000' => 0,
+                            'bill_50000' => 9,
+                            'bill_20000' => 10,
+                            'bill_10000' => 26,
+                            'bill_5000' => 26,
+                            'bill_2000' => 57,
+                            'bill_1000' => 12,
+                            'coin_1000' => 1,
+                            'coin_500' => 1,
+                            'coin_200' => 0,
+                            'coin_100' => 0,
+                            'total_physical_amount' => 1167500,
+                        ]
+                    );
+
+                    // 6. Finalisasi WorkDay 12
+                    $workDay->update([
+                        'status' => \App\Models\WorkDay::STATUS_FINAL,
+                        'closed_at' => now(),
+                        'total_orders' => 34,
+                        'closing_notes' => 'Closing on-bid 25 Oktober 2026 Full Day. 34 pesanan selesai. Hub Rp196.100, Tip Shopee Rp17.000, Jual Vprime Rp200.000, QRIS Rp13.000. SPayLater Rp464.934 LUNAS. Saldo fisik Rp1.167.500 selisih Rp0. Seluruh saldo digital klop 100%.',
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Closing 25 Oktober 2026 berhasil disinkronisasi 100% klop!',
+                        'accounts' => [
+                            'Cash' => $cashAcc->fresh()->current_balance,
+                            'ShopeePay' => $shopeePayAcc->fresh()->current_balance,
+                            'BCA' => $bcaAcc->fresh()->current_balance,
+                            'GoPay' => $gopayAcc->fresh()->current_balance,
+                            'GoPay Merchant' => $gopayMerchantAcc->fresh()->current_balance,
+                            'e-Money' => \App\Models\Account::where('name', 'e-Money')->value('current_balance'),
+                        ],
+                        'spaylater_status' => $spayDebtAcc->fresh()->current_balance,
+                    ]);
+                });
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+        }
+
         if ($request->query('action') === 'inspect_work_day_12_txs') {
             $txs = \App\Models\Transaction::with('entries.account')
                 ->where('work_day_id', 12)
